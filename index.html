@@ -1,0 +1,1578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>War Era Tools</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'%3E%3Crect width='1' height='2' fill='%23009A49'/%3E%3Crect x='1' width='1' height='2' fill='white'/%3E%3Crect x='2' width='1' height='2' fill='%23FF7900'/%3E%3C/svg%3E" />
+<style>
+  :root {
+    --bg: #0b0d10;
+    --panel: #14181d;
+    --panel-2: #1a1f25;
+    --border: #262d36;
+    --text: #e6e9ee;
+    --muted: #8b94a3;
+    --accent: #4ade80;
+    --accent-dim: #166534;
+    --warn: #fbbf24;
+    --danger: #f87171;
+    --link: #60a5fa;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex; flex-direction: column; min-height: 100vh;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ── Shared chrome ───────────────────────────────────────────────── */
+  header {
+    border-bottom: 1px solid var(--border);
+  }
+  .header-top {
+    padding: 20px 32px 0;
+    display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between;
+  }
+  .brand h1 { margin: 0; font-size: 20px; font-weight: 600; }
+  .brand .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+
+  .tabs {
+    padding: 14px 32px 0;
+    display: flex; gap: 4px;
+  }
+  .tab {
+    background: transparent; border: none; cursor: pointer;
+    color: var(--muted); font: inherit; font-size: 14px;
+    padding: 10px 14px;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .tab:hover { color: var(--text); background: transparent; border-color: transparent; }
+  .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+
+  .toolbar {
+    padding: 14px 32px;
+    border-top: 1px solid var(--border);
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;
+    background: var(--panel);
+  }
+  .toolbar .title-row {
+    display: flex; align-items: center; gap: 10px;
+    color: var(--muted); font-size: 13px;
+  }
+  .toolbar .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  input[type="text"] {
+    background: var(--bg); color: var(--text); border: 1px solid var(--border);
+    padding: 8px 12px; border-radius: 6px; font-size: 13px; min-width: 220px;
+    font-family: inherit;
+  }
+  input:focus { outline: none; border-color: #3a4350; }
+  button {
+    background: var(--bg); color: var(--text); border: 1px solid var(--border);
+    padding: 8px 14px; border-radius: 6px; font-size: 13px; cursor: pointer;
+    font-family: inherit;
+  }
+  button:hover:not(:disabled) { background: var(--panel-2); border-color: #3a4350; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  main { padding: 24px 32px; max-width: 1400px; margin: 0 auto; width: 100%; flex: 1; }
+
+  footer {
+    padding: 20px 32px;
+    border-top: 1px solid var(--border);
+    color: var(--muted); font-size: 13px; text-align: center;
+  }
+  footer .heart { color: var(--danger); }
+  footer a { color: var(--muted); }
+  footer a:hover { color: var(--text); }
+
+  /* Views: hidden unless active. Keeps both tools mounted so reloading
+     isn't necessary on tab switch, but only the active one is visible. */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ── Shared status + step panel ──────────────────────────────────── */
+  .status {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 16px; margin-bottom: 16px; color: var(--muted); font-size: 13px;
+  }
+  .status.error { color: var(--danger); border-color: #4a1d1d; }
+  .status.hidden { display: none; }
+
+  .hint {
+    color: var(--muted); font-size: 13px; text-align: center;
+    padding: 48px 16px;
+  }
+  .hint.hidden { display: none; }
+
+  .steps {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 18px; margin-bottom: 16px;
+    display: flex; flex-direction: column; gap: 12px;
+    transition: opacity 0.4s ease;
+  }
+  .steps.hidden { display: none; }
+  .steps.fading { opacity: 0; pointer-events: none; }
+
+  .step {
+    display: flex; align-items: flex-start; gap: 12px;
+    font-size: 13px; line-height: 1.35;
+  }
+  .step-icon {
+    width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px;
+    border-radius: 50%;
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .step[data-state="pending"] .step-icon { border: 1.5px solid var(--border); }
+  .step[data-state="active"]  .step-icon {
+    border: 1.5px solid rgba(96, 165, 250, 0.22);
+    border-top-color: var(--link);
+    animation: step-spin 0.7s linear infinite;
+  }
+  .step[data-state="done"]    .step-icon { background: var(--accent); }
+  .step[data-state="done"]    .step-icon::after {
+    content: '';
+    width: 4px; height: 8px;
+    border: solid #052e0e;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg) translate(0, -1px);
+  }
+  .step[data-state="error"]   .step-icon { background: var(--danger); }
+  .step[data-state="error"]   .step-icon::before,
+  .step[data-state="error"]   .step-icon::after {
+    content: ''; position: absolute;
+    width: 9px; height: 1.8px; background: #2a0a0a; border-radius: 1px;
+  }
+  .step[data-state="error"]   .step-icon::before { transform: rotate(45deg); }
+  .step[data-state="error"]   .step-icon::after  { transform: rotate(-45deg); }
+  @keyframes step-spin { to { transform: rotate(360deg); } }
+
+  .step-body { flex: 1; min-width: 0; }
+  .step-title { color: var(--muted); font-weight: 500; transition: color 0.2s; }
+  .step[data-state="active"] .step-title,
+  .step[data-state="error"]  .step-title { color: var(--text); }
+  .step[data-state="done"]   .step-title { color: var(--muted); }
+
+  .step-sub {
+    color: var(--muted); font-size: 12px; margin-top: 2px;
+    font-variant-numeric: tabular-nums;
+    display: none;
+  }
+  .step[data-state="active"] .step-sub:not(:empty),
+  .step[data-state="error"]  .step-sub:not(:empty) { display: block; }
+  .step[data-state="error"]  .step-sub { color: var(--danger); }
+
+  .step-count {
+    color: var(--muted); font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0; align-self: center;
+  }
+  .step[data-state="done"] .step-count { color: var(--accent); }
+
+  /* ── Shared howto disclosure ─────────────────────────────────────── */
+  details.howto {
+    margin-top: 24px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+  }
+  details.howto.hidden { display: none; }
+  details.howto summary {
+    cursor: pointer; padding: 12px 18px;
+    color: var(--muted); font-size: 13px; user-select: none;
+    list-style: none;
+  }
+  details.howto summary::-webkit-details-marker { display: none; }
+  details.howto summary::before {
+    content: '▸'; display: inline-block;
+    margin-right: 0.4em;
+    transition: transform 0.15s;
+  }
+  details.howto[open] summary::before { transform: rotate(90deg); }
+  details.howto summary:hover { color: var(--text); }
+  details.howto .howto-body {
+    padding: 0 18px 16px; font-size: 12px; color: var(--muted); line-height: 1.6;
+  }
+  details.howto ul { margin: 0; padding-left: 20px; }
+  details.howto li { margin-bottom: 6px; }
+  details.howto code {
+    background: var(--panel-2); padding: 1px 5px; border-radius: 3px;
+    font-family: ui-monospace, SFMono-Regular, monospace; font-size: 11px;
+  }
+
+  /* ── MU view ─────────────────────────────────────────────────────── */
+  .mu-grid {
+    display: grid; gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  }
+  .mu-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px; display: flex; flex-direction: column; gap: 12px;
+  }
+  .mu-card .card-head { display: flex; gap: 12px; align-items: center; }
+  .mu-avatar {
+    width: 48px; height: 48px; border-radius: 8px; background: var(--panel-2);
+    flex-shrink: 0; object-fit: cover; border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center; color: var(--muted);
+    font-weight: 600; font-size: 18px;
+  }
+  .mu-card .card-title { flex: 1; min-width: 0; }
+  .mu-card .card-title h3 {
+    margin: 0; font-size: 15px; font-weight: 600; word-break: break-word;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .mu-card .card-title .game-link {
+    display: inline-flex; align-items: center;
+    color: var(--muted); transition: color 0.15s;
+  }
+  .mu-card .card-title .game-link:hover { color: var(--link); }
+  .mu-card .card-title .game-link svg { width: 14px; height: 14px; }
+  .mu-card .card-title > .badge { margin-top: 4px; }
+
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
+    background: rgba(74, 222, 128, 0.12); color: var(--accent);
+  }
+  .badge.full { background: rgba(248, 113, 113, 0.12); color: var(--danger); }
+
+  .mu-card .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 12px; }
+  .mu-card .stat { background: var(--panel-2); padding: 8px 10px; border-radius: 6px; }
+  .mu-card .stat .k { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .mu-card .stat .v { font-weight: 600; margin-top: 2px; word-break: break-word; }
+  .mu-card .stat .v.warn { color: var(--danger); }
+
+  .members { font-size: 12px; }
+  .members .m-head {
+    display: flex; justify-content: space-between; align-items: center;
+    cursor: pointer; padding: 6px 0; user-select: none;
+  }
+  .members .m-head:hover { color: var(--accent); }
+  .members ul { list-style: none; margin: 0; padding: 8px 0 0 0; max-height: 220px; overflow-y: auto; }
+  .members li {
+    padding: 4px 8px; border-radius: 4px;
+    font-size: 12px; color: var(--text); background: var(--panel-2); margin-bottom: 4px;
+    word-break: break-all;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .members li.foreign { opacity: 0.55; }
+  .members li .role {
+    display: inline-block;
+    font-size: 10px; padding: 1px 6px; border-radius: 3px;
+    background: rgba(96, 165, 250, 0.15); color: var(--link);
+    font-weight: 600; letter-spacing: 0.02em;
+  }
+  .members li .flag { font-size: 11px; }
+  .members .arrow { transition: transform 0.2s; display: inline-block; }
+  .members[data-open="true"] .arrow { transform: rotate(90deg); }
+  .members[data-open="false"] ul { display: none; }
+
+  /* ── Advisor view ────────────────────────────────────────────────── */
+  .adv-grid { display: flex; flex-direction: column; gap: 12px; }
+
+  .adv-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+    overflow: hidden;
+  }
+  .adv-card .card-head {
+    padding: 14px 18px;
+    display: flex; align-items: center;
+    gap: 10px; border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .adv-card .card-head .title {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 16px; font-weight: 600;
+    min-width: 0;
+  }
+  .icon-box {
+    width: 32px; height: 32px;
+    background: var(--panel-2); border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; line-height: 0; overflow: hidden;
+  }
+  .icon-box img { width: 24px; height: 24px; object-fit: contain; display: block; }
+  .icon-box .fallback {
+    width: 24px; height: 24px;
+    font-size: 18px; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .adv-card .card-head .sub-title {
+    color: var(--muted); font-size: 13px; font-weight: normal;
+    min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .adv-card .card-head .link-icon {
+    color: var(--muted); text-decoration: none;
+    padding: 4px; border-radius: 4px;
+    display: inline-flex; align-items: center; line-height: 0;
+  }
+  .adv-card .card-head .link-icon svg { width: 14px; height: 14px; }
+  .adv-card .card-head .link-icon:hover {
+    color: var(--link); background: var(--panel-2); text-decoration: none;
+  }
+  .worker-badge {
+    font-size: 11px; font-weight: 500;
+    background: rgba(96, 165, 250, 0.12); color: var(--link);
+    border: 1px solid rgba(96, 165, 250, 0.3);
+    padding: 2px 8px; border-radius: 999px;
+    white-space: nowrap; cursor: help;
+  }
+  .adv-card .card-head .chev {
+    display: inline;
+    color: var(--muted); font-size: 12px;
+    transition: transform 0.15s;
+  }
+  .adv-card.expanded .card-head .chev { transform: rotate(180deg); }
+
+  .verdict {
+    margin-left: auto;
+    padding: 5px 12px; border-radius: 999px;
+    font-size: 12px; font-weight: 500; white-space: nowrap;
+    border: 1px solid transparent;
+  }
+  .verdict.optimal { background: rgba(74, 222, 128, 0.1);  color: var(--accent); border-color: rgba(74, 222, 128, 0.3); }
+  .verdict.move    { background: rgba(251, 191, 36, 0.1);  color: var(--warn);   border-color: rgba(251, 191, 36, 0.3); }
+  .verdict.huge    { background: rgba(248, 113, 113, 0.1); color: var(--danger); border-color: rgba(248, 113, 113, 0.3); }
+
+  .adv-card .body { padding: 16px 18px; }
+  .adv-card .panels { display: grid; gap: 12px; }
+  .adv-card:not(.expanded) .body,
+  .adv-card:not(.expanded) details.alts-wrap { display: none; }
+  .adv-card .panels.compare { grid-template-columns: 1fr auto 1fr; }
+  .adv-card .panels.compare .arrow {
+    align-self: center; color: var(--muted); font-size: 20px; user-select: none;
+  }
+
+  .side {
+    background: var(--panel-2); border-radius: 6px; padding: 14px;
+  }
+  .side .label {
+    font-size: 11px; text-transform: uppercase; color: var(--muted);
+    letter-spacing: 0.6px; margin-bottom: 8px; font-weight: 500;
+  }
+  .side .country {
+    display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap;
+    font-size: 14px; margin-bottom: 10px;
+  }
+  .side .country .region { font-weight: 600; }
+  .side .country .controller { color: var(--muted); font-size: 12px; }
+  .side .country .flag { font-size: 14px; }
+  .side .stats { display: flex; gap: 16px; font-size: 13px; flex-wrap: wrap; }
+  .side .stat-label { color: var(--muted); font-size: 12px; }
+  .side .stat-value { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .side .stat-value.pos      { color: var(--accent); }
+  .side .stat-value.tax-low  { color: var(--accent); }
+  .side .stat-value.tax-mid  { color: var(--warn); }
+  .side .stat-value.tax-high { color: var(--danger); }
+  .delta {
+    margin-left: 4px; font-size: 11px; font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+  .delta.good { color: var(--accent); }
+  .delta.bad  { color: var(--danger); }
+  .side .net {
+    margin-top: 10px; padding-top: 10px;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 13px;
+  }
+  .side .net .net-val {
+    font-weight: 600; font-variant-numeric: tabular-nums; font-size: 15px;
+  }
+  .breakdown {
+    margin-top: 6px; font-size: 11px; color: var(--muted); line-height: 1.6;
+  }
+
+  details.alts-wrap { border-top: 1px solid var(--border); }
+  details.alts-wrap summary {
+    cursor: pointer; padding: 10px 18px;
+    color: var(--muted); font-size: 12px; user-select: none;
+    background: var(--panel-2);
+    list-style: none;
+  }
+  details.alts-wrap summary::-webkit-details-marker { display: none; }
+  details.alts-wrap summary::before {
+    content: '▸'; display: inline-block;
+    margin-right: 0.4em;
+    transition: transform 0.15s;
+  }
+  details.alts-wrap[open] summary::before { transform: rotate(90deg); }
+  details.alts-wrap summary:hover { color: var(--text); }
+  .alts { background: var(--panel-2); }
+  .alt {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 18px; font-size: 12px; gap: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .alt.curr { background: rgba(96, 165, 250, 0.05); }
+  .alt.worse { opacity: 0.5; }
+  .alt .rank { color: var(--muted); margin-right: 6px; font-variant-numeric: tabular-nums; }
+  .alt .right { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .alt .right .v { font-weight: 600; }
+
+  @media (max-width: 720px) {
+    .header-top { padding: 16px 20px 0; }
+    .tabs { padding: 12px 20px 0; }
+    .toolbar { padding: 12px 20px; }
+    main { padding: 16px 20px; }
+    footer { padding: 16px 20px; }
+    .adv-card .panels.compare { grid-template-columns: 1fr; }
+    .adv-card .panels.compare .arrow { transform: rotate(90deg); justify-self: center; }
+    .alt { flex-direction: column; align-items: flex-start; gap: 4px; }
+    .alt .right { white-space: normal; padding-left: 18px; }
+    .adv-card .card-head { flex-wrap: wrap; }
+    .adv-card .card-head .title { flex: 1 1 auto; min-width: 0; flex-wrap: wrap; }
+    .adv-card .card-head .chev { margin-left: auto; order: 2; }
+    .verdict {
+      margin-left: 0; order: 3; flex-basis: 100%;
+      white-space: normal; text-align: center;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="brand">
+      <h1>War Era Tools</h1>
+      <div class="sub">Live data via <a href="https://gateway.warerastats.io/" target="_blank" rel="noopener">War Era Gateway</a></div>
+    </div>
+  </div>
+  <nav class="tabs">
+    <button class="tab" data-view="mu">🇮🇪 Irish MUs</button>
+    <button class="tab" data-view="advisor">🏭 Migration Advisor</button>
+  </nav>
+  <!-- One toolbar per view; only the active one is shown. -->
+  <div class="toolbar" data-toolbar="mu">
+    <div class="title-row">Military units owned by Irish citizens with mostly Irish rosters.</div>
+    <div class="controls">
+      <input type="text" id="mu-filter" placeholder="Filter by name…" />
+      <button id="mu-refresh">Refresh</button>
+    </div>
+  </div>
+  <div class="toolbar" data-toolbar="advisor" hidden>
+    <div class="title-row">Find a better country for each of your companies.</div>
+    <div class="controls">
+      <input id="adv-username" type="text" placeholder="Your War Era username" autocomplete="off" spellcheck="false" />
+      <button id="adv-go">Analyse</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ─── Irish Military Units view ─────────────────────────────── -->
+  <section class="view" data-view="mu">
+    <div id="mu-steps" class="steps hidden">
+      <div class="step" data-state="pending" data-step="1">
+        <div class="step-icon"></div>
+        <div class="step-body">
+          <div class="step-title">Fetching military units</div>
+          <div class="step-sub"></div>
+        </div>
+        <div class="step-count"></div>
+      </div>
+      <div class="step" data-state="pending" data-step="2">
+        <div class="step-icon"></div>
+        <div class="step-body">
+          <div class="step-title">Finding Irish citizens</div>
+          <div class="step-sub"></div>
+        </div>
+        <div class="step-count"></div>
+      </div>
+      <div class="step" data-state="pending" data-step="3">
+        <div class="step-icon"></div>
+        <div class="step-body">
+          <div class="step-title">Resolving usernames</div>
+          <div class="step-sub"></div>
+        </div>
+        <div class="step-count"></div>
+      </div>
+    </div>
+    <div id="mu-status" class="status hidden"></div>
+    <div id="mu-grid" class="mu-grid"></div>
+    <details class="howto">
+      <summary>How MUs are selected</summary>
+      <div class="howto-body">
+        <ul>
+          <li><strong>Owner nationality</strong> — the MU's owner must currently be an Irish citizen. Owners who've migrated away get filtered out, even if they founded the MU.</li>
+          <li><strong>MU country</strong> — when the MU exposes its own country (under <code>countryId</code>, <code>country</code>, <code>nationalityId</code>, or <code>nationality</code>), it must be set to Ireland. MUs without any country field skip this check rather than being dropped, so missing data doesn't wipe the list.</li>
+          <li><strong>Member majority</strong> — at least half of the MU's members must be Irish. MUs with a mostly foreign roster are dropped even when the owner is local.</li>
+          <li>In the expanded members list, Irish citizens are marked 🇮🇪 and non-citizens are marked 🌍 and dimmed. The <strong>Irish</strong> stat on each card shows the ratio.</li>
+        </ul>
+      </div>
+    </details>
+  </section>
+
+  <!-- ─── Migration Advisor view ────────────────────────────────── -->
+  <section class="view" data-view="advisor">
+    <div id="adv-steps" class="steps hidden">
+      <div class="step" data-state="pending" data-step="1">
+        <div class="step-icon"></div>
+        <div class="step-body">
+          <div class="step-title">Finding user</div>
+          <div class="step-sub"></div>
+        </div>
+        <div class="step-count"></div>
+      </div>
+      <div class="step" data-state="pending" data-step="2">
+        <div class="step-icon"></div>
+        <div class="step-body">
+          <div class="step-title">Loading user's companies</div>
+          <div class="step-sub"></div>
+        </div>
+        <div class="step-count"></div>
+      </div>
+      <div class="step" data-state="pending" data-step="3">
+        <div class="step-icon"></div>
+        <div class="step-body">
+          <div class="step-title">Loading country data</div>
+          <div class="step-sub"></div>
+        </div>
+        <div class="step-count"></div>
+      </div>
+    </div>
+    <div id="adv-status" class="status hidden"></div>
+    <div id="adv-hint" class="hint">Enter your War Era username above to begin.</div>
+    <div id="adv-grid" class="adv-grid"></div>
+    <details class="howto hidden" id="adv-howto">
+      <summary>How this works</summary>
+      <div class="howto-body">
+        <ul>
+          <li><strong>Production bonus</strong> has up to four components. Strategic resources and regional deposits are flat country/region facts; the two +30% bonuses are gated by the country's <strong>industrialism</strong> lean — a signed integer the game exposes via the warerastats data feed (range −2…+2 in current data, with 0 = neutral). The gating is asymmetric: <em>industrialist-leaning</em> (ind &gt; 0) countries grant the +30 on their specialised item; <em>agrarian-leaning</em> (ind &lt; 0) countries grant the +30 on matching regional deposits; <em>neutral</em> (ind = 0) countries grant neither. Each lean grants exactly one type of +30%, never both.
+            <ul style="margin-top: 4px;">
+              <li><strong>Strategic resources</strong> — the country's <code>productionPercent</code>, fires when the item matches the country's <code>specializedItem</code>. Independent of industrialism.</li>
+              <li><strong>+30% Industrialism (specialisation)</strong> — fires alongside strategic resources only when the country is industrialist-leaning AND specialises in the item.</li>
+              <li><strong>Regional deposit</strong> (the deposit's <code>bonusPercent</code>, typically +30%) — fires when the country does NOT specialise in this item AND the region has an active matching deposit.</li>
+              <li><strong>+30% Industrialism (deposit)</strong> — fires alongside a regional deposit only when the country is agrarian-leaning.</li>
+            </ul>
+          </li>
+          <li><strong>Industrialism is read directly,</strong> not inferred. The signed integer comes from the warerastats companion endpoint. If warerastats is unreachable, the tool degrades gracefully: industrialism defaults to 0 for all countries.</li>
+          <li><strong>Income tax</strong> is deducted from <em>workers'</em> wages, not from the owner's share of production. So whether tax directly affects you depends on whether you actually work in the company.</li>
+          <li><strong>You work here</strong> (badge shown on the card): ranking uses your take-home: <code>(1 + bonus%) × (1 − income tax%)</code>.</li>
+          <li><strong>No badge:</strong> you own the company but don't work in it. Ranking uses raw output: <code>1 + bonus%</code>.</li>
+          <li><strong>The percentage on each verdict pill is a relative increase</strong>, not a percentage-point change.</li>
+          <li><strong>Numbers shown are regional/country bonuses only.</strong> Company-level upgrades aren't location-dependent, so totals here may be lower than what the game shows on your company.</li>
+          <li>Not modelled: migration cost, active wars or sanctions, worker recruitment effects of high tax, market and sales taxes, or political shifts.</li>
+        </ul>
+      </div>
+    </details>
+  </section>
+</main>
+
+<footer>
+  Made with <span class="heart">♥️</span> by toie.
+</footer>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+ *  SHARED UTILITIES
+ * ═══════════════════════════════════════════════════════════════════ */
+const API_BASE         = 'https://warera-proxy.toie.workers.dev/trpc';
+const WARERASTATS_BASE = 'https://warera-proxy.toie.workers.dev/warerastats';
+const GAME_BASE        = 'https://app.warera.io';
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function fmtNum(v) {
+  if (v == null) return null;
+  if (typeof v === 'number') return v.toLocaleString(undefined, {maximumFractionDigits: 0});
+  return String(v);
+}
+function fmt(v, dp = 2) {
+  if (!isFinite(v)) return '0';
+  return v.toFixed(dp).replace(/\.?0+$/, '');
+}
+function flag(code) {
+  if (!code || code.length !== 2) return '🌐';
+  return code.toUpperCase().split('').map(c =>
+    String.fromCodePoint(c.charCodeAt(0) - 65 + 0x1F1E6)
+  ).join('');
+}
+function formatDuration(ms) {
+  if (!isFinite(ms) || ms <= 0) return 'expired';
+  const totalSec = Math.floor(ms / 1000);
+  const d = Math.floor(totalSec / 86400);
+  const h = Math.floor((totalSec % 86400) / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${Math.max(m, 1)}m`;
+}
+function formatDate(v) {
+  if (!v) return null;
+  const d = new Date(v);
+  if (isNaN(d)) return null;
+  return d.toISOString().slice(0, 10);
+}
+
+// Transient = worth retrying. Covers raw HTTP 5xx plus proxy responses that
+// embed an upstream 5xx in the message body.
+function isTransientError(err) {
+  if (err && err.status >= 500 && err.status < 600) return true;
+  const msg = String(err?.message || '').toLowerCase();
+  return /http 50[234]|no available server|timed? ?out|fetch failed|network ?error/.test(msg);
+}
+
+/**
+ * tRPC fetch helper, shared by both tools.
+ * - Optional timeout via AbortController.
+ * - Optional retry on transient errors (used by the advisor; MU tool skips it).
+ */
+async function trpc(endpoint, input = {}, { retry = false, timeoutMs = null } = {}, attempt = 1) {
+  const MAX_ATTEMPTS = retry ? 3 : 1;
+  const url = `${API_BASE}/${endpoint}?input=${encodeURIComponent(JSON.stringify(input))}`;
+  const ctrl = timeoutMs ? new AbortController() : null;
+  const t = timeoutMs ? setTimeout(() => ctrl.abort(), timeoutMs) : null;
+  try {
+    const res = await fetch(url, ctrl ? { signal: ctrl.signal } : undefined);
+    if (!res.ok) {
+      const err = new Error(`${endpoint} → HTTP ${res.status}`);
+      err.status = res.status;
+      throw err;
+    }
+    const json = await res.json();
+    if (json && !Array.isArray(json) && json.error) {
+      const msg = json.error.message || json.error.data?.message || 'unknown error';
+      throw new Error(`${endpoint} → ${String(msg).slice(0, 120)}`);
+    }
+    const item = Array.isArray(json) ? json[0] : json;
+    return item?.result?.data ?? item;
+  } catch (e) {
+    if (e.name === 'AbortError') throw new Error(`${endpoint} → timed out`);
+    if (attempt < MAX_ATTEMPTS && isTransientError(e)) {
+      await new Promise(r => setTimeout(r, 400 * attempt));
+      return trpc(endpoint, input, { retry, timeoutMs }, attempt + 1);
+    }
+    throw e;
+  } finally {
+    if (t) clearTimeout(t);
+  }
+}
+
+/**
+ * Step panel controller. Each view has its own #foo-steps element; we wrap it
+ * in this object so the per-tool code doesn't have to know the DOM details.
+ */
+function makeSteps(rootEl) {
+  function setStep(n, state, { sub, count } = {}) {
+    const el = rootEl.querySelector(`.step[data-step="${n}"]`);
+    if (!el) return;
+    el.dataset.state = state;
+    if (sub   !== undefined) el.querySelector('.step-sub').textContent   = sub   ?? '';
+    if (count !== undefined) el.querySelector('.step-count').textContent = count ?? '';
+  }
+  function reset() {
+    rootEl.classList.remove('hidden', 'fading');
+    for (const step of rootEl.querySelectorAll('.step')) {
+      step.dataset.state = 'pending';
+      step.querySelector('.step-sub').textContent = '';
+      step.querySelector('.step-count').textContent = '';
+    }
+  }
+  function markActiveAsError(message) {
+    const active = rootEl.querySelector('.step[data-state="active"]');
+    if (active) {
+      active.dataset.state = 'error';
+      active.querySelector('.step-sub').textContent = message;
+    }
+  }
+  function fadeOut(delay = 1200) {
+    setTimeout(() => rootEl.classList.add('fading'), delay);
+    setTimeout(() => rootEl.classList.add('hidden'), delay + 500);
+  }
+  function hide() { rootEl.classList.add('hidden'); }
+  return { setStep, reset, markActiveAsError, fadeOut, hide };
+}
+
+function makeStatus(el) {
+  return function setStatus(text, isError = false) {
+    if (!text) { el.classList.add('hidden'); return; }
+    el.textContent = text;
+    el.classList.toggle('error', isError);
+    el.classList.remove('hidden');
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ *  IRISH MILITARY UNITS
+ *  Lifted near-verbatim from the original tool; only the chrome bits
+ *  (status, steps, $ refs) are routed through the shared helpers.
+ * ═══════════════════════════════════════════════════════════════════ */
+const MUTool = (() => {
+  const IRELAND_COUNTRY_ID = '6813b6d446e731854c7ac7fe';
+  const PAGE_LIMIT = 100;
+
+  const REQUIRE_IRISH_COUNTRY = true;
+  const MU_COUNTRY_FIELDS = ['countryId', 'country', 'nationalityId', 'nationality'];
+  const EXCLUDED_MU_IDS = [
+    '6955c186b1fc6d0b7b00fadc',
+  ];
+
+  const $grid    = document.getElementById('mu-grid');
+  const $filter  = document.getElementById('mu-filter');
+  const $refresh = document.getElementById('mu-refresh');
+  const steps    = makeSteps(document.getElementById('mu-steps'));
+  const setStatus = makeStatus(document.getElementById('mu-status'));
+
+  let allMUs = [];
+  let irishIdsGlobal = new Set();
+  const userNames = {};
+  let started = false;
+
+  const idOf          = m => m?._id ?? null;
+  const nameOf        = m => m?.name ?? '(no name)';
+  const avatarOf      = m => m?.avatarUrl ?? null;
+  const dormsOf       = m => m?.activeUpgradeLevels?.dormitories ?? null;
+  const hqOf          = m => m?.activeUpgradeLevels?.headquarters ?? null;
+  const ownerOf       = m => m?.user ?? null;
+  const membersOf     = m => Array.isArray(m?.members) ? m.members : null;
+  const memberCountOf = m => membersOf(m)?.length ?? 0;
+  const weeklyDmgOf   = m => m?.rankings?.muWeeklyDamages?.value ?? null;
+  const wealthOf      = m => m?.rankings?.muWealth?.value ?? null;
+
+  function countryOf(mu) {
+    for (const f of MU_COUNTRY_FIELDS) {
+      if (mu?.[f] != null) return mu[f];
+    }
+    return null;
+  }
+  const memberIdOf = u => typeof u === 'string' ? u : (u?._id ?? null);
+
+  function countIrishMembers(mu, irishIds) {
+    const members = membersOf(mu) || [];
+    return members.filter(u => irishIds.has(memberIdOf(u))).length;
+  }
+
+  async function fetchAllMUs() {
+    const out = [];
+    const seen = new Set();
+    let cursor;
+    let safety = 0;
+    while (safety++ < 200) {
+      const input = { limit: PAGE_LIMIT };
+      if (cursor) input.cursor = cursor;
+      const page = await trpc('mu.getManyPaginated', input, { timeoutMs: 20000 });
+      const items = page?.items ?? page?.data ?? (Array.isArray(page) ? page : []);
+      let added = 0;
+      for (const item of items) {
+        const id = idOf(item);
+        if (id && !seen.has(id)) {
+          seen.add(id);
+          out.push(item);
+          added++;
+        }
+      }
+      const next = page?.nextCursor ?? page?.cursor ?? null;
+      if (!next || items.length === 0 || added === 0) break;
+      cursor = next;
+      steps.setStep(1, 'active', { sub: `${out.length} loaded so far…` });
+    }
+    return out;
+  }
+
+  async function fetchIrishUserIds() {
+    const ids = new Set();
+    let cursor;
+    let safety = 0;
+    while (safety++ < 200) {
+      const input = { countryId: IRELAND_COUNTRY_ID, limit: PAGE_LIMIT };
+      if (cursor) input.cursor = cursor;
+      const page = await trpc('user.getUsersByCountry', input, { timeoutMs: 20000 });
+      const items = page?.items ?? page?.data ?? (Array.isArray(page) ? page : []);
+      for (const u of items) {
+        if (u?._id) {
+          ids.add(u._id);
+          if (u.username) userNames[u._id] = u.username;
+        }
+      }
+      steps.setStep(2, 'active', { sub: `${ids.size} citizens found so far…` });
+      const next = page?.nextCursor ?? page?.cursor ?? null;
+      if (!next || items.length === 0) break;
+      cursor = next;
+    }
+    return ids;
+  }
+
+  async function resolveUserNames(idArr) {
+    const unknown = [...new Set(idArr)].filter(id => id && !userNames[id]);
+    const concurrency = 20;
+    for (let i = 0; i < unknown.length; i += concurrency) {
+      const batch = unknown.slice(i, i + concurrency);
+      await Promise.all(batch.map(async id => {
+        try {
+          const u = await trpc('user.getUserLite', { userId: id }, { timeoutMs: 20000 });
+          if (u?.username) userNames[id] = u.username;
+        } catch {}
+      }));
+      const done = Math.min(i + concurrency, unknown.length);
+      steps.setStep(3, 'active', { sub: `${done} of ${unknown.length} resolved…` });
+    }
+  }
+
+  function matchesQuery(obj, q) {
+    if (!q) return true;
+    const needle = q.toLowerCase();
+    const seen = new WeakSet();
+    function walk(v) {
+      if (v == null) return false;
+      if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
+        return String(v).toLowerCase().includes(needle);
+      }
+      if (typeof v === 'object') {
+        if (seen.has(v)) return false;
+        seen.add(v);
+        if (Array.isArray(v)) return v.some(walk);
+        return Object.values(v).some(walk);
+      }
+      return false;
+    }
+    return walk(obj);
+  }
+
+  function avatarEl(mu) {
+    const src = avatarOf(mu);
+    const initial = (nameOf(mu).slice(0,1) || '?').toUpperCase();
+    if (src && /^https?:\/\//.test(src)) {
+      return `<img class="mu-avatar" src="${escapeHtml(src)}" alt="" data-initial="${escapeHtml(initial)}" onerror="var d=document.createElement('div');d.className='mu-avatar';d.textContent=this.dataset.initial;this.replaceWith(d)">`;
+    }
+    return `<div class="mu-avatar">${escapeHtml(initial)}</div>`;
+  }
+  function capacityOf(mu) {
+    const dorms = dormsOf(mu);
+    return dorms != null ? dorms * 5 : null;
+  }
+  function capacityBadge(mu) {
+    const cap = capacityOf(mu);
+    if (cap == null) return '';
+    const used = memberCountOf(mu);
+    if (used >= cap) return `<span class="badge full">Full</span>`;
+    return `<span class="badge">${cap - used} open</span>`;
+  }
+  function statsBlock(mu) {
+    const total = memberCountOf(mu);
+    const irish = mu._irishMembers ?? 0;
+    const irishStr = total > 0 ? `${irish} / ${total}` : '—';
+    const irishCls = (total > 0 && irish < total) ? ' warn' : '';
+
+    const candidates = [
+      ['Members',    capacityOf(mu) != null ? `${total} / ${capacityOf(mu)}` : total],
+      ['Irish',      irishStr, irishCls],
+      ['Dorms',      dormsOf(mu) ?? '—'],
+      ['HQ',         hqOf(mu) ?? '—'],
+      ['Weekly Dmg', fmtNum(weeklyDmgOf(mu)) ?? '—'],
+      ['Wealth',     fmtNum(wealthOf(mu)) ?? '—'],
+      ['Created',    formatDate(mu?.createdAt) ?? '—'],
+    ];
+    return `<div class="stats">${
+      candidates.map(([k, v, cls = '']) =>
+        `<div class="stat"><div class="k">${escapeHtml(k)}</div><div class="v${cls}">${escapeHtml(String(v))}</div></div>`
+      ).join('')
+    }</div>`;
+  }
+  function membersBlock(mu) {
+    const arr = membersOf(mu);
+    if (!arr || !arr.length) return '';
+    const commanders = new Set(mu?.roles?.commanders || []);
+    return `
+      <div class="members" data-open="false">
+        <div class="m-head" onclick="this.parentNode.dataset.open = this.parentNode.dataset.open === 'true' ? 'false' : 'true'">
+          <span><span class="arrow">▶</span> Members (${arr.length})</span>
+        </div>
+        <ul>${arr.map(u => {
+          const id = memberIdOf(u);
+          const name = userNames[id] ?? id ?? '';
+          const isIrish = irishIdsGlobal.has(id);
+          const flagSpan = isIrish ? '<span class="flag" title="Irish">🇮🇪</span>' : '<span class="flag" title="Non-Irish">🌍</span>';
+          const tag = commanders.has(id) ? '<span class="role">Commander</span>' : '';
+          const cls = isIrish ? '' : ' class="foreign"';
+          return `<li${cls}>${flagSpan}<span>${escapeHtml(String(name))}</span>${tag}</li>`;
+        }).join('')}</ul>
+      </div>
+    `;
+  }
+  function renderCard(mu) {
+    const id = idOf(mu);
+    const link = id
+      ? `<a class="game-link" href="${GAME_BASE}/mu/${escapeHtml(id)}" target="_blank" rel="noopener" title="Open in game"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>`
+      : '';
+    return `
+      <div class="mu-card">
+        <div class="card-head">
+          ${avatarEl(mu)}
+          <div class="card-title">
+            <h3>${escapeHtml(nameOf(mu))}${link}</h3>
+            ${capacityBadge(mu)}
+          </div>
+        </div>
+        ${statsBlock(mu)}
+        ${membersBlock(mu)}
+      </div>
+    `;
+  }
+
+  function render() {
+    const q = $filter.value.trim();
+    const filtered = allMUs.filter(m => matchesQuery(m, q));
+    if (!filtered.length) {
+      $grid.innerHTML = '';
+      setStatus(`No MUs match "${q}". Total: ${allMUs.length}.`);
+      return;
+    }
+    filtered.sort((a, b) => {
+      const wa = weeklyDmgOf(a) ?? 0;
+      const wb = weeklyDmgOf(b) ?? 0;
+      if (wa !== wb) return wb - wa;
+      return memberCountOf(b) - memberCountOf(a);
+    });
+    $grid.innerHTML = filtered.map(renderCard).join('');
+    setStatus(`${filtered.length} MUs${q ? ` matching "${q}"` : ''}`);
+  }
+
+  async function load() {
+    $refresh.disabled = true;
+    $grid.innerHTML = '';
+    setStatus('');
+    steps.reset();
+    try {
+      steps.setStep(1, 'active', { sub: 'Starting…' });
+      const muList = await fetchAllMUs();
+      steps.setStep(1, 'done', { sub: '', count: `${muList.length} MUs` });
+
+      steps.setStep(2, 'active', { sub: 'Starting…' });
+      const irishIds = await fetchIrishUserIds();
+      irishIdsGlobal = irishIds;
+
+      let droppedCountry = 0, droppedMembers = 0, droppedExcluded = 0;
+      const ownerIrish = muList.filter(mu => irishIds.has(ownerOf(mu)));
+      allMUs = ownerIrish.filter(mu => {
+        if (EXCLUDED_MU_IDS.includes(idOf(mu))) { droppedExcluded++; return false; }
+        if (REQUIRE_IRISH_COUNTRY) {
+          const c = countryOf(mu);
+          if (c != null && c !== IRELAND_COUNTRY_ID) { droppedCountry++; return false; }
+        }
+        const members = membersOf(mu) || [];
+        if (members.length > 0) {
+          const irish = countIrishMembers(mu, irishIds);
+          if ((irish / members.length) < 0.5) { droppedMembers++; return false; }
+        }
+        return true;
+      }).map(mu => {
+        mu._irishMembers = countIrishMembers(mu, irishIds);
+        return mu;
+      });
+
+      console.log(
+        `[filter] ${muList.length} total → ${ownerIrish.length} Irish-owned → ${allMUs.length} kept ` +
+        `(dropped: ${droppedCountry} foreign country, ${droppedMembers} non-Irish membership, ${droppedExcluded} blacklisted)`
+      );
+
+      steps.setStep(2, 'done', { sub: '', count: `${irishIds.size} citizens · ${allMUs.length} Irish MUs` });
+
+      const memberIds = new Set();
+      for (const mu of allMUs) {
+        const owner = ownerOf(mu);
+        if (owner) memberIds.add(owner);
+        (membersOf(mu) || []).forEach(u => {
+          const id = memberIdOf(u);
+          if (id) memberIds.add(id);
+        });
+      }
+      if (memberIds.size > 0) {
+        steps.setStep(3, 'active', { sub: `0 of ${memberIds.size} resolved…` });
+        await resolveUserNames([...memberIds]);
+        steps.setStep(3, 'done', { sub: '', count: `${memberIds.size} usernames` });
+      } else {
+        steps.setStep(3, 'done', { sub: '', count: 'no users to resolve' });
+      }
+
+      render();
+      steps.fadeOut();
+    } catch (e) {
+      steps.markActiveAsError(e.message);
+      setStatus(`Error: ${e.message}`, true);
+    } finally {
+      $refresh.disabled = false;
+    }
+  }
+
+  $filter.addEventListener('input', () => { if (allMUs.length) render(); });
+  $refresh.addEventListener('click', load);
+
+  return {
+    /** Called by the view router the first time this tab is shown. */
+    activate() {
+      if (started) return;
+      started = true;
+      load();
+    }
+  };
+})();
+
+/* ═══════════════════════════════════════════════════════════════════
+ *  COMPANY MIGRATION ADVISOR
+ * ═══════════════════════════════════════════════════════════════════ */
+const AdvisorTool = (() => {
+  const companyUrlFor = id => `${GAME_BASE}/company/${id}`;
+
+  const ITEMS = {
+    cocain:     { name: 'Pill',            file: 'cocain.png',     fb: '💊' },
+    coca:       { name: 'Mysterious Plant',file: 'coca.png',       fb: '🌿' },
+    lightAmmo:  { name: 'Light Ammo',      file: 'lightAmmo.png',  fb: '•' },
+    ammo:       { name: 'Ammo',            file: 'ammo.png',       fb: '🔫' },
+    heavyAmmo:  { name: 'Heavy Ammo',      file: 'heavyAmmo.png',  fb: '💥' },
+    lead:       { name: 'Lead',            file: 'lead.png',       fb: '⚫' },
+    cookedFish: { name: 'Cooked Fish',     file: 'cookedFish.png', fb: '🍣' },
+    steak:      { name: 'Steak',           file: 'steak.png',      fb: '🥩' },
+    bread:      { name: 'Bread',           file: 'bread.png',      fb: '🍞' },
+    fish:       { name: 'Fish',            file: 'fish.png',       fb: '🐟' },
+    livestock:  { name: 'Livestock',       file: 'livestock.png',  fb: '🐄' },
+    grain:      { name: 'Grain',           file: 'grain.png',      fb: '🌾' },
+    oil:        { name: 'Oil',             file: 'oil.png',        fb: '⛽' },
+    steel:      { name: 'Steel',           file: 'steel.png',      fb: '🏗️' },
+    concrete:   { name: 'Concrete',        file: 'concrete.png',   fb: '🧱' },
+    petroleum:  { name: 'Petroleum',       file: 'petroleum.png',  fb: '🛢️' },
+    iron:       { name: 'Iron',            file: 'iron.png',       fb: '⛓️' },
+    limestone:  { name: 'Limestone',       file: 'limestone.png',  fb: '🪨' },
+  };
+
+  const OPTIMAL_THRESHOLD = 2;
+  const HUGE_THRESHOLD    = 20;
+
+  let GAME_DEPOSIT_BONUS = 30;
+
+  function ethicsLean(country) {
+    const ind = country?.industrialism ?? 0;
+    if (ind < 0) return 'agrarian';
+    if (ind > 0) return 'industrialist';
+    return null;
+  }
+
+  const $grid     = document.getElementById('adv-grid');
+  const $hint     = document.getElementById('adv-hint');
+  const $username = document.getElementById('adv-username');
+  const $go       = document.getElementById('adv-go');
+  const $howto    = document.getElementById('adv-howto');
+  const steps     = makeSteps(document.getElementById('adv-steps'));
+  const setStatus = makeStatus(document.getElementById('adv-status'));
+
+  let lastResult = null;
+
+  // Use the shared trpc but with retry enabled — the advisor was the noisier
+  // of the two tools w.r.t. transient 5xx, hence its original retry logic.
+  const adv_trpc = (endpoint, input) => trpc(endpoint, input, { retry: true });
+
+  let USER_ENDPOINT = null;
+  async function fetchUser(userId) {
+    if (USER_ENDPOINT) {
+      try { return await adv_trpc(USER_ENDPOINT, { userId }); }
+      catch { return null; }
+    }
+    const candidates = ['user.getById', 'user.getUserById', 'user.getUser', 'user.get'];
+    for (const ep of candidates) {
+      try {
+        const u = await adv_trpc(ep, { userId });
+        if (u) { USER_ENDPOINT = ep; return u; }
+      } catch { /* try next */ }
+    }
+    return null;
+  }
+
+  function isDepositActive(dep) {
+    if (!dep) return false;
+    const now = Date.now();
+    const starts = dep.startsAt ? new Date(dep.startsAt).getTime() : 0;
+    const ends   = dep.endsAt   ? new Date(dep.endsAt).getTime()   : 0;
+    return now >= starts && now <= ends;
+  }
+
+  function computeBonus(country, region, itemCode) {
+    if (!country) return null;
+    const isSpecialised = country.specializedItem === itemCode;
+    const lean          = ethicsLean(country);
+
+    const strategic = isSpecialised
+      ? (country.strategicResources?.bonuses?.productionPercent || 0)
+      : 0;
+    const specialisation = isSpecialised && lean === 'industrialist' ? 30 : 0;
+
+    const hasMatchingDeposit = !isSpecialised
+      && !!region?.deposit
+      && region.deposit.type === itemCode
+      && isDepositActive(region.deposit);
+    const deposit        = hasMatchingDeposit ? (region.deposit.bonusPercent || 0) : 0;
+    const depositCountry = hasMatchingDeposit && lean === 'agrarian' ? GAME_DEPOSIT_BONUS : 0;
+
+    const total   = strategic + specialisation + deposit + depositCountry;
+    const tax     = country.taxes?.income ?? 0;
+    const netMult = (1 + total / 100) * (1 - tax / 100);
+    const depositEndsAt = hasMatchingDeposit ? region.deposit.endsAt : null;
+    return { strategic, specialisation, deposit, depositCountry, depositEndsAt, lean, total, tax, netMult };
+  }
+
+  async function loadCountriesParallel(countries) {
+    const byId = {};
+    const total = countries.length;
+    const chunk = 25;
+    let done = 0;
+    for (let i = 0; i < total; i += chunk) {
+      const slice = countries.slice(i, i + chunk);
+      await Promise.all(slice.map(async c => {
+        try {
+          const country = await adv_trpc('country.getCountryById', { countryId: c._id });
+          if (country) byId[c._id] = country;
+        } catch { /* skip individual failures */ }
+        done++;
+      }));
+      steps.setStep(3, 'active', { sub: null, count: `${done}/${total}` });
+    }
+    return byId;
+  }
+
+  async function resolveUserId(username) {
+    const search = await adv_trpc('search.searchAnything', { searchText: username });
+    const candidateIds = search?.userIds || [];
+    if (!candidateIds.length) {
+      throw new Error(`No user found matching "${username}"`);
+    }
+
+    steps.setStep(1, 'active', {
+      sub: `Verifying username among ${candidateIds.length} match${candidateIds.length === 1 ? '' : 'es'}`,
+      count: `0/${Math.min(candidateIds.length, 10)}`
+    });
+
+    const top = candidateIds.slice(0, 10);
+    let checked = 0;
+    const profiles = await Promise.all(top.map(async id => {
+      const u = await fetchUser(id);
+      checked++;
+      steps.setStep(1, 'active', { count: `${checked}/${top.length}` });
+      return u;
+    }));
+
+    const known = profiles.filter(Boolean);
+    const normalize = s => (s || '').toLowerCase().trim();
+    const target = normalize(username);
+
+    const exact = known.find(u => normalize(u.username) === target);
+    if (exact) return { userId: exact._id, username: exact.username, exact: true };
+
+    if (!known.length) {
+      console.warn('[advisor] Could not verify usernames — falling back to top search result.');
+      return { userId: candidateIds[0], username, exact: false };
+    }
+
+    const found = known.map(u => u.username).filter(Boolean);
+    throw new Error(
+      `No exact match for "${username}". ` +
+      `Search returned: ${found.slice(0, 5).join(', ')}${found.length > 5 ? '…' : ''}`
+    );
+  }
+
+  async function analyse(username) {
+    steps.setStep(1, 'active', { sub: `Searching for "${username}"` });
+    const resolved = await resolveUserId(username);
+    const userId = resolved.userId;
+    steps.setStep(1, 'done', {
+      count: resolved.exact ? `→ ${resolved.username}` : `→ ${resolved.username} (unverified)`
+    });
+
+    steps.setStep(2, 'active', { sub: 'Fetching company list' });
+    const [companyList, workersData] = await Promise.all([
+      adv_trpc('company.getCompanies', { userId, perPage: 100 }),
+      adv_trpc('worker.getWorkers', { userId }).catch(() => null),
+    ]);
+    const companyIds = companyList?.items || [];
+    if (!companyIds.length) throw new Error(`"${resolved.username}" has no companies`);
+
+    const ownCompaniesWhereUserWorks = new Set();
+    (workersData?.workersPerCompany || []).forEach(({ company, workers }) => {
+      (workers || []).forEach(w => {
+        if (w.user === userId) ownCompaniesWhereUserWorks.add(company._id);
+      });
+    });
+
+    steps.setStep(2, 'active', { sub: `Loading ${companyIds.length} company details`, count: `0/${companyIds.length}` });
+    let loaded = 0;
+    const companies = await Promise.all(companyIds.map(async id => {
+      const c = await adv_trpc('company.getById', { companyId: id });
+      loaded++;
+      steps.setStep(2, 'active', { sub: 'Loading company details', count: `${loaded}/${companyIds.length}` });
+      return c;
+    }));
+    steps.setStep(2, 'done', { count: `${companies.length} loaded` });
+
+    steps.setStep(3, 'active', { sub: 'Loading regions, countries, and game config' });
+    const [regionsObj, allCountriesRaw, gameConfig, warerastatsCountries] = await Promise.all([
+      adv_trpc('region.getRegionsObject', {}),
+      adv_trpc('country.getAllCountries', {}),
+      adv_trpc('gameConfig.getGameConfig', {}).catch(() => null),
+      fetch(`${WARERASTATS_BASE}/countries`).then(r => r.json()).catch(() => []),
+    ]);
+    const cfgDepBonus = gameConfig?.company?.depositResourceBonus;
+    if (typeof cfgDepBonus === 'number') GAME_DEPOSIT_BONUS = cfgDepBonus;
+    const allCountries = Array.isArray(allCountriesRaw)
+      ? allCountriesRaw
+      : (allCountriesRaw?.items || []);
+
+    const industrialismById = {};
+    (Array.isArray(warerastatsCountries) ? warerastatsCountries : []).forEach(c => {
+      if (c && c.countryId != null && c.industrialism != null) {
+        industrialismById[c.countryId] = c.industrialism;
+      }
+    });
+
+    steps.setStep(3, 'active', { sub: `Loading bonuses for ${allCountries.length} countries`, count: `0/${allCountries.length}` });
+    const countryById = await loadCountriesParallel(allCountries);
+    Object.values(countryById).forEach(c => {
+      if (c && c._id in industrialismById) c.industrialism = industrialismById[c._id];
+    });
+    steps.setStep(3, 'done', { count: `${allCountries.length} loaded` });
+
+    const regionsByCountry = {};
+    Object.values(regionsObj).forEach(r => {
+      if (!r?.country) return;
+      (regionsByCountry[r.country] = regionsByCountry[r.country] || []).push(r);
+    });
+
+    const analyses = companies.filter(Boolean).map(c => {
+      const a = analyseCompany(c, regionsObj, regionsByCountry, countryById);
+      a.userWorksHere = ownCompaniesWhereUserWorks.has(c._id);
+      return a;
+    });
+    return { username: resolved.username, userId, analyses };
+  }
+
+  function analyseCompany(company, allRegions, regionsByCountry, countryById) {
+    const currentRegion  = allRegions[company.region];
+    const currentCountry = currentRegion ? countryById[currentRegion.country] : null;
+    const currentBonus   = computeBonus(currentCountry, currentRegion, company.itemCode);
+
+    const candidates = [];
+    for (const cid in countryById) {
+      const country = countryById[cid];
+      if (!country) continue;
+      const regs = regionsByCountry[cid] || [];
+      for (const region of regs) {
+        const bonus = computeBonus(country, region, company.itemCode);
+        if (!bonus) continue;
+        candidates.push({ country, region, ...bonus });
+      }
+    }
+
+    const current = currentBonus
+      ? { country: currentCountry, region: currentRegion, ...currentBonus }
+      : null;
+    return { company, current, candidates };
+  }
+
+  /* ---- Rendering ---- */
+
+  function scoreOf(c, userWorksHere) {
+    return userWorksHere ? c.netMult : (1 + c.total / 100);
+  }
+  function scoreLabel(userWorksHere) {
+    return userWorksHere ? 'take-home (after tax)' : 'production bonus';
+  }
+
+  function improvementFor(current, best, userWorksHere) {
+    if (!current || !best) return 0;
+    const cur = scoreOf(current, userWorksHere);
+    const bst = scoreOf(best, userWorksHere);
+    return (bst - cur) / cur * 100;
+  }
+
+  function evaluate(analysis) {
+    const { current, candidates, userWorksHere } = analysis;
+    if (!current || !candidates.length) {
+      return { cls: 'optimal', text: 'No data', showAlt: false, best: null, sorted: [] };
+    }
+    const sorted = [...candidates].sort((a, b) => scoreOf(b, userWorksHere) - scoreOf(a, userWorksHere));
+    const best = sorted[0];
+    const sameRegion  = current.region?._id  === best.region?._id;
+    const sameCountry = current.country?._id === best.country?._id;
+    const imp = improvementFor(current, best, userWorksHere);
+    const gainLabel = userWorksHere ? 'more take-home' : 'more output';
+
+    if (sameRegion || imp < 0.1) {
+      return { cls: 'optimal', text: '✓ Best placed', showAlt: false, best, sorted };
+    }
+    if (imp < OPTIMAL_THRESHOLD) {
+      return {
+        cls: 'optimal',
+        text: `✓ Stay put · top option only +${fmt(imp, 1)}% ${gainLabel}`,
+        showAlt: false, best, sorted
+      };
+    }
+    const target = sameCountry
+      ? best.region.name
+      : `${best.region.name} (${best.country.name})`;
+    if (imp >= HUGE_THRESHOLD) {
+      return { cls: 'huge', text: `⚠ Move to ${target}: +${fmt(imp, 1)}% ${gainLabel}`, showAlt: true, best, sorted };
+    }
+    return { cls: 'move', text: `↻ Move to ${target}: +${fmt(imp, 1)}% ${gainLabel}`, showAlt: true, best, sorted };
+  }
+
+  function iconHtml(itemCode) {
+    const it = ITEMS[itemCode];
+    if (!it) return `<div class="icon-box"><span class="fallback">📦</span></div>`;
+    return `<div class="icon-box"><img src="images/${it.file}" alt="${it.name}" onerror="this.outerHTML='<span class=\\'fallback\\'>${it.fb}</span>'"></div>`;
+  }
+
+  function renderSide(side, label, compareWith, userWorksHere) {
+    if (!side || !side.country) return `<div class="side"><div style="color:var(--muted)">Unknown location</div></div>`;
+    const breakdown = [];
+    if (side.strategic)       breakdown.push(`Strategic resources: +${fmt(side.strategic)}%`);
+    if (side.specialisation)  breakdown.push(`Industrialism: +${side.specialisation}%`);
+    if (side.deposit) {
+      const ttl = side.depositEndsAt ? new Date(side.depositEndsAt).getTime() - Date.now() : null;
+      const left = (ttl !== null && ttl > 0) ? ` (${formatDuration(ttl)} left)` : '';
+      breakdown.push(`Regional deposit: +${side.deposit}%${left}`);
+    }
+    if (side.depositCountry)  breakdown.push(`Industrialism: +${side.depositCountry}%`);
+    const taxClass = side.tax >= 12 ? 'tax-high' : side.tax >= 8 ? 'tax-mid' : 'tax-low';
+
+    const inlineDelta = (delta, higherIsBetter, threshold = 0.05) => {
+      if (compareWith === undefined || delta === null || Math.abs(delta) < threshold) return '';
+      const sign = delta > 0 ? '+' : '−';
+      const abs  = Math.abs(delta);
+      const good = (delta > 0) === higherIsBetter;
+      const tip  = good
+        ? `${fmt(abs)} percentage points better than your current location`
+        : `${fmt(abs)} percentage points worse than your current location`;
+      return `<span class="delta ${good ? 'good' : 'bad'}" title="${tip}">(${sign}${fmt(abs)} pp)</span>`;
+    };
+    const bonusDelta = compareWith ? inlineDelta(side.total - compareWith.total, true) : '';
+
+    const relativeDelta = (current, better, higherIsBetter, label) => {
+      if (compareWith === undefined || current === undefined) return '';
+      const pct = (better - current) / current * 100;
+      if (Math.abs(pct) < 0.05) return '';
+      const sign = pct > 0 ? '+' : '−';
+      const good = (pct > 0) === higherIsBetter;
+      return `<span class="delta ${good ? 'good' : 'bad'}">(${sign}${fmt(Math.abs(pct), 1)}% ${label})</span>`;
+    };
+
+    const taxOpacity = userWorksHere ? '' : ' style="opacity: 0.55"';
+    const summary = userWorksHere
+      ? {
+          label: 'Your take-home per work cycle',
+          value: `${side.netMult.toFixed(3)}× base wage`,
+          help:  'How much you keep after income tax, relative to a no-bonus country.',
+          delta: compareWith ? relativeDelta(compareWith.netMult, side.netMult, true, 'more take-home') : ''
+        }
+      : {
+          label: 'Output per work cycle',
+          value: `${(1 + side.total / 100).toFixed(3)}× base`,
+          help:  'How much product you produce vs. a no-bonus country.',
+          delta: compareWith ? relativeDelta(1 + compareWith.total / 100, 1 + side.total / 100, true, 'more output') : ''
+        };
+
+    return `
+      <div class="side">
+        ${label ? `<div class="label">${label}</div>` : ''}
+        <div class="country">
+          <span class="region">${side.region?.name || '?'}</span>
+          <span class="controller">currently controlled by</span>
+          <span class="flag">${flag(side.country.code)}</span>
+          <span class="controller">${side.country.name}</span>
+        </div>
+        <div class="stats">
+          <span><span class="stat-label">Production bonus</span> <span class="stat-value pos">+${fmt(side.total)}%</span>${bonusDelta}</span>
+          <span${taxOpacity}><span class="stat-label">Income tax</span> <span class="stat-value ${taxClass}">${fmt(side.tax)}%</span></span>
+        </div>
+        <div class="net" title="${summary.help}">
+          <span class="stat-label">${summary.label}</span>
+          <span><span class="net-val">${summary.value}</span>${summary.delta}</span>
+        </div>
+        ${breakdown.length ? `<div class="breakdown">${breakdown.join(' &nbsp;·&nbsp; ')}</div>` : ''}
+      </div>
+    `;
+  }
+
+  function renderCard(analysis) {
+    const { company, current, userWorksHere } = analysis;
+    const item = ITEMS[company.itemCode] || { name: company.itemCode };
+    const verdict = evaluate(analysis);
+    const showCompanyName = company.name && company.name !== item.name;
+    const workerBadge = userWorksHere
+      ? `<span class="worker-badge" title="You are one of this company's workers, so income tax applies to your earnings here.">👷 You work here</span>`
+      : '';
+
+    if (!current) {
+      return `<div class="adv-card"><div class="card-head"><div class="title">${iconHtml(company.itemCode)}<span>${item.name}</span><a href="${companyUrlFor(company._id)}" target="_blank" rel="noopener" class="link-icon" title="Open this company in War Era"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a></div></div>
+        <div class="body" style="color:var(--muted)">Could not analyse (missing region/country data).</div></div>`;
+    }
+
+    const body = verdict.showAlt
+      ? `<div class="panels compare">
+           ${renderSide(current, 'Currently in', undefined, userWorksHere)}
+           <div class="arrow">→</div>
+           ${renderSide(verdict.best, 'Better option', current, userWorksHere)}
+         </div>`
+      : `<div class="panels">
+           ${renderSide(current, 'Currently in', undefined, userWorksHere)}
+         </div>`;
+
+    const top10 = verdict.sorted.slice(0, 10);
+    const currentScore = current ? scoreOf(current, userWorksHere) : null;
+    const altsHtml = top10.map((c, i) => {
+      const isCurrent = c.country._id === current.country?._id && c.region._id === current.region?._id;
+      const isWorse   = !isCurrent && currentScore !== null && scoreOf(c, userWorksHere) < currentScore;
+      const headline = userWorksHere
+        ? `${c.netMult.toFixed(3)}× base take-home`
+        : `${(1 + c.total / 100).toFixed(3)}× base output`;
+      const depositTtl = c.depositEndsAt ? new Date(c.depositEndsAt).getTime() - Date.now() : null;
+      const depositTag = (depositTtl !== null && depositTtl > 0)
+        ? ` <span style="color:var(--warn)" title="Bonus comes from a deposit; will revert when the deposit expires.">⏱ ${formatDuration(depositTtl)}</span>`
+        : '';
+      const classes = ['alt'];
+      if (isCurrent) classes.push('curr');
+      if (isWorse)   classes.push('worse');
+      return `
+        <div class="${classes.join(' ')}">
+          <span><span class="rank">${i + 1}.</span><strong>${c.region.name}</strong> <span style="color:var(--muted)">${flag(c.country.code)} ${c.country.name}</span>${isCurrent ? ' <span style="color:var(--link)">(your current)</span>' : ''}</span>
+          <span class="right">+${fmt(c.total)}% bonus${depositTag} &nbsp;·&nbsp; ${fmt(c.tax)}% income tax &nbsp;·&nbsp; <span class="v">${headline}</span></span>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="adv-card">
+        <div class="card-head">
+          <div class="title">
+            ${iconHtml(company.itemCode)}
+            <span>${item.name}</span>
+            ${showCompanyName ? `<span class="sub-title">· ${company.name}</span>` : ''}
+            <a href="${companyUrlFor(company._id)}" target="_blank" rel="noopener" class="link-icon" title="Open this company in War Era"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>
+            ${workerBadge}
+          </div>
+          <div class="verdict ${verdict.cls}">${verdict.text}</div>
+          <span class="chev">▾</span>
+        </div>
+        <div class="body">${body}</div>
+        <details class="alts-wrap">
+          <summary>Top 10 regions ranked by ${scoreLabel(userWorksHere)}</summary>
+          <div class="alts">${altsHtml}</div>
+        </details>
+      </div>
+    `;
+  }
+
+  function render() {
+    if (!lastResult) return;
+    const { username, analyses } = lastResult;
+    const moveCount = analyses.filter(a => evaluate(a).showAlt).length;
+    setStatus(
+      moveCount > 0
+        ? `Showing ${analyses.length} companies for ${username}. ${moveCount} could improve by moving.`
+        : `Showing ${analyses.length} companies for ${username}. All optimally placed.`
+    );
+    $grid.innerHTML = analyses.map(renderCard).join('');
+    $howto.classList.remove('hidden');
+  }
+
+  async function run() {
+    const username = $username.value.trim();
+    if (!username) { $username.focus(); return; }
+    $go.disabled = true;
+    $hint.classList.add('hidden');
+    setStatus('');
+    $grid.innerHTML = '';
+    $howto.classList.add('hidden');
+    steps.reset();
+    try {
+      lastResult = await analyse(username);
+      steps.fadeOut(400);
+      render();
+    } catch (e) {
+      steps.hide();
+      const friendly = isTransientError(e)
+        ? `The data server is having a moment (${e.message}). Wait a few seconds and try again.`
+        : `Error: ${e.message}`;
+      setStatus(friendly, true);
+    } finally {
+      $go.disabled = false;
+    }
+  }
+
+  $go.addEventListener('click', run);
+  $username.addEventListener('keydown', e => { if (e.key === 'Enter') run(); });
+
+  $grid.addEventListener('click', e => {
+    if (e.target.closest('details, summary, button, a')) return;
+    const card = e.target.closest('.adv-card');
+    if (!card) return;
+    if (e.target.closest('.card-head')) {
+      card.classList.toggle('expanded');
+    }
+  });
+
+  return {
+    /** Called by the router when the advisor tab is selected. */
+    activate() {
+      // Respect ?u=… on the query string, but only run once.
+      const params = new URLSearchParams(location.search);
+      if (params.get('u') && !$username.value) {
+        $username.value = params.get('u');
+        run();
+      } else {
+        $username.focus();
+      }
+    }
+  };
+})();
+
+/* ═══════════════════════════════════════════════════════════════════
+ *  VIEW ROUTER
+ *  Tab navigation via the URL hash so views are deep-linkable.
+ *    #mu        →  Irish Military Units
+ *    #advisor   →  Migration Advisor (also reads ?u=username)
+ *  Each tool is mounted on first activation only, so switching back
+ *  and forth doesn't refetch.
+ * ═══════════════════════════════════════════════════════════════════ */
+(() => {
+  const VALID = new Set(['mu', 'advisor']);
+  const tabs = document.querySelectorAll('.tab');
+  const views = document.querySelectorAll('.view');
+  const toolbars = document.querySelectorAll('.toolbar');
+  const activated = new Set();
+
+  function tools(name) {
+    return name === 'mu' ? MUTool : AdvisorTool;
+  }
+
+  function setView(name, { updateHash = true } = {}) {
+    if (!VALID.has(name)) name = 'mu';
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.view === name));
+    views.forEach(v => v.classList.toggle('active', v.dataset.view === name));
+    toolbars.forEach(t => {
+      const match = t.dataset.toolbar === name;
+      t.hidden = !match;
+    });
+    if (updateHash && location.hash.replace(/^#/, '') !== name) {
+      history.replaceState(null, '', `#${name}${location.search}`);
+    }
+    if (!activated.has(name)) {
+      activated.add(name);
+      try { tools(name).activate(); }
+      catch (e) { console.error(`Failed to activate ${name}:`, e); }
+    }
+  }
+
+  tabs.forEach(t => t.addEventListener('click', () => setView(t.dataset.view)));
+  window.addEventListener('hashchange', () => setView(location.hash.replace(/^#/, ''), { updateHash: false }));
+
+  const initial = location.hash.replace(/^#/, '') || 'mu';
+  setView(initial, { updateHash: false });
+})();
+</script>
+</body>
+</html>

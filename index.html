@@ -477,10 +477,36 @@
 
   @media (max-width: 720px) {
     .header-top { padding: 16px 20px 0; }
-    .tabs { padding: 12px 20px 0; }
+    .tabs {
+      padding: 12px 20px 0;
+      /* Don't wrap tab labels onto two lines — scroll horizontally if the
+         three tabs ever overflow a tiny screen. The .tab-long spans hide
+         their content below this breakpoint to keep widths in check. */
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab {
+      padding: 10px 12px;
+      font-size: 13px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .tab-long { display: none; }
     .toolbar { padding: 12px 20px; }
     main { padding: 16px 20px; }
     footer { padding: 16px 20px; }
+
+    /* Home page: tighter on mobile so the cards don't feel bulky next to
+       the smaller header, and so two cards fit in one viewport height. */
+    .home { margin: 8px auto; }
+    .home .lede { font-size: 15px; margin-bottom: 20px; }
+    .tool-card { padding: 14px; gap: 14px; }
+    .tool-card-icon { font-size: 32px; }
+    .tool-card h3 { font-size: 15px; margin-bottom: 4px; }
+    .tool-card p { font-size: 12.5px; margin-bottom: 8px; }
+
     .adv-card .panels.compare { grid-template-columns: 1fr; }
     .adv-card .panels.compare .arrow { transform: rotate(90deg); justify-self: center; }
     .alt { flex-direction: column; align-items: flex-start; gap: 4px; }
@@ -506,8 +532,8 @@
   </div>
   <nav class="tabs">
     <button class="tab" data-view="home">🏠 Home</button>
-    <button class="tab" data-view="mu">🇮🇪 Irish MUs</button>
-    <button class="tab" data-view="advisor">🏭 Migration Advisor</button>
+    <button class="tab" data-view="mu">🇮🇪 <span class="tab-long">Irish </span>MUs</button>
+    <button class="tab" data-view="advisor">🏭 <span class="tab-long">Migration </span>Advisor</button>
   </nav>
   <!-- One toolbar per view; only the active one is shown. Both start hidden
        because the default landing tab is Home, which has no toolbar. -->
@@ -1584,6 +1610,15 @@ const AdvisorTool = (() => {
   async function run() {
     const username = $username.value.trim();
     if (!username) { $username.focus(); return; }
+
+    // Make the current advisor view shareable as a URL. replaceState keeps
+    // the back-button history intact and (unlike a real navigation) does
+    // not fire hashchange, so this won't trigger a re-activation loop.
+    const newHash = `#advisor?u=${encodeURIComponent(username)}`;
+    if (location.hash !== newHash) {
+      history.replaceState(null, '', newHash + location.search);
+    }
+
     $go.disabled = true;
     $hint.classList.add('hidden');
     setStatus('');

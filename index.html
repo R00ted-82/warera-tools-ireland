@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-GB">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -115,10 +115,46 @@
   footer a { color: var(--muted); }
   footer a:hover { color: var(--text); }
 
-  /* Views: hidden unless active. Keeps both tools mounted so reloading
-     isn't necessary on tab switch, but only the active one is visible. */
   .view { display: none; }
   .view.active { display: block; }
+
+  /* ── Home view ───────────────────────────────────────────────────── */
+  .home { max-width: 760px; margin: 16px auto; }
+  .home .lede {
+    font-size: 16px; color: var(--text); line-height: 1.6;
+    margin: 0 0 28px;
+  }
+  .home .lede a { color: var(--accent); }
+  .tool-cards { display: grid; gap: 14px; }
+  .tool-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .tool-card:hover {
+    text-decoration: none;
+    border-color: rgba(74, 222, 128, 0.45);
+    background: var(--panel-2);
+  }
+  .tool-card-icon {
+    font-size: 36px; line-height: 1; flex-shrink: 0;
+  }
+  .tool-card-body { flex: 1; min-width: 0; }
+  .tool-card h3 { margin: 0 0 6px; font-size: 16px; font-weight: 600; }
+  .tool-card p {
+    margin: 0 0 10px;
+    color: var(--muted); font-size: 13px; line-height: 1.5;
+  }
+  .tool-card .tool-link {
+    color: var(--accent); font-size: 13px; font-weight: 500;
+  }
 
   /* ── Shared status + step panel ──────────────────────────────────── */
   .status {
@@ -469,12 +505,14 @@
     </div>
   </div>
   <nav class="tabs">
+    <button class="tab" data-view="home">🏠 Home</button>
     <button class="tab" data-view="mu">🇮🇪 Irish MUs</button>
     <button class="tab" data-view="advisor">🏭 Migration Advisor</button>
   </nav>
-  <!-- One toolbar per view; only the active one is shown. -->
-  <div class="toolbar" data-toolbar="mu">
-    <div class="title-row">Military units owned by Irish citizens with mostly Irish rosters.</div>
+  <!-- One toolbar per view; only the active one is shown. Both start hidden
+       because the default landing tab is Home, which has no toolbar. -->
+  <div class="toolbar" data-toolbar="mu" hidden>
+    <div class="title-row">Military units owned by Irish citizens, in Ireland, with a majority of Irish citizens.</div>
     <div class="controls">
       <div class="seg" id="mu-filter">
         <button class="seg-btn active" data-mu-filter="all">All</button>
@@ -494,6 +532,33 @@
 </header>
 
 <main>
+  <!-- ─── Home view (landing page) ──────────────────────────────── -->
+  <section class="view" data-view="home">
+    <div class="home">
+      <p class="lede">
+        A small collection of tools that read the <a href="https://app.warera.io/" target="_blank" rel="noopener">War Era</a> API for things the in-game UI doesn't make easy. Pick one to begin.
+      </p>
+      <div class="tool-cards">
+        <a class="tool-card" href="#mu">
+          <div class="tool-card-icon">🇮🇪</div>
+          <div class="tool-card-body">
+            <h3>Irish Military Units</h3>
+            <p>Every MU owned by an Irish citizen, in Ireland, with a majority of Irish citizens. Filter by whether they have open slots, and see who's already inside.</p>
+            <span class="tool-link">Open Irish MUs →</span>
+          </div>
+        </a>
+        <a class="tool-card" href="#advisor">
+          <div class="tool-card-icon">🏭</div>
+          <div class="tool-card-body">
+            <h3>Company Migration Advisor</h3>
+            <p>Enter your username and see whether each of your companies is in its best country — and how much extra output or take-home a move would buy you.</p>
+            <span class="tool-link">Open Migration Advisor →</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
   <!-- ─── Irish Military Units view ─────────────────────────────── -->
   <section class="view" data-view="mu">
     <div id="mu-steps" class="steps hidden">
@@ -649,11 +714,6 @@ function isTransientError(err) {
   return /http 50[234]|no available server|timed? ?out|fetch failed|network ?error/.test(msg);
 }
 
-/**
- * tRPC fetch helper, shared by both tools.
- * - Optional timeout via AbortController.
- * - Optional retry on transient errors (used by the advisor; MU tool skips it).
- */
 async function trpc(endpoint, input = {}, { retry = false, timeoutMs = null } = {}, attempt = 1) {
   const MAX_ATTEMPTS = retry ? 3 : 1;
   const url = `${API_BASE}/${endpoint}?input=${encodeURIComponent(JSON.stringify(input))}`;
@@ -685,10 +745,6 @@ async function trpc(endpoint, input = {}, { retry = false, timeoutMs = null } = 
   }
 }
 
-/**
- * Step panel controller. Each view has its own #foo-steps element; we wrap it
- * in this object so the per-tool code doesn't have to know the DOM details.
- */
 function makeSteps(rootEl) {
   function setStep(n, state, { sub, count } = {}) {
     const el = rootEl.querySelector(`.step[data-step="${n}"]`);
@@ -731,8 +787,6 @@ function makeStatus(el) {
 
 /* ═══════════════════════════════════════════════════════════════════
  *  IRISH MILITARY UNITS
- *  Lifted near-verbatim from the original tool; only the chrome bits
- *  (status, steps, $ refs) are routed through the shared helpers.
  * ═══════════════════════════════════════════════════════════════════ */
 const MUTool = (() => {
   const IRELAND_COUNTRY_ID = '6813b6d446e731854c7ac7fe';
@@ -744,11 +798,10 @@ const MUTool = (() => {
     '6955c186b1fc6d0b7b00fadc',
   ];
 
-  // Valid states for the segmented toolbar control.
   const FILTER_STATES = ['all', 'open', 'full'];
 
   const $grid    = document.getElementById('mu-grid');
-  const $filter  = document.getElementById('mu-filter');   // the .seg container
+  const $filter  = document.getElementById('mu-filter');
   const $refresh = document.getElementById('mu-refresh');
   const steps    = makeSteps(document.getElementById('mu-steps'));
   const setStatus = makeStatus(document.getElementById('mu-status'));
@@ -756,7 +809,7 @@ const MUTool = (() => {
   let allMUs = [];
   let irishIdsGlobal = new Set();
   const userNames = {};
-  let started = false;
+  let loadStarted = false;       // load() has been kicked off
   let filterState = 'all';
 
   const idOf          = m => m?._id ?? null;
@@ -783,9 +836,6 @@ const MUTool = (() => {
     return members.filter(u => irishIds.has(memberIdOf(u))).length;
   }
 
-  // Slot-based filter. MUs without dormitory data have unknown capacity, so
-  // they appear under 'all' only — neither 'open' nor 'full' would be a
-  // confident claim about them.
   function filterMatch(mu) {
     if (filterState === 'all') return true;
     const cap = capacityOf(mu);
@@ -1049,8 +1099,6 @@ const MUTool = (() => {
     }
   }
 
-  // Click anywhere in the .seg container; closest('.seg-btn') picks the right
-  // button regardless of whether the user hit the text or padding.
   $filter.addEventListener('click', e => {
     const btn = e.target.closest('.seg-btn');
     if (btn) setFilter(btn.dataset.muFilter);
@@ -1059,15 +1107,18 @@ const MUTool = (() => {
 
   return {
     /**
-     * Called by the view router the first time this tab is shown.
-     * @param {URLSearchParams} [params] — parsed from the hash, e.g. #mu?filter=open
+     * Called by the router every time this view becomes active. Idempotent —
+     * the data load is kicked off exactly once; later activations only
+     * re-apply URL params (currently just ?filter=).
+     * @param {URLSearchParams} [params]
      */
     activate(params) {
-      if (started) return;
-      started = true;
-      const initialFilter = params?.get('filter');
-      if (initialFilter) setFilter(initialFilter);
-      load();
+      const filterParam = params?.get('filter');
+      if (filterParam) setFilter(filterParam);
+      if (!loadStarted) {
+        loadStarted = true;
+        load();
+      }
     }
   };
 })();
@@ -1121,8 +1172,6 @@ const AdvisorTool = (() => {
 
   let lastResult = null;
 
-  // Use the shared trpc but with retry enabled — the advisor was the noisier
-  // of the two tools w.r.t. transient 5xx, hence its original retry logic.
   const adv_trpc = (endpoint, input) => trpc(endpoint, input, { retry: true });
 
   let USER_ENDPOINT = null;
@@ -1214,10 +1263,10 @@ const AdvisorTool = (() => {
     }));
 
     const known = profiles.filter(Boolean);
-    const normalize = s => (s || '').toLowerCase().trim();
-    const target = normalize(username);
+    const normalise = s => (s || '').toLowerCase().trim();
+    const target = normalise(username);
 
-    const exact = known.find(u => normalize(u.username) === target);
+    const exact = known.find(u => normalise(u.username) === target);
     if (exact) return { userId: exact._id, username: exact.username, exact: true };
 
     if (!known.length) {
@@ -1328,8 +1377,6 @@ const AdvisorTool = (() => {
       : null;
     return { company, current, candidates };
   }
-
-  /* ---- Rendering ---- */
 
   function scoreOf(c, userWorksHere) {
     return userWorksHere ? c.netMult : (1 + c.total / 100);
@@ -1571,14 +1618,22 @@ const AdvisorTool = (() => {
   });
 
   return {
-    /** Called by the router when the advisor tab is selected. */
-    activate() {
-      // Respect ?u=… on the query string, but only run once.
-      const params = new URLSearchParams(location.search);
-      if (params.get('u') && !$username.value) {
-        $username.value = params.get('u');
+    /**
+     * Called by the router every time this view becomes active. Idempotent:
+     * if the username param differs from what's already in the input, the
+     * field is updated and analysis re-runs. Otherwise it's a no-op (or
+     * focuses the empty field).
+     * @param {URLSearchParams} [params]
+     */
+    activate(params) {
+      // Hash params take precedence; fall back to ?u= on the search string
+      // so any old links with the bare query string still work.
+      const u = (params && params.get('u'))
+             || new URLSearchParams(location.search).get('u');
+      if (u && $username.value !== u) {
+        $username.value = u;
         run();
-      } else {
+      } else if (!$username.value) {
         $username.focus();
       }
     }
@@ -1588,45 +1643,80 @@ const AdvisorTool = (() => {
 /* ═══════════════════════════════════════════════════════════════════
  *  VIEW ROUTER
  *  Tab navigation via the URL hash so views are deep-linkable.
- *    #mu        →  Irish Military Units
- *    #advisor   →  Migration Advisor (also reads ?u=username)
- *  Each tool is mounted on first activation only, so switching back
- *  and forth doesn't refetch.
+ *    #home                →  landing page (default)
+ *    #mu                  →  Irish Military Units
+ *    #mu?filter=open      →  MU tool with the "Has slots" filter applied
+ *    #advisor             →  Migration Advisor (empty)
+ *    #advisor?u=toie      →  Migration Advisor auto-running for "toie"
+ *  Params live INSIDE the hash (after a literal '?') so the whole route
+ *  is portable as one fragment and survives static hosting that doesn't
+ *  rewrite query strings.
+ *
+ *  Idempotency: `activate(params)` is called every time the view becomes
+ *  active, not just on first mount. Tools handle being called repeatedly
+ *  (MU doesn't re-fetch; advisor only re-runs if the username changed).
+ *  This is what makes hash edits like `#advisor` → `#advisor?u=toie`
+ *  pick up the new param without a full reload.
  * ═══════════════════════════════════════════════════════════════════ */
 (() => {
-  const VALID = new Set(['mu', 'advisor']);
+  const VALID = new Set(['home', 'mu', 'advisor']);
+  const DEFAULT_VIEW = 'home';
   const tabs = document.querySelectorAll('.tab');
   const views = document.querySelectorAll('.view');
   const toolbars = document.querySelectorAll('.toolbar');
-  const activated = new Set();
 
-  function tools(name) {
-    return name === 'mu' ? MUTool : AdvisorTool;
+  // Tools keyed by view name. `null` means "no tool" — used for static views
+  // like Home that have nothing to activate.
+  const tools = {
+    home: null,
+    mu: MUTool,
+    advisor: AdvisorTool,
+  };
+
+  function parseRoute() {
+    const raw = location.hash.replace(/^#/, '');
+    const qIdx = raw.indexOf('?');
+    const view = (qIdx >= 0 ? raw.slice(0, qIdx) : raw) || DEFAULT_VIEW;
+    const queryStr = qIdx >= 0 ? raw.slice(qIdx + 1) : '';
+    return { view, params: new URLSearchParams(queryStr) };
   }
 
-  function setView(name, { updateHash = true } = {}) {
-    if (!VALID.has(name)) name = 'mu';
+  function writeHash(name, params) {
+    const queryStr = params ? params.toString() : '';
+    const newHash = queryStr ? `#${name}?${queryStr}` : `#${name}`;
+    if (location.hash !== newHash) {
+      history.replaceState(null, '', newHash + location.search);
+    }
+  }
+
+  function setView(name, { updateHash = true, params = new URLSearchParams() } = {}) {
+    if (!VALID.has(name)) name = DEFAULT_VIEW;
     tabs.forEach(t => t.classList.toggle('active', t.dataset.view === name));
     views.forEach(v => v.classList.toggle('active', v.dataset.view === name));
-    toolbars.forEach(t => {
-      const match = t.dataset.toolbar === name;
-      t.hidden = !match;
-    });
-    if (updateHash && location.hash.replace(/^#/, '') !== name) {
-      history.replaceState(null, '', `#${name}${location.search}`);
-    }
-    if (!activated.has(name)) {
-      activated.add(name);
-      try { tools(name).activate(); }
+    toolbars.forEach(t => { t.hidden = t.dataset.toolbar !== name; });
+
+    if (updateHash) writeHash(name, params);
+
+    const tool = tools[name];
+    if (tool && typeof tool.activate === 'function') {
+      try { tool.activate(params); }
       catch (e) { console.error(`Failed to activate ${name}:`, e); }
     }
   }
 
+  // Tab clicks navigate to the bare view URL — params don't carry across
+  // tools, since e.g. ?u= only means something to the advisor.
   tabs.forEach(t => t.addEventListener('click', () => setView(t.dataset.view)));
-  window.addEventListener('hashchange', () => setView(location.hash.replace(/^#/, ''), { updateHash: false }));
 
-  const initial = location.hash.replace(/^#/, '') || 'mu';
-  setView(initial, { updateHash: false });
+  // Home view's tool-cards are <a href="#…"> links; the hashchange handler
+  // below catches them via the normal hashchange event.
+  window.addEventListener('hashchange', () => {
+    const r = parseRoute();
+    setView(r.view, { updateHash: false, params: r.params });
+  });
+
+  const initial = parseRoute();
+  setView(initial.view, { updateHash: false, params: initial.params });
 })();
 </script>
 </body>

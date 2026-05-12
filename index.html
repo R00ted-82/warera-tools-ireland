@@ -29,31 +29,52 @@
   a { color: var(--link); text-decoration: none; }
   a:hover { text-decoration: underline; }
 
-  /* ── Shared chrome ───────────────────────────────────────────────── */
+  /* ── Header ──────────────────────────────────────────────────────── */
   header {
     border-bottom: 1px solid var(--border);
   }
   .header-top {
-    padding: 20px 32px 0;
+    padding: 18px 32px;
     display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between;
   }
-  .brand h1 { margin: 0; font-size: 20px; font-weight: 600; }
+
+  /* Brand is a link to home; subtle hover so it doesn't shout. */
+  .brand {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+  .brand:hover { text-decoration: none; }
+  .brand h1 {
+    margin: 0;
+    font-size: 20px; font-weight: 600;
+    transition: color 0.15s;
+  }
+  .brand:hover h1 { color: var(--accent); }
   .brand .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
 
-  .tabs {
-    padding: 14px 32px 0;
-    display: flex; gap: 4px;
+  /* Back-to-home link, only shown on tool views. */
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    color: var(--muted);
+    font-size: 13px;
+    padding: 7px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--panel);
+    text-decoration: none;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    white-space: nowrap;
   }
-  .tab {
-    background: transparent; border: none; cursor: pointer;
-    color: var(--muted); font: inherit; font-size: 14px;
-    padding: 10px 14px;
-    border-bottom: 2px solid transparent;
-    border-radius: 0;
-    transition: color 0.15s, border-color 0.15s;
+  .back-link:hover {
+    color: var(--text);
+    border-color: #3a4350;
+    background: var(--panel-2);
+    text-decoration: none;
   }
-  .tab:hover { color: var(--text); background: transparent; border-color: transparent; }
-  .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+  /* Author rule needed so the [hidden] attribute beats display:inline-flex. */
+  .back-link[hidden] { display: none; }
 
   .toolbar {
     padding: 14px 32px;
@@ -66,8 +87,6 @@
     color: var(--muted); font-size: 13px;
   }
   .toolbar .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  /* Author-stylesheet rule needed because .toolbar { display: flex }
-     above wins over the browser's UA [hidden] rule on specificity ties. */
   .toolbar[hidden] { display: none; }
 
   /* Segmented filter buttons (used in the MU toolbar). */
@@ -476,30 +495,15 @@
   .alt .right .v { font-weight: 600; }
 
   @media (max-width: 720px) {
-    .header-top { padding: 16px 20px 0; }
-    .tabs {
-      padding: 12px 20px 0;
-      /* Don't wrap tab labels onto two lines — scroll horizontally if the
-         three tabs ever overflow a tiny screen. The .tab-long spans hide
-         their content below this breakpoint to keep widths in check. */
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      scrollbar-width: none;
-    }
-    .tabs::-webkit-scrollbar { display: none; }
-    .tab {
-      padding: 10px 12px;
-      font-size: 13px;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-    .tab-long { display: none; }
+    .header-top { padding: 14px 20px; }
     .toolbar { padding: 12px 20px; }
     main { padding: 16px 20px; }
     footer { padding: 16px 20px; }
 
-    /* Home page: tighter on mobile so the cards don't feel bulky next to
-       the smaller header, and so two cards fit in one viewport height. */
+    .brand h1 { font-size: 18px; }
+    .back-link { padding: 6px 12px; font-size: 12px; }
+
+    /* Home page: tighter on mobile so two cards fit one viewport. */
     .home { margin: 8px auto; }
     .home .lede { font-size: 15px; margin-bottom: 20px; }
     .tool-card { padding: 14px; gap: 14px; }
@@ -525,18 +529,14 @@
 
 <header>
   <div class="header-top">
-    <div class="brand">
+    <a class="brand" href="#home">
       <h1>War Era Tools</h1>
-      <div class="sub">Live data via <a href="https://gateway.warerastats.io/" target="_blank" rel="noopener">War Era Gateway</a></div>
-    </div>
+      <div class="sub">Live data via <a href="https://gateway.warerastats.io/" target="_blank" rel="noopener" onclick="event.stopPropagation()">War Era Gateway</a></div>
+    </a>
+    <a class="back-link" href="#home" hidden>← Home</a>
   </div>
-  <nav class="tabs">
-    <button class="tab" data-view="home">🏠 Home</button>
-    <button class="tab" data-view="mu">🇮🇪 <span class="tab-long">Irish </span>MUs</button>
-    <button class="tab" data-view="advisor">🏭 <span class="tab-long">Migration </span>Advisor</button>
-  </nav>
-  <!-- One toolbar per view; only the active one is shown. Both start hidden
-       because the default landing tab is Home, which has no toolbar. -->
+  <!-- One toolbar per tool view. Both start hidden; the router shows the
+       relevant one when its view becomes active. -->
   <div class="toolbar" data-toolbar="mu" hidden>
     <div class="title-row">Military units owned by Irish citizens, in Ireland, with a majority of Irish citizens.</div>
     <div class="controls">
@@ -562,7 +562,7 @@
   <section class="view" data-view="home">
     <div class="home">
       <p class="lede">
-        A small collection of tools that read the <a href="https://app.warera.io/" target="_blank" rel="noopener">War Era</a> API for things the in-game UI doesn't make easy. Pick one to begin.
+        A small collection of tools for Irish players of <a href="https://app.warera.io/" target="_blank" rel="noopener">War Era</a>. Because the in-game UI clearly wasn't built with us in mind. <em>Sláinte</em>.
       </p>
       <div class="tool-cards">
         <a class="tool-card" href="#mu">
@@ -577,7 +577,7 @@
           <div class="tool-card-icon">🏭</div>
           <div class="tool-card-body">
             <h3>Company Migration Advisor</h3>
-            <p>Enter your username and see whether each of your companies is in its best country — and how much extra output or take-home a move would buy you.</p>
+            <p>Enter your username and see whether each of your companies is in its best country, and how much extra output or take-home a move would buy you.</p>
             <span class="tool-link">Open Migration Advisor →</span>
           </div>
         </a>
@@ -619,9 +619,9 @@
       <summary>How MUs are selected</summary>
       <div class="howto-body">
         <ul>
-          <li><strong>Owner nationality</strong> — the MU's owner must currently be an Irish citizen. Owners who've migrated away get filtered out, even if they founded the MU.</li>
-          <li><strong>MU country</strong> — when the MU exposes its own country (under <code>countryId</code>, <code>country</code>, <code>nationalityId</code>, or <code>nationality</code>), it must be set to Ireland. MUs without any country field skip this check rather than being dropped, so missing data doesn't wipe the list.</li>
-          <li><strong>Member majority</strong> — at least half of the MU's members must be Irish. MUs with a mostly foreign roster are dropped even when the owner is local.</li>
+          <li><strong>Owner nationality.</strong> The MU's owner must currently be an Irish citizen. Owners who've migrated away get filtered out, even if they founded the MU.</li>
+          <li><strong>MU country.</strong> When the MU exposes its own country (under <code>countryId</code>, <code>country</code>, <code>nationalityId</code>, or <code>nationality</code>), it must be set to Ireland. MUs without any country field skip this check rather than being dropped, so missing data doesn't wipe the list.</li>
+          <li><strong>Member majority.</strong> At least half of the MU's members must be Irish. MUs with a mostly foreign roster are dropped even when the owner is local.</li>
           <li>In the expanded members list, Irish citizens are marked 🇮🇪 and non-citizens are marked 🌍 and dimmed. The <strong>Irish</strong> stat on each card shows the ratio.</li>
         </ul>
       </div>
@@ -663,18 +663,18 @@
       <summary>How this works</summary>
       <div class="howto-body">
         <ul>
-          <li><strong>Production bonus</strong> has up to four components. Strategic resources and regional deposits are flat country/region facts; the two +30% bonuses are gated by the country's <strong>industrialism</strong> lean — a signed integer the game exposes via the warerastats data feed (range −2…+2 in current data, with 0 = neutral). The gating is asymmetric: <em>industrialist-leaning</em> (ind &gt; 0) countries grant the +30 on their specialised item; <em>agrarian-leaning</em> (ind &lt; 0) countries grant the +30 on matching regional deposits; <em>neutral</em> (ind = 0) countries grant neither. Each lean grants exactly one type of +30%, never both.
+          <li><strong>Production bonus</strong> has up to four components. Strategic resources and regional deposits are flat country/region facts; the two +30% bonuses are gated by the country's <strong>industrialism</strong> lean, a signed integer the game exposes via the warerastats data feed (range −2…+2 in current data, with 0 = neutral). The gating is asymmetric: <em>industrialist-leaning</em> (ind &gt; 0) countries grant the +30 on their specialised item; <em>agrarian-leaning</em> (ind &lt; 0) countries grant the +30 on matching regional deposits; <em>neutral</em> (ind = 0) countries grant neither. Each lean grants exactly one type of +30%, never both.
             <ul style="margin-top: 4px;">
-              <li><strong>Strategic resources</strong> — the country's <code>productionPercent</code>, fires when the item matches the country's <code>specializedItem</code>. Independent of industrialism.</li>
-              <li><strong>+30% Industrialism (specialisation)</strong> — fires alongside strategic resources only when the country is industrialist-leaning AND specialises in the item.</li>
-              <li><strong>Regional deposit</strong> (the deposit's <code>bonusPercent</code>, typically +30%) — fires when the country does NOT specialise in this item AND the region has an active matching deposit.</li>
-              <li><strong>+30% Industrialism (deposit)</strong> — fires alongside a regional deposit only when the country is agrarian-leaning.</li>
+              <li><strong>Strategic resources:</strong> the country's <code>productionPercent</code>, fires when the item matches the country's <code>specializedItem</code>. Independent of industrialism.</li>
+              <li><strong>+30% Industrialism (specialisation):</strong> fires alongside strategic resources only when the country is industrialist-leaning AND specialises in the item.</li>
+              <li><strong>Regional deposit</strong> (the deposit's <code>bonusPercent</code>, typically +30%): fires when the country does NOT specialise in this item AND the region has an active matching deposit.</li>
+              <li><strong>+30% Industrialism (deposit):</strong> fires alongside a regional deposit only when the country is agrarian-leaning.</li>
             </ul>
           </li>
           <li><strong>Industrialism is read directly,</strong> not inferred. The signed integer comes from the warerastats companion endpoint. If warerastats is unreachable, the tool degrades gracefully: industrialism defaults to 0 for all countries.</li>
           <li><strong>Income tax</strong> is deducted from <em>workers'</em> wages, not from the owner's share of production. So whether tax directly affects you depends on whether you actually work in the company.</li>
-          <li><strong>You work here</strong> (badge shown on the card): ranking uses your take-home: <code>(1 + bonus%) × (1 − income tax%)</code>.</li>
-          <li><strong>No badge:</strong> you own the company but don't work in it. Ranking uses raw output: <code>1 + bonus%</code>.</li>
+          <li><strong>You work here</strong> (badge shown on the card): ranking uses your take-home, <code>(1 + bonus%) × (1 − income tax%)</code>.</li>
+          <li><strong>No badge:</strong> you own the company but don't work in it. Ranking uses raw output, <code>1 + bonus%</code>.</li>
           <li><strong>The percentage on each verdict pill is a relative increase</strong>, not a percentage-point change.</li>
           <li><strong>Numbers shown are regional/country bonuses only.</strong> Company-level upgrades aren't location-dependent, so totals here may be lower than what the game shows on your company.</li>
           <li>Not modelled: migration cost, active wars or sanctions, worker recruitment effects of high tax, market and sales taxes, or political shifts.</li>
@@ -732,8 +732,8 @@ function formatDate(v) {
   return d.toISOString().slice(0, 10);
 }
 
-// Transient = worth retrying. Covers raw HTTP 5xx plus proxy responses that
-// embed an upstream 5xx in the message body.
+// Transient errors are worth retrying. Covers raw HTTP 5xx plus proxy
+// responses that embed an upstream 5xx in the message body.
 function isTransientError(err) {
   if (err && err.status >= 500 && err.status < 600) return true;
   const msg = String(err?.message || '').toLowerCase();
@@ -835,7 +835,7 @@ const MUTool = (() => {
   let allMUs = [];
   let irishIdsGlobal = new Set();
   const userNames = {};
-  let loadStarted = false;       // load() has been kicked off
+  let loadStarted = false;
   let filterState = 'all';
 
   const idOf          = m => m?._id ?? null;
@@ -862,6 +862,8 @@ const MUTool = (() => {
     return members.filter(u => irishIds.has(memberIdOf(u))).length;
   }
 
+  // MUs without dormitory data have unknown capacity, so they appear under
+  // 'all' only. Neither 'open' nor 'full' can be claimed honestly.
   function filterMatch(mu) {
     if (filterState === 'all') return true;
     const cap = capacityOf(mu);
@@ -1133,8 +1135,8 @@ const MUTool = (() => {
 
   return {
     /**
-     * Called by the router every time this view becomes active. Idempotent —
-     * the data load is kicked off exactly once; later activations only
+     * Called by the router every time this view becomes active. Idempotent:
+     * the data load is kicked off exactly once. Later activations only
      * re-apply URL params (currently just ?filter=).
      * @param {URLSearchParams} [params]
      */
@@ -1267,6 +1269,18 @@ const AdvisorTool = (() => {
     return byId;
   }
 
+  /**
+   * Resolve a username to the correct user ID.
+   *
+   * search.searchAnything is a fuzzy/relevance search across all entity
+   * types. It returns userIds, but the top-ranked one is NOT guaranteed
+   * to be an exact username match. Taking userIds[0] blindly was the
+   * source of the "wrong companies" bug.
+   *
+   * Strategy: pull profiles for the top N candidates and find the one
+   * whose username matches the requested string exactly (case-insensitive).
+   * Fall back to looser matching only if nothing's exact.
+   */
   async function resolveUserId(username) {
     const search = await adv_trpc('search.searchAnything', { searchText: username });
     const candidateIds = search?.userIds || [];
@@ -1296,7 +1310,7 @@ const AdvisorTool = (() => {
     if (exact) return { userId: exact._id, username: exact.username, exact: true };
 
     if (!known.length) {
-      console.warn('[advisor] Could not verify usernames — falling back to top search result.');
+      console.warn('[advisor] Could not verify usernames; falling back to top search result.');
       return { userId: candidateIds[0], username, exact: false };
     }
 
@@ -1677,31 +1691,34 @@ const AdvisorTool = (() => {
 
 /* ═══════════════════════════════════════════════════════════════════
  *  VIEW ROUTER
- *  Tab navigation via the URL hash so views are deep-linkable.
- *    #home                →  landing page (default)
- *    #mu                  →  Irish Military Units
- *    #mu?filter=open      →  MU tool with the "Has slots" filter applied
- *    #advisor             →  Migration Advisor (empty)
- *    #advisor?u=toie      →  Migration Advisor auto-running for "toie"
- *  Params live INSIDE the hash (after a literal '?') so the whole route
+ *  Hash-based routing so views are deep-linkable.
+ *    #home                landing page (default)
+ *    #mu                  Irish Military Units
+ *    #mu?filter=open      MU tool with the "Has slots" filter applied
+ *    #advisor             Migration Advisor (empty)
+ *    #advisor?u=toie      Migration Advisor auto-running for "toie"
+ *
+ *  Params live inside the hash (after a literal '?') so the whole route
  *  is portable as one fragment and survives static hosting that doesn't
  *  rewrite query strings.
  *
- *  Idempotency: `activate(params)` is called every time the view becomes
+ *  Idempotency: activate(params) is called every time the view becomes
  *  active, not just on first mount. Tools handle being called repeatedly
  *  (MU doesn't re-fetch; advisor only re-runs if the username changed).
- *  This is what makes hash edits like `#advisor` → `#advisor?u=toie`
- *  pick up the new param without a full reload.
+ *  This is what makes hash edits like #advisor → #advisor?u=toie pick up
+ *  the new param without a full reload.
+ *
+ *  Navigation: there are no tabs. Users land on Home and click into
+ *  tools via the tool cards. The .back-link button in the header sends
+ *  them back to Home, and clicking the brand title does the same.
  * ═══════════════════════════════════════════════════════════════════ */
 (() => {
   const VALID = new Set(['home', 'mu', 'advisor']);
   const DEFAULT_VIEW = 'home';
-  const tabs = document.querySelectorAll('.tab');
   const views = document.querySelectorAll('.view');
   const toolbars = document.querySelectorAll('.toolbar');
+  const $backLink = document.querySelector('.back-link');
 
-  // Tools keyed by view name. `null` means "no tool" — used for static views
-  // like Home that have nothing to activate.
   const tools = {
     home: null,
     mu: MUTool,
@@ -1726,9 +1743,9 @@ const AdvisorTool = (() => {
 
   function setView(name, { updateHash = true, params = new URLSearchParams() } = {}) {
     if (!VALID.has(name)) name = DEFAULT_VIEW;
-    tabs.forEach(t => t.classList.toggle('active', t.dataset.view === name));
     views.forEach(v => v.classList.toggle('active', v.dataset.view === name));
     toolbars.forEach(t => { t.hidden = t.dataset.toolbar !== name; });
+    $backLink.hidden = (name === DEFAULT_VIEW);
 
     if (updateHash) writeHash(name, params);
 
@@ -1739,12 +1756,6 @@ const AdvisorTool = (() => {
     }
   }
 
-  // Tab clicks navigate to the bare view URL — params don't carry across
-  // tools, since e.g. ?u= only means something to the advisor.
-  tabs.forEach(t => t.addEventListener('click', () => setView(t.dataset.view)));
-
-  // Home view's tool-cards are <a href="#…"> links; the hashchange handler
-  // below catches them via the normal hashchange event.
   window.addEventListener('hashchange', () => {
     const r = parseRoute();
     setView(r.view, { updateHash: false, params: r.params });

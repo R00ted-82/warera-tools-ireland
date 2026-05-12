@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>War Era Tools</title>
+<title>War Era tools · An Irish player's toolkit</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'%3E%3Crect width='1' height='2' fill='%23009A49'/%3E%3Crect x='1' width='1' height='2' fill='white'/%3E%3Crect x='2' width='1' height='2' fill='%23FF7900'/%3E%3C/svg%3E" />
 <style>
   :root {
@@ -38,7 +38,6 @@
     display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between;
   }
 
-  /* Brand is a link to home; subtle hover so it doesn't shout. */
   .brand {
     text-decoration: none;
     color: inherit;
@@ -47,13 +46,13 @@
   .brand:hover { text-decoration: none; }
   .brand h1 {
     margin: 0;
-    font-size: 20px; font-weight: 600;
+    font-size: 22px; font-weight: 700;
+    letter-spacing: -0.01em;
     transition: color 0.15s;
   }
   .brand:hover h1 { color: var(--accent); }
   .brand .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
 
-  /* Back-to-home link, only shown on tool views. */
   .back-link {
     display: inline-flex;
     align-items: center;
@@ -73,23 +72,9 @@
     background: var(--panel-2);
     text-decoration: none;
   }
-  /* Author rule needed so the [hidden] attribute beats display:inline-flex. */
   .back-link[hidden] { display: none; }
 
-  .toolbar {
-    padding: 14px 32px;
-    border-top: 1px solid var(--border);
-    display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;
-    background: var(--panel);
-  }
-  .toolbar .title-row {
-    display: flex; align-items: center; gap: 10px;
-    color: var(--muted); font-size: 13px;
-  }
-  .toolbar .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .toolbar[hidden] { display: none; }
-
-  /* Segmented filter buttons (used in the MU toolbar). */
+  /* Segmented filter buttons (used by the MU tool). */
   .seg {
     display: inline-flex;
     border: 1px solid var(--border);
@@ -131,11 +116,52 @@
     color: var(--muted); font-size: 13px; text-align: center;
   }
   footer .heart { color: var(--danger); }
+  footer .sep { margin: 0 6px; opacity: 0.5; }
   footer a { color: var(--muted); }
   footer a:hover { color: var(--text); }
 
   .view { display: none; }
   .view.active { display: block; }
+
+  /* ── Tool view header ────────────────────────────────────────────── */
+  /* Each tool view opens with one of these: a page-level title and
+     subtitle on the left, the tool's controls on the right, separated
+     from the content below by a thin border. No dedicated background
+     bar, so it reads as part of the page rather than a strip pinned
+     to the chrome. */
+  .tool-header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 24px;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 22px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .tool-header .title-block {
+    flex: 1 1 280px;
+    min-width: 0;
+  }
+  .tool-header h2 {
+    margin: 0;
+    font-size: 20px; font-weight: 600;
+    line-height: 1.2;
+    display: flex; align-items: center; gap: 10px;
+    color: var(--text);
+  }
+  .tool-header .title-block p {
+    margin: 6px 0 0;
+    color: var(--muted); font-size: 13px;
+    line-height: 1.5;
+    max-width: 60ch;
+  }
+  .tool-header .controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
 
   /* ── Home view ───────────────────────────────────────────────────── */
   .home { max-width: 760px; margin: 16px auto; }
@@ -496,12 +522,19 @@
 
   @media (max-width: 720px) {
     .header-top { padding: 14px 20px; }
-    .toolbar { padding: 12px 20px; }
     main { padding: 16px 20px; }
     footer { padding: 16px 20px; }
 
-    .brand h1 { font-size: 18px; }
+    .brand h1 { font-size: 20px; }
     .back-link { padding: 6px 12px; font-size: 12px; }
+
+    .tool-header {
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      gap: 12px 16px;
+    }
+    .tool-header h2 { font-size: 18px; }
+    .tool-header .title-block p { font-size: 12.5px; }
 
     /* Home page: tighter on mobile so two cards fit one viewport. */
     .home { margin: 8px auto; }
@@ -530,30 +563,10 @@
 <header>
   <div class="header-top">
     <a class="brand" href="#home">
-      <h1>War Era Tools</h1>
-      <div class="sub">Live data via <a href="https://gateway.warerastats.io/" target="_blank" rel="noopener" onclick="event.stopPropagation()">War Era Gateway</a></div>
+      <h1>War Era tools</h1>
+      <div class="sub">An Irish player's toolkit</div>
     </a>
     <a class="back-link" href="#home" hidden>← Home</a>
-  </div>
-  <!-- One toolbar per tool view. Both start hidden; the router shows the
-       relevant one when its view becomes active. -->
-  <div class="toolbar" data-toolbar="mu" hidden>
-    <div class="title-row">Military units owned by Irish citizens, in Ireland, with a majority of Irish citizens.</div>
-    <div class="controls">
-      <div class="seg" id="mu-filter">
-        <button class="seg-btn active" data-mu-filter="all">All</button>
-        <button class="seg-btn" data-mu-filter="open">Has slots</button>
-        <button class="seg-btn" data-mu-filter="full">Full</button>
-      </div>
-      <button id="mu-refresh">Refresh</button>
-    </div>
-  </div>
-  <div class="toolbar" data-toolbar="advisor" hidden>
-    <div class="title-row">Find a better country for each of your companies.</div>
-    <div class="controls">
-      <input id="adv-username" type="text" placeholder="Your War Era username" autocomplete="off" spellcheck="false" />
-      <button id="adv-go">Analyse</button>
-    </div>
   </div>
 </header>
 
@@ -562,7 +575,7 @@
   <section class="view" data-view="home">
     <div class="home">
       <p class="lede">
-        A small collection of tools for Irish players of <a href="https://app.warera.io/" target="_blank" rel="noopener">War Era</a>. Because the in-game UI clearly wasn't built with us in mind. <em>Sláinte</em>.
+        <em>Sláinte!</em> A small collection of tools for Irish players of <a href="https://app.warera.io/" target="_blank" rel="noopener">War Era</a>.
       </p>
       <div class="tool-cards">
         <a class="tool-card" href="#mu">
@@ -587,6 +600,21 @@
 
   <!-- ─── Irish Military Units view ─────────────────────────────── -->
   <section class="view" data-view="mu">
+    <div class="tool-header">
+      <div class="title-block">
+        <h2><span>🇮🇪</span> Irish Military Units</h2>
+        <p>Owned by Irish citizens, in Ireland, with a majority of Irish citizens.</p>
+      </div>
+      <div class="controls">
+        <div class="seg" id="mu-filter">
+          <button class="seg-btn active" data-mu-filter="all">All</button>
+          <button class="seg-btn" data-mu-filter="open">Has slots</button>
+          <button class="seg-btn" data-mu-filter="full">Full</button>
+        </div>
+        <button id="mu-refresh">Refresh</button>
+      </div>
+    </div>
+
     <div id="mu-steps" class="steps hidden">
       <div class="step" data-state="pending" data-step="1">
         <div class="step-icon"></div>
@@ -630,6 +658,17 @@
 
   <!-- ─── Migration Advisor view ────────────────────────────────── -->
   <section class="view" data-view="advisor">
+    <div class="tool-header">
+      <div class="title-block">
+        <h2><span>🏭</span> Company Migration Advisor</h2>
+        <p>Find a better country for each of your companies.</p>
+      </div>
+      <div class="controls">
+        <input id="adv-username" type="text" placeholder="Your War Era username" autocomplete="off" spellcheck="false" />
+        <button id="adv-go">Analyse</button>
+      </div>
+    </div>
+
     <div id="adv-steps" class="steps hidden">
       <div class="step" data-state="pending" data-step="1">
         <div class="step-icon"></div>
@@ -685,7 +724,7 @@
 </main>
 
 <footer>
-  Made with <span class="heart">♥️</span> by toie.
+  Made with <span class="heart">♥️</span> by toie. <span class="sep">·</span> Live data via <a href="https://gateway.warerastats.io/" target="_blank" rel="noopener">War Era Gateway</a>.
 </footer>
 
 <script>
@@ -1702,21 +1741,20 @@ const AdvisorTool = (() => {
  *  is portable as one fragment and survives static hosting that doesn't
  *  rewrite query strings.
  *
- *  Idempotency: activate(params) is called every time the view becomes
- *  active, not just on first mount. Tools handle being called repeatedly
- *  (MU doesn't re-fetch; advisor only re-runs if the username changed).
- *  This is what makes hash edits like #advisor → #advisor?u=toie pick up
- *  the new param without a full reload.
+ *  Idempotency: activate(params) runs every time a view becomes active,
+ *  not just on first mount. Tools handle being called repeatedly: MU
+ *  doesn't re-fetch its data, the advisor only re-runs if the username
+ *  changed. This is what makes hash edits like #advisor to #advisor?u=toie
+ *  pick up the new param without a full reload.
  *
  *  Navigation: there are no tabs. Users land on Home and click into
- *  tools via the tool cards. The .back-link button in the header sends
- *  them back to Home, and clicking the brand title does the same.
+ *  tools via the cards. The .back-link in the header sends them back,
+ *  and clicking the brand title does the same.
  * ═══════════════════════════════════════════════════════════════════ */
 (() => {
   const VALID = new Set(['home', 'mu', 'advisor']);
   const DEFAULT_VIEW = 'home';
   const views = document.querySelectorAll('.view');
-  const toolbars = document.querySelectorAll('.toolbar');
   const $backLink = document.querySelector('.back-link');
 
   const tools = {
@@ -1744,7 +1782,6 @@ const AdvisorTool = (() => {
   function setView(name, { updateHash = true, params = new URLSearchParams() } = {}) {
     if (!VALID.has(name)) name = DEFAULT_VIEW;
     views.forEach(v => v.classList.toggle('active', v.dataset.view === name));
-    toolbars.forEach(t => { t.hidden = t.dataset.toolbar !== name; });
     $backLink.hidden = (name === DEFAULT_VIEW);
 
     if (updateHash) writeHash(name, params);

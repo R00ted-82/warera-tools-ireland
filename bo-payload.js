@@ -28,7 +28,7 @@
   };
 
   // Embed branding — fixed, not user-editable in the modal.
-  const BO_EMBED_TITLE = '⚔️ 🇮🇪 Battle orders requested';
+  const BO_EMBED_TITLE = '🪖 🇮🇪 Battle orders requested';
   const BO_EMBED_COLOR = 0x4ade80;  // Ireland accent green
 
   function fmtTimeAgo(d) {

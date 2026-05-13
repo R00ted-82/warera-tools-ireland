@@ -850,7 +850,9 @@ body:has(.view[data-view="battle-orders"].active) main { padding-bottom: 80px; }
   }
 
   function composeMessage() {
-    const sections = ['⚔️ **🇮🇪 Battle orders requested. Commanders please post orders in-game:**'];
+    const IRELAND_GREEN = 0x4ade80; // matches the --accent green you use elsewhere
+
+    const lines = [];
     for (const id of selectedBattles) {
       const b = battles.find(x => x._id === id);
       if (!b) continue;
@@ -864,14 +866,66 @@ body:has(.view[data-view="battle-orders"].active) main { padding-bottom: 80px; }
       const tag = irlSides.length > 0 ? ' · 🇮🇪 country order' : '';
       const url = `${GAME_BASE}/battle/${b._id}`;
       const title = `${aN} vs ${dN}${reg ? ` · ${reg}` : ''}`;
-      sections.push(
+      lines.push(
         `⚔️ **[${title}](${url})**\n` +
         `${round}${aS}-${dS}${tag}`
       );
     }
-    // \u200b survives Discord's whitespace trim.
-    return sections.join('\n\n') + '\n\u200b';
+
+    return {
+      embeds: [{
+        title: '⚔️ 🇮🇪 Battle orders requested',
+        description:
+          'Commanders please post orders in-game:\n\n' +
+          lines.join('\n\n'),
+        color: IRELAND_GREEN,
+        timestamp: new Date().toISOString(),
+      }],
+    };
   }
+
+  // $composeBtn handler: stringify the payload for the preview textarea.
+  $composeBtn.onclick = () => {
+    $msg.value = JSON.stringify(composeMessage(), null, 2);
+    $modal.classList.add('show');
+    if (CFG.DISCORD_WORKER_URL) {
+      $sendBtn.disabled = false;
+      $sendBtn.removeAttribute('title');
+    } else {
+      $sendBtn.disabled = true;
+      $sendBtn.title = 'Configure DISCORD_WORKER_URL';
+    }
+  };
+
+  // $sendBtn handler: parse the textarea back into JSON and forward it.
+  $sendBtn.onclick = async () => {
+    if (!CFG.DISCORD_WORKER_URL) { alert('DISCORD_WORKER_URL not set in payload.'); return; }
+    let payload;
+    try {
+      payload = JSON.parse($msg.value);
+    } catch (e) {
+      alert('Message is no longer valid JSON: ' + e.message);
+      return;
+    }
+    const old = $sendBtn.textContent;
+    $sendBtn.disabled = true; $sendBtn.textContent = 'Sending…';
+    try {
+      const r = await fetch(CFG.DISCORD_WORKER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      $sendBtn.textContent = 'Sent ✓';
+      setTimeout(() => { $modal.classList.remove('show'); $sendBtn.textContent = old; }, 800);
+    } catch (e) {
+      alert('Send failed: ' + e.message);
+      $sendBtn.textContent = old; $sendBtn.disabled = false;
+    }
+  };
+
+  // Copy button — same as before, just copies whatever's in the textarea.
+  // No changes needed if it already does that.
 
   async function fullLoad() {
     steps.reset();

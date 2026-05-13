@@ -954,7 +954,7 @@ body:has(.view[data-view="battle-orders"].active) main { padding-bottom: 80px; }
     renderBar();
   };
   $composeBtn.onclick = () => {
-    $msg.value = composeMessage();
+    $msg.value = JSON.stringify(composeMessage(), null, 2);
     $modal.classList.add('show');
     if (CFG.DISCORD_WORKER_URL) {
       $sendBtn.disabled = false;
@@ -979,11 +979,19 @@ body:has(.view[data-view="battle-orders"].active) main { padding-bottom: 80px; }
     if (!CFG.DISCORD_WORKER_URL) { alert('DISCORD_WORKER_URL not set in payload.'); return; }
     const old = $sendBtn.textContent;
     $sendBtn.disabled = true; $sendBtn.textContent = 'Sending…';
+    let payload;
+    try {
+      payload = JSON.parse($msg.value);
+    } catch (e) {
+      alert('Message is no longer valid JSON: ' + e.message);
+      $sendBtn.textContent = old; $sendBtn.disabled = false;
+      return;
+    }
     try {
       const r = await fetch(CFG.DISCORD_WORKER_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: $msg.value }),
+        body: JSON.stringify(payload),
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       $sendBtn.textContent = 'Sent ✓';

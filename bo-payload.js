@@ -27,6 +27,10 @@
     MIN_IRISH_RATIO:         0.5,
   };
 
+  // Embed branding — fixed, not user-editable in the modal.
+  const BO_EMBED_TITLE = '⚔️ 🇮🇪 Battle orders requested';
+  const BO_EMBED_COLOR = 0x4ade80;  // Ireland accent green
+
   function fmtTimeAgo(d) {
     if (!d) return '';
     const ms = Date.now() - d.getTime();
@@ -849,10 +853,12 @@ body:has(.view[data-view="battle-orders"].active) main { padding-bottom: 80px; }
     if (lastUpdatedAt) $updatedLabel.textContent = `Updated ${fmtTimeAgo(lastUpdatedAt)}`;
   }
 
-  function composeMessage() {
-    const IRELAND_GREEN = 0x4ade80; // matches the --accent green you use elsewhere
+  /* ── Discord message composition ──────────────────────────────── */
+  // The textarea shows JUST the embed description (the readable body),
+  // not the full JSON. On send we wrap it in the fixed embed envelope.
 
-    const lines = [];
+  function composeDescription() {
+    const lines = ['Commanders please post orders in-game:', ''];
     for (const id of selectedBattles) {
       const b = battles.find(x => x._id === id);
       if (!b) continue;
@@ -866,26 +872,23 @@ body:has(.view[data-view="battle-orders"].active) main { padding-bottom: 80px; }
       const tag = irlSides.length > 0 ? ' · 🇮🇪 country order' : '';
       const url = `${GAME_BASE}/battle/${b._id}`;
       const title = `${aN} vs ${dN}${reg ? ` · ${reg}` : ''}`;
-      lines.push(
-        `⚔️ **[${title}](${url})**\n` +
-        `${round}${aS}-${dS}${tag}`
-      );
+      lines.push(`⚔️ **[${title}](${url})**`);
+      lines.push(`${round}${aS}-${dS}${tag}`);
+      lines.push('');  // blank line between battles
     }
+    return lines.join('\n').trimEnd();
+  }
 
+  function buildPayload(description) {
     return {
       embeds: [{
-        title: '⚔️ 🇮🇪 Battle orders requested',
-        description:
-          'Commanders please post orders in-game:\n\n' +
-          lines.join('\n\n'),
-        color: IRELAND_GREEN,
+        title: BO_EMBED_TITLE,
+        description,
+        color: BO_EMBED_COLOR,
         timestamp: new Date().toISOString(),
       }],
     };
   }
-
-  // Copy button — same as before, just copies whatever's in the textarea.
-  // No changes needed if it already does that.
 
   async function fullLoad() {
     steps.reset();
@@ -954,7 +957,7 @@ body:has(.view[data-view="battle-orders"].active) main { padding-bottom: 80px; }
     renderBar();
   };
   $composeBtn.onclick = () => {
-    $msg.value = JSON.stringify(composeMessage(), null, 2);
+    $msg.value = composeDescription();
     $modal.classList.add('show');
     if (CFG.DISCORD_WORKER_URL) {
       $sendBtn.disabled = false;
@@ -977,21 +980,16 @@ body:has(.view[data-view="battle-orders"].active) main { padding-bottom: 80px; }
   };
   $sendBtn.onclick = async () => {
     if (!CFG.DISCORD_WORKER_URL) { alert('DISCORD_WORKER_URL not set in payload.'); return; }
+    const description = $msg.value.trim();
+    if (!description) { alert('Message is empty.'); return; }
+
     const old = $sendBtn.textContent;
     $sendBtn.disabled = true; $sendBtn.textContent = 'Sending…';
-    let payload;
-    try {
-      payload = JSON.parse($msg.value);
-    } catch (e) {
-      alert('Message is no longer valid JSON: ' + e.message);
-      $sendBtn.textContent = old; $sendBtn.disabled = false;
-      return;
-    }
     try {
       const r = await fetch(CFG.DISCORD_WORKER_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(buildPayload(description)),
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       $sendBtn.textContent = 'Sent ✓';

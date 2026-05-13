@@ -850,25 +850,26 @@ body:has(.view[data-view="battle-orders"].active) main { padding-bottom: 80px; }
   }
 
   function composeMessage() {
-    const sections = ['**🇮🇪 Battle orders requested. Commanders please post orders in-game:**'];
+    const sections = ['⚔️ **🇮🇪 Battle orders requested. Commanders please post orders in-game:**'];
     for (const id of selectedBattles) {
       const b = battles.find(x => x._id === id);
       if (!b) continue;
-      const aN = countryName(b.attacker?.country);
-      const dN = countryName(b.defender?.country);
+      const aN  = countryName(b.attacker?.country);
+      const dN  = countryName(b.defender?.country);
       const reg = regionName(b.defender?.region);
-      const aS = b.attacker?.wonRoundsCount ?? 0;
-      const dS = b.defender?.wonRoundsCount ?? 0;
+      const aS  = b.attacker?.wonRoundsCount ?? 0;
+      const dS  = b.defender?.wonRoundsCount ?? 0;
       const round = Array.isArray(b.rounds) ? `R${b.rounds.length} ` : '';
       const irlSides = irelandCountryOrderSides(b);
       const tag = irlSides.length > 0 ? ' · 🇮🇪 country order' : '';
+      const url = `${GAME_BASE}/battle/${b._id}`;
+      const title = `${aN} vs ${dN}${reg ? ` · ${reg}` : ''}`;
       sections.push(
-        `**${aN} vs ${dN}**${reg ? ` · ${reg}` : ''}\n` +
-        `${round}${aS}-${dS}${tag}\n` +
-        `${GAME_BASE}/battle/${b._id}`
+        `⚔️ **[${title}](${url})**\n` +
+        `${round}${aS}-${dS}${tag}`
       );
     }
-    // \u200b survives Discord's whitespace trim; keeps embed below a gap.
+    // \u200b survives Discord's whitespace trim.
     return sections.join('\n\n') + '\n\u200b';
   }
 

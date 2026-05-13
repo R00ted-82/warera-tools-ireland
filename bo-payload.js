@@ -872,7 +872,7 @@ body:has(.view[data-view="battle-orders"].active) main { padding-bottom: 80px; }
       const tag = irlSides.length > 0 ? ' · 🇮🇪 country order' : '';
       const url = `${GAME_BASE}/battle/${b._id}`;
       const title = `${aN} vs ${dN}${reg ? ` · ${reg}` : ''}`;
-      lines.push(`⚔️ **[${title}](${url})**`);
+      lines.push(`⚔️ **[${title}](<${url}>)**`);
       lines.push(`${round}${aS}-${dS}${tag}`);
       lines.push('');  // blank line between battles
     }

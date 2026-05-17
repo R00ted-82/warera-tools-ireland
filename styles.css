@@ -599,3 +599,26 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
 @media (max-width: 720px) {
   .bo-gate { padding: 24px 18px; margin: 24px auto; }
 }
+
+/* ── Skill tags (Eco / War / Mixed) in MU member lists ───────────── */
+.members li .skill-tag {
+  display: inline-block;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.members li .skill-tag.skill-eco {
+  background: rgba(74, 222, 128, 0.15);
+  color: var(--accent);
+}
+.members li .skill-tag.skill-war {
+  background: rgba(248, 113, 113, 0.15);
+  color: var(--danger);
+}
+.members li .skill-tag.skill-mixed {
+  background: rgba(251, 191, 36, 0.15);
+  color: var(--warn);
+}

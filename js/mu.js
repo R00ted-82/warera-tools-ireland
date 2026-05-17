@@ -13,6 +13,57 @@ const MUTool = (() => {
 
   const FILTER_STATES = ['all', 'open', 'full'];
 
+  // ── Skill classification ─────────────────────────────────────────
+  // Skill names from https://warera.wiki/skills. Loot Chance is
+  // "special" and doesn't belong in either bucket, so it's omitted.
+  //
+  // PURITY_THRESHOLD controls how skewed a player's allocation must
+  // be to count as a pure eco or pure war specialist. Anything in
+  // the middle band is tagged 'mixed'. At 0.6, the 40-60% range
+  // counts as mixed; bump higher for stricter purity (fewer pure
+  // labels, more mixed), lower for looser (more pure labels).
+  //
+  // The classifier reads user.skills off whatever user objects are
+  // already coming back from getUsersByCountry / getUserLite. No
+  // extra API calls. If those endpoints don't carry skills, the
+  // classifier returns null and no tag renders (we log one sample
+  // object the first time this happens so you can see the shape).
+  const PURITY_THRESHOLD = 0.6;
+  const ECO_SKILLS = new Set([
+    'energy', 'companies', 'entrepreneurship', 'production',
+  ]);
+  const WAR_SKILLS = new Set([
+    'health', 'hunger', 'attack', 'precision',
+    'critChance', 'critDamage', 'armor', 'dodge',
+  ]);
+
+  function classifyUser(userData) {
+    const skills = userData?.skills;
+    if (!skills || typeof skills !== 'object') return null;
+
+    let eco = 0, war = 0;
+    for (const [key, val] of Object.entries(skills)) {
+      // Accept either a raw number or a wrapper like {level: N}.
+      let n;
+      if (typeof val === 'number') n = val;
+      else if (val && typeof val === 'object') {
+        n = Number(val.level ?? val.value ?? val.points ?? 0);
+      } else n = Number(val);
+      if (!isFinite(n) || n <= 0) continue;
+
+      if      (ECO_SKILLS.has(key)) eco += n;
+      else if (WAR_SKILLS.has(key)) war += n;
+      // lootChance and any unknown keys are ignored.
+    }
+
+    const total = eco + war;
+    if (total === 0) return null;
+    const ecoShare = eco / total;
+    if (ecoShare >= PURITY_THRESHOLD)     return 'eco';
+    if (ecoShare <= 1 - PURITY_THRESHOLD) return 'war';
+    return 'mixed';
+  }
+
   const $grid    = document.getElementById('mu-grid');
   const $filter  = document.getElementById('mu-filter');
   const $refresh = document.getElementById('mu-refresh');
@@ -22,8 +73,23 @@ const MUTool = (() => {
   let allMUs = [];
   let irishIdsGlobal = new Set();
   const userNames = {};
+  const userSkillType = {};   // id -> 'eco' | 'war' | 'mixed' | null
   let loadStarted = false;
   let filterState = 'all';
+
+  // One-shot diagnostic. If the classifier returns null but the user
+  // object actually had a skills field, the field shape is something
+  // we didn't expect — log a sample so it's easy to inspect.
+  let _unknownShapeLogged = false;
+  function recordSkills(userId, userData) {
+    if (!userId || !userData || userId in userSkillType) return;
+    const verdict = classifyUser(userData);
+    userSkillType[userId] = verdict;
+    if (!_unknownShapeLogged && verdict === null && userData.skills) {
+      console.log('[MU] unexpected user.skills shape — sample:', userData.skills);
+      _unknownShapeLogged = true;
+    }
+  }
 
   const idOf          = m => m?._id ?? null;
   const nameOf        = m => m?.name ?? '(no name)';
@@ -101,6 +167,7 @@ const MUTool = (() => {
         if (u?._id) {
           ids.add(u._id);
           if (u.username) userNames[u._id] = u.username;
+          recordSkills(u._id, u);
         }
       }
       steps.setStep(2, 'active', { sub: `${ids.size} citizens found so far…` });
@@ -120,6 +187,7 @@ const MUTool = (() => {
         try {
           const u = await trpc('user.getUserLite', { userId: id }, { timeoutMs: 20000 });
           if (u?.username) userNames[id] = u.username;
+          recordSkills(id, u);
         } catch {}
       }));
       const done = Math.min(i + concurrency, unknown.length);
@@ -167,6 +235,11 @@ const MUTool = (() => {
       ).join('')
     }</div>`;
   }
+  function skillTagHtml(type) {
+    if (!type) return '';
+    const label = type.charAt(0).toUpperCase() + type.slice(1);
+    return `<span class="skill-tag skill-${type}" title="Skill allocation: ${label}">${label}</span>`;
+  }
   function membersBlock(mu) {
     const arr = membersOf(mu);
     if (!arr || !arr.length) return '';
@@ -181,9 +254,10 @@ const MUTool = (() => {
           const name = userNames[id] ?? id ?? '';
           const isIrish = irishIdsGlobal.has(id);
           const flagSpan = isIrish ? '<span class="flag" title="Irish">🇮🇪</span>' : '<span class="flag" title="Non-Irish">🌍</span>';
-          const tag = commanders.has(id) ? '<span class="role">Commander</span>' : '';
+          const commanderTag = commanders.has(id) ? '<span class="role">Commander</span>' : '';
+          const skillTag = skillTagHtml(userSkillType[id]);
           const cls = isIrish ? '' : ' class="foreign"';
-          return `<li${cls}>${flagSpan}<span>${escapeHtml(String(name))}</span>${tag}</li>`;
+          return `<li${cls}>${flagSpan}<span>${escapeHtml(String(name))}</span>${skillTag}${commanderTag}</li>`;
         }).join('')}</ul>
       </div>
     `;

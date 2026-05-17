@@ -32,7 +32,13 @@ const MUTool = (() => {
   // PURITY_THRESHOLD controls how skewed a player's allocation must
   // be to count as pure eco or pure war. At 0.6, the 40-60% band is
   // 'mixed'. Bump higher for stricter purity, lower for looser.
-  const PURITY_THRESHOLD = 0.6;
+  //
+  // MIN_POINTS_TO_CLASSIFY suppresses tags for players who've barely
+  // committed. With a fresh account starting at 4 free points, a
+  // threshold of 5 means we only tag people who've at least levelled
+  // up once AND spent some of those points — anything less is noise.
+  const PURITY_THRESHOLD     = 0.6;
+  const MIN_POINTS_TO_CLASSIFY = 5;
   const ECO_SKILLS = new Set([
     'energy', 'companies', 'entrepreneurship', 'production', 'management',
   ]);
@@ -61,7 +67,7 @@ const MUTool = (() => {
     }
 
     const total = eco + war;
-    if (total === 0) return null;
+    if (total < MIN_POINTS_TO_CLASSIFY) return null;
     const ecoShare = eco / total;
     if (ecoShare >= PURITY_THRESHOLD)     return 'eco';
     if (ecoShare <= 1 - PURITY_THRESHOLD) return 'war';

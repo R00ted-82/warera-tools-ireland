@@ -518,13 +518,38 @@ body:has(.view[data-view="battle-orders"].active) main { padding-bottom: 80px; }
   }
 
   // Loaders
-  async function loadBattlesAndRefs() {
-    const [battlesRes, countriesRes, regionsRes] = await Promise.all([
-      trpc('battle.getBattles', { isActive: true, limit: PAGE_LIMIT }, { retry: true, timeoutMs: 20000 }),
+
+  // Paginates battle.getBattles until exhausted. Mirrors loadAllMUs /
+  // loadIrishCitizens. The previous single-call version capped at 100 battles
+  // and silently dropped everything on page 2+ (including country-order battles).
+  async function loadAllActiveBattles(onProgress) {
+    const out = []; const seen = new Set();
+    let cursor; let safety = 0;
+    while (safety++ < 50) {  // 50 × 100 = 5000 active battles cap; plenty of headroom
+      const input = { isActive: true, limit: PAGE_LIMIT };
+      if (cursor) input.cursor = cursor;
+      const page = await trpc('battle.getBattles', input, { retry: true, timeoutMs: 20000 });
+      const items = page?.items ?? (Array.isArray(page) ? page : []);
+      let added = 0;
+      for (const b of items) {
+        const id = b?._id;
+        if (id && !seen.has(id)) { seen.add(id); out.push(b); added++; }
+      }
+      const next = page?.nextCursor ?? page?.cursor ?? null;
+      if (!next || items.length === 0 || added === 0) break;
+      cursor = next;
+      onProgress?.(out.length);
+    }
+    return out;
+  }
+
+  async function loadBattlesAndRefs(onProgress) {
+    const [battleList, countriesRes, regionsRes] = await Promise.all([
+      loadAllActiveBattles(onProgress),
       trpc('country.getAllCountries', {}, { retry: true, timeoutMs: 20000 }),
       trpc('region.getRegionsObject', {}, { retry: true, timeoutMs: 20000 }),
     ]);
-    battles = battlesRes?.items ?? (Array.isArray(battlesRes) ? battlesRes : []);
+    battles = battleList;
     const countryArr = Array.isArray(countriesRes) ? countriesRes : (countriesRes?.items ?? []);
     countriesById = {};
     for (const c of countryArr) if (c?._id) countriesById[c._id] = c;
@@ -897,7 +922,9 @@ body:has(.view[data-view="battle-orders"].active) main { padding-bottom: 80px; }
 
     try {
       steps.setStep(1, 'active', { sub: 'Fetching active battles, countries, regions' });
-      await loadBattlesAndRefs();
+      await loadBattlesAndRefs(n =>
+        steps.setStep(1, 'active', { sub: `${n} battles so far…` })
+      );
       steps.setStep(1, 'done', { count: `${battles.length} battles` });
 
       steps.setStep(2, 'active', { sub: 'Paginating Irish citizens' });

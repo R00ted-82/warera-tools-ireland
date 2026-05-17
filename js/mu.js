@@ -14,27 +14,31 @@ const MUTool = (() => {
   const FILTER_STATES = ['all', 'open', 'full'];
 
   // ── Skill classification ─────────────────────────────────────────
-  // Skill names from https://warera.wiki/skills. Loot Chance is
-  // "special" and doesn't belong in either bucket, so it's omitted.
+  // Skill keys come from user.getUserLite's `skills` object, verified
+  // against a live response. Each skill value is an object; we read
+  // `level` (points the player has spent) rather than `value` (the
+  // derived stat) since allocation is what tells us their playstyle.
+  //
+  // Bucketing:
+  //   eco — energy, companies, entrepreneurship, production, management
+  //   war — health, hunger, attack, precision, armor, dodge,
+  //         criticalChance, criticalDamages
+  //   ignored — lootChance (special; doesn't favour either side)
+  //
+  // `management` isn't listed on the public wiki but ships in the
+  // API; the name and default value pattern matches the economic
+  // skills, so it's grouped there.
   //
   // PURITY_THRESHOLD controls how skewed a player's allocation must
-  // be to count as a pure eco or pure war specialist. Anything in
-  // the middle band is tagged 'mixed'. At 0.6, the 40-60% range
-  // counts as mixed; bump higher for stricter purity (fewer pure
-  // labels, more mixed), lower for looser (more pure labels).
-  //
-  // The classifier reads user.skills off whatever user objects are
-  // already coming back from getUsersByCountry / getUserLite. No
-  // extra API calls. If those endpoints don't carry skills, the
-  // classifier returns null and no tag renders (we log one sample
-  // object the first time this happens so you can see the shape).
+  // be to count as pure eco or pure war. At 0.6, the 40-60% band is
+  // 'mixed'. Bump higher for stricter purity, lower for looser.
   const PURITY_THRESHOLD = 0.6;
   const ECO_SKILLS = new Set([
-    'energy', 'companies', 'entrepreneurship', 'production',
+    'energy', 'companies', 'entrepreneurship', 'production', 'management',
   ]);
   const WAR_SKILLS = new Set([
     'health', 'hunger', 'attack', 'precision',
-    'critChance', 'critDamage', 'armor', 'dodge',
+    'criticalChance', 'criticalDamages', 'armor', 'dodge',
   ]);
 
   function classifyUser(userData) {

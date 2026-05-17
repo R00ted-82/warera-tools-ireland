@@ -87,18 +87,16 @@ const MUTool = (() => {
   let loadStarted = false;
   let filterState = 'all';
 
-  // One-shot diagnostic. If the classifier returns null but the user
-  // object actually had a skills field, the field shape is something
-  // we didn't expect — log a sample so it's easy to inspect.
-  let _unknownShapeLogged = false;
   function recordSkills(userId, userData) {
-    if (!userId || !userData || userId in userSkillType) return;
-    const verdict = classifyUser(userData);
-    userSkillType[userId] = verdict;
-    if (!_unknownShapeLogged && verdict === null && userData.skills) {
-      console.log('[MU] unexpected user.skills shape — sample:', userData.skills);
-      _unknownShapeLogged = true;
-    }
+    if (!userId || !userData) return;
+    if (userId in userSkillType) return;
+    // Sparse responses (the bulk country query returns just _id +
+    // createdAt) have no skills field — leave them uncached so the
+    // later getUserLite call gets a chance to classify properly.
+    // Without this, we'd cache `null` from the country query and the
+    // richer response would never get to run.
+    if (!userData.skills) return;
+    userSkillType[userId] = classifyUser(userData);
   }
 
   const idOf          = m => m?._id ?? null;

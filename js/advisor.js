@@ -7,8 +7,11 @@
  *    strategic       — country.strategicResources.bonuses.productionPercent
  *                      (fires when item matches country.specializedItem)
  *    specialisation  — flat +30% "Industrialism", fires when the country is
- *                      INDUSTRIALIST-leaning (industrialism > 0) and the
- *                      item matches its specialisedItem
+ *                      INDUSTRIALIST-leaning (industrialism > 0), the item
+ *                      matches its specialisedItem, AND the item is an
+ *                      INDUSTRIAL item (not food/agrarian). Verified:
+ *                      Bulgaria/steak (ind=+2) does NOT get +30, but
+ *                      South Africa/steel and Guinea-Bissau/lead do.
  *    deposit         — region.deposit.bonusPercent, fires when the region
  *                      has an active matching deposit AND the country does
  *                      NOT specialise in this item
@@ -27,8 +30,9 @@
  *  This model was verified against in-game tooltips for Guinea-Bissau/lead
  *  (+56), Jordan/concrete (no +30), India/cookedFish (+20.5), Serbia/steak
  *  (+20), South Africa/steel (+34.25), Peru/lead deposit (+30 not +60),
- *  Ireland/grain deposit (+60), and others. Do NOT re-introduce a +30 on
- *  food items for industrialist countries — that was the bug.
+ *  Ireland/grain deposit (+60), Bulgaria/steak (+10 not +40 — agrarian
+ *  exclusion), and others. Do NOT re-introduce a +30 on food/agrarian items
+ *  for industrialist countries — that was the bug.
  * ═══════════════════════════════════════════════════════════════════ */
 const AdvisorTool = (() => {
   const companyUrlFor = id => `${GAME_BASE}/company/${id}`;
@@ -56,6 +60,23 @@ const AdvisorTool = (() => {
 
   const OPTIMAL_THRESHOLD = 2;
   const HUGE_THRESHOLD    = 20;
+
+  // The +30% Industrialism (specialisation) bonus does NOT fire on
+  // agrarian items, even when the country is industrialist-leaning.
+  // Verified against Bulgaria/steak: industrialism=+2, specializedItem=steak,
+  // strategic=+10, but the game's "Move company" panel shows Bulgaria at
+  // +10% (not +40%), and Croatia (+21.25% from strategic alone) ranks
+  // ahead of it. Compare with industrial items where the +30 does fire:
+  // Guinea-Bissau/lead → +56, South Africa/steel → +34.25.
+  //
+  // This list includes the agrarian raw materials (fish, livestock, grain),
+  // their processed forms (cookedFish, steak, bread), and the coca/pill
+  // pair, which follow the same production model. If a future spec-eligible
+  // food item is added, extend this set.
+  const AGRARIAN_ITEMS = new Set([
+    'steak', 'bread', 'fish', 'cookedFish', 'livestock', 'grain',
+    'coca', 'cocain',
+  ]);
 
   // Companion endpoint for industrialism. Lives on Hattorius's
   // warerastats.io, proxied through the same worker that fronts the
@@ -183,7 +204,13 @@ const AdvisorTool = (() => {
     const strategic = isSpecialised
       ? (country.strategicResources?.bonuses?.productionPercent || 0)
       : 0;
-    const specialisation = isSpecialised && lean === 'industrialist' ? 30 : 0;
+    // Industrialism (spec) +30 fires only for INDUSTRIAL items. Agrarian
+    // items (food, plants, pills) don't get it even when the country
+    // qualifies on lean + specialisation. See AGRARIAN_ITEMS comment.
+    const specialisation = isSpecialised
+      && lean === 'industrialist'
+      && !AGRARIAN_ITEMS.has(itemCode)
+      ? 30 : 0;
 
     const hasMatchingDeposit = !isSpecialised
       && !!region?.deposit

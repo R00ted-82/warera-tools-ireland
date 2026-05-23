@@ -1,5 +1,20 @@
 /* ═══════════════════════════════════════════════════════════════════
  *  COMPANY MIGRATION ADVISOR
+ *
+ *  Uses the game's own bonus-computation endpoints so the advisor is
+ *  always 100% in sync with in-game numbers, no matter how the rules
+ *  evolve (ethics categories, deposit interactions, future modifiers).
+ *
+ *    company.getProductionBonus(companyId)
+ *      → { strategicBonus, depositBonus, ethicSpecializationBonus,
+ *          ethicDepositBonus, total } for one company in its current region.
+ *
+ *    company.getRecommendedRegionIdsByItemCode(itemCode, includeDeposit)
+ *      → top 5 regions for an item, each with the same bonus breakdown
+ *        plus taxPercent. (perPage is fixed server-side at 5.)
+ *
+ *  We no longer compute bonuses locally; region/country fetches are kept
+ *  for display only (region/country names, flags, tax labels).
  * ═══════════════════════════════════════════════════════════════════ */
 const AdvisorTool = (() => {
   const companyUrlFor = id => `${GAME_BASE}/company/${id}`;
@@ -54,70 +69,6 @@ const AdvisorTool = (() => {
       } catch { /* try next */ }
     }
     return null;
-  }
-
-  function isDepositActive(dep) {
-    if (!dep) return false;
-    const now = Date.now();
-    const starts = dep.startsAt ? new Date(dep.startsAt).getTime() : 0;
-    const ends   = dep.endsAt   ? new Date(dep.endsAt).getTime()   : 0;
-    return now >= starts && now <= ends;
-  }
-
-  /**
-   * Production bonus has two components in the current game:
-   *   1. Strategic resources: the country's `productionPercent`, applied when
-   *      the item matches the country's `specializedItem`.
-   *   2. Regional deposit: the deposit's `bonusPercent`, applied when the
-   *      country does NOT specialise in this item AND the region has an
-   *      active matching deposit.
-   *
-   * The previous version of this code also applied a +30% "industrialism"
-   * bonus on top, gated by warerastats's `industrialism` field. That bonus
-   * does not exist in the current game — verified against in-game country
-   * tooltips for Bulgaria (10%), Croatia (21.25%), and Italy (31%). All
-   * three match `productionPercent` exactly with no industrialism
-   * stacking. The warerastats fetch and the `industrialism` field on the
-   * country object are kept for future use, but no longer affect the math.
-   */
-  function computeBonus(country, region, itemCode) {
-    if (!country) return null;
-    const isSpecialised = country.specializedItem === itemCode;
-
-    const strategic = isSpecialised
-      ? (country.strategicResources?.bonuses?.productionPercent || 0)
-      : 0;
-
-    const hasMatchingDeposit = !isSpecialised
-      && !!region?.deposit
-      && region.deposit.type === itemCode
-      && isDepositActive(region.deposit);
-    const deposit = hasMatchingDeposit ? (region.deposit.bonusPercent || 0) : 0;
-
-    const total   = strategic + deposit;
-    const tax     = country.taxes?.income ?? 0;
-    const netMult = (1 + total / 100) * (1 - tax / 100);
-    const depositEndsAt = hasMatchingDeposit ? region.deposit.endsAt : null;
-    return { strategic, deposit, depositEndsAt, total, tax, netMult };
-  }
-
-  async function loadCountriesParallel(countries) {
-    const byId = {};
-    const total = countries.length;
-    const chunk = 25;
-    let done = 0;
-    for (let i = 0; i < total; i += chunk) {
-      const slice = countries.slice(i, i + chunk);
-      await Promise.all(slice.map(async c => {
-        try {
-          const country = await adv_trpc('country.getCountryById', { countryId: c._id });
-          if (country) byId[c._id] = country;
-        } catch { /* skip individual failures */ }
-        done++;
-      }));
-      steps.setStep(3, 'active', { sub: null, count: `${done}/${total}` });
-    }
-    return byId;
   }
 
   /**
@@ -195,78 +146,106 @@ const AdvisorTool = (() => {
       });
     });
 
-    steps.setStep(2, 'active', { sub: `Loading ${companyIds.length} company details`, count: `0/${companyIds.length}` });
+    // Pull company details + their *current* bonuses in parallel. The bonus
+    // call is the game's own server-side calculation, so it captures every
+    // rule (ethics, deposits, future modifiers) without us re-implementing.
+    steps.setStep(2, 'active', { sub: `Loading ${companyIds.length} company details + bonuses`, count: `0/${companyIds.length}` });
     let loaded = 0;
     const companies = await Promise.all(companyIds.map(async id => {
-      const c = await adv_trpc('company.getById', { companyId: id });
+      const [details, bonus] = await Promise.all([
+        adv_trpc('company.getById', { companyId: id }),
+        adv_trpc('company.getProductionBonus', { companyId: id }).catch(() => null),
+      ]);
       loaded++;
-      steps.setStep(2, 'active', { sub: 'Loading company details', count: `${loaded}/${companyIds.length}` });
-      return c;
+      steps.setStep(2, 'active', { sub: 'Loading company details + bonuses', count: `${loaded}/${companyIds.length}` });
+      if (!details) return null;
+      return { ...details, _bonus: bonus };
     }));
-    steps.setStep(2, 'done', { count: `${companies.length} loaded` });
+    steps.setStep(2, 'done', { count: `${companies.filter(Boolean).length} loaded` });
 
-    steps.setStep(3, 'active', { sub: 'Loading regions, countries, and game config' });
-    // warerastats is still fetched so that `industrialism` is available on
-    // country objects for any future logic that wants it; the current
-    // bonus calculation does not use it.
-    const [regionsObj, allCountriesRaw, _gameConfig, warerastatsCountries] = await Promise.all([
+    // Region/country data is now display-only (names, flags, tax). The
+    // bonus math comes from the API.
+    steps.setStep(3, 'active', { sub: 'Loading regions and countries' });
+    const [regionsObj, allCountriesRaw] = await Promise.all([
       adv_trpc('region.getRegionsObject', {}),
       adv_trpc('country.getAllCountries', {}),
-      adv_trpc('gameConfig.getGameConfig', {}).catch(() => null),
-      fetch(`${WARERASTATS_BASE}/countries`).then(r => r.json()).catch(() => []),
     ]);
     const allCountries = Array.isArray(allCountriesRaw)
       ? allCountriesRaw
       : (allCountriesRaw?.items || []);
+    const countryById = {};
+    allCountries.forEach(c => { if (c?._id) countryById[c._id] = c; });
 
-    const industrialismById = {};
-    (Array.isArray(warerastatsCountries) ? warerastatsCountries : []).forEach(c => {
-      if (c && c.countryId != null && c.industrialism != null) {
-        industrialismById[c.countryId] = c.industrialism;
+    // One recommendation lookup per distinct item the user produces.
+    const itemCodes = [...new Set(companies.filter(Boolean).map(c => c.itemCode))];
+    steps.setStep(3, 'active', { sub: `Loading top regions for ${itemCodes.length} item type${itemCodes.length === 1 ? '' : 's'}`, count: `0/${itemCodes.length}` });
+    let topLoaded = 0;
+    const topByItem = {};
+    await Promise.all(itemCodes.map(async code => {
+      try {
+        const list = await adv_trpc('company.getRecommendedRegionIdsByItemCode', {
+          itemCode: code,
+          includeDeposit: true,
+        });
+        topByItem[code] = Array.isArray(list) ? list : [];
+      } catch {
+        topByItem[code] = [];
       }
-    });
-
-    steps.setStep(3, 'active', { sub: `Loading bonuses for ${allCountries.length} countries`, count: `0/${allCountries.length}` });
-    const countryById = await loadCountriesParallel(allCountries);
-    Object.values(countryById).forEach(c => {
-      if (c && c._id in industrialismById) c.industrialism = industrialismById[c._id];
-    });
-    steps.setStep(3, 'done', { count: `${allCountries.length} loaded` });
-
-    const regionsByCountry = {};
-    Object.values(regionsObj).forEach(r => {
-      if (!r?.country) return;
-      (regionsByCountry[r.country] = regionsByCountry[r.country] || []).push(r);
-    });
+      topLoaded++;
+      steps.setStep(3, 'active', { count: `${topLoaded}/${itemCodes.length}` });
+    }));
+    steps.setStep(3, 'done', { count: `${itemCodes.length} item${itemCodes.length === 1 ? '' : 's'}` });
 
     const analyses = companies.filter(Boolean).map(c => {
-      const a = analyseCompany(c, regionsObj, regionsByCountry, countryById);
+      const a = analyseCompany(c, regionsObj, countryById, topByItem[c.itemCode] || []);
       a.userWorksHere = ownCompaniesWhereUserWorks.has(c._id);
       return a;
     });
     return { username: resolved.username, userId, analyses };
   }
 
-  function analyseCompany(company, allRegions, regionsByCountry, countryById) {
+  /**
+   * Build a side object the renderer understands from a (region, bonus)
+   * pair. `bonus` is the API shape: { strategicBonus, depositBonus,
+   * ethicSpecializationBonus, ethicDepositBonus, total, taxPercent?,
+   * depositEndAt?, itemCode? }.
+   */
+  function makeSide(region, country, bonus) {
+    const total = bonus?.total ?? 0;
+    const tax = bonus?.taxPercent ?? country?.taxes?.income ?? 0;
+    const netMult = (1 + total / 100) * (1 - tax / 100);
+    return {
+      country,
+      region,
+      strategic:        bonus?.strategicBonus ?? 0,
+      specialisation:   bonus?.ethicSpecializationBonus ?? 0,
+      deposit:          bonus?.depositBonus ?? 0,
+      depositCountry:   bonus?.ethicDepositBonus ?? 0,
+      depositEndsAt:    bonus?.depositEndAt || null,
+      total,
+      tax,
+      netMult,
+    };
+  }
+
+  function analyseCompany(company, allRegions, countryById, topRegions) {
     const currentRegion  = allRegions[company.region];
     const currentCountry = currentRegion ? countryById[currentRegion.country] : null;
-    const currentBonus   = computeBonus(currentCountry, currentRegion, company.itemCode);
-
-    const candidates = [];
-    for (const cid in countryById) {
-      const country = countryById[cid];
-      if (!country) continue;
-      const regs = regionsByCountry[cid] || [];
-      for (const region of regs) {
-        const bonus = computeBonus(country, region, company.itemCode);
-        if (!bonus) continue;
-        candidates.push({ country, region, ...bonus });
-      }
-    }
-
-    const current = currentBonus
-      ? { country: currentCountry, region: currentRegion, ...currentBonus }
+    const current = company._bonus
+      ? makeSide(currentRegion, currentCountry, company._bonus)
       : null;
+
+    // Map top-region API entries to sides. They include their own bonus
+    // breakdown, so no further computation is needed.
+    const candidates = topRegions
+      .map(t => {
+        const r = allRegions[t.regionId];
+        if (!r) return null;
+        const country = countryById[r.country];
+        return makeSide(r, country, t);
+      })
+      .filter(Boolean);
+
     return { company, current, candidates };
   }
 
@@ -324,12 +303,14 @@ const AdvisorTool = (() => {
   function renderSide(side, label, compareWith, userWorksHere) {
     if (!side || !side.country) return `<div class="side"><div style="color:var(--muted)">Unknown location</div></div>`;
     const breakdown = [];
-    if (side.strategic) breakdown.push(`Strategic resources: +${fmt(side.strategic)}%`);
+    if (side.strategic)       breakdown.push(`Strategic resources: +${fmt(side.strategic)}%`);
+    if (side.specialisation)  breakdown.push(`Industrialism: +${fmt(side.specialisation)}%`);
     if (side.deposit) {
       const ttl = side.depositEndsAt ? new Date(side.depositEndsAt).getTime() - Date.now() : null;
       const left = (ttl !== null && ttl > 0) ? ` (${formatDuration(ttl)} left)` : '';
-      breakdown.push(`Regional deposit: +${side.deposit}%${left}`);
+      breakdown.push(`Regional deposit: +${fmt(side.deposit)}%${left}`);
     }
+    if (side.depositCountry)  breakdown.push(`Industrialism: +${fmt(side.depositCountry)}%`);
     const taxClass = side.tax >= 12 ? 'tax-high' : side.tax >= 8 ? 'tax-mid' : 'tax-low';
 
     const inlineDelta = (delta, higherIsBetter, threshold = 0.05) => {
@@ -451,7 +432,7 @@ const AdvisorTool = (() => {
         </div>
         <div class="body">${body}</div>
         <details class="alts-wrap">
-          <summary>Top 10 regions ranked by ${scoreLabel(userWorksHere)}</summary>
+          <summary>Top ${top10.length} region${top10.length === 1 ? '' : 's'} ranked by ${scoreLabel(userWorksHere)}</summary>
           <div class="alts">${altsHtml}</div>
         </details>
       </div>

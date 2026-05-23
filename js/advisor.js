@@ -55,6 +55,31 @@ const AdvisorTool = (() => {
 
   const adv_trpc = (endpoint, input) => trpc(endpoint, input, { retry: true });
 
+  // Some endpoints aren't on the warerastats gateway and have to be
+  // proxied directly to the game's API (api3.warera.io) via the worker's
+  // /warera/* route. These use POST + batched tRPC format. PROXY_BASE
+  // mirrors what `trpc()` uses internally; if you ever change the worker
+  // host, update both places.
+  const PROXY_BASE = 'https://warera-proxy.toie.workers.dev';
+  const GAME_API_ENDPOINTS = new Set([
+    'company.getProductionBonus',
+    'company.getRecommendedRegionIdsByItemCode',
+  ]);
+  async function adv_call(endpoint, input) {
+    if (!GAME_API_ENDPOINTS.has(endpoint)) {
+      return adv_trpc(endpoint, input);
+    }
+    const url = `${PROXY_BASE}/warera/trpc/${endpoint}?batch=1`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ '0': input }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status} on ${endpoint}`);
+    const json = await res.json();
+    return json?.[0]?.result?.data;
+  }
+
   let USER_ENDPOINT = null;
   async function fetchUser(userId) {
     if (USER_ENDPOINT) {
@@ -154,7 +179,7 @@ const AdvisorTool = (() => {
     const companies = await Promise.all(companyIds.map(async id => {
       const [details, bonus] = await Promise.all([
         adv_trpc('company.getById', { companyId: id }),
-        adv_trpc('company.getProductionBonus', { companyId: id }).catch(() => null),
+        adv_call('company.getProductionBonus', { companyId: id }).catch(() => null),
       ]);
       loaded++;
       steps.setStep(2, 'active', { sub: 'Loading company details + bonuses', count: `${loaded}/${companyIds.length}` });
@@ -183,7 +208,7 @@ const AdvisorTool = (() => {
     const topByItem = {};
     await Promise.all(itemCodes.map(async code => {
       try {
-        const list = await adv_trpc('company.getRecommendedRegionIdsByItemCode', {
+        const list = await adv_call('company.getRecommendedRegionIdsByItemCode', {
           itemCode: code,
           includeDeposit: true,
         });

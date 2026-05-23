@@ -1,20 +1,34 @@
 /* ═══════════════════════════════════════════════════════════════════
  *  COMPANY MIGRATION ADVISOR
  *
- *  Uses the game's own bonus-computation endpoints so the advisor is
- *  always 100% in sync with in-game numbers, no matter how the rules
- *  evolve (ethics categories, deposit interactions, future modifiers).
+ *  Computes production bonuses locally from country + region data fetched
+ *  through the warerastats gateway. The bonus model has four components:
  *
- *    company.getProductionBonus(companyId)
- *      → { strategicBonus, depositBonus, ethicSpecializationBonus,
- *          ethicDepositBonus, total } for one company in its current region.
+ *    strategic       — country.strategicResources.bonuses.productionPercent
+ *                      (fires when item matches country.specializedItem)
+ *    specialisation  — flat +30% "Industrialism", fires when the country is
+ *                      INDUSTRIALIST-leaning (industrialism > 0) and the
+ *                      item matches its specialisedItem
+ *    deposit         — region.deposit.bonusPercent, fires when the region
+ *                      has an active matching deposit AND the country does
+ *                      NOT specialise in this item
+ *    depositCountry  — flat country-level deposit bonus (read from
+ *                      gameConfig.company.depositResourceBonus, defaults
+ *                      to 30), fires when there's a matching active deposit
+ *                      AND the country is AGRARIAN-leaning (industrialism < 0)
  *
- *    company.getRecommendedRegionIdsByItemCode(itemCode, includeDeposit)
- *      → top 5 regions for an item, each with the same bonus breakdown
- *        plus taxPercent. (perPage is fixed server-side at 5.)
+ *  Industrialism is a signed integer from the warerastats companion endpoint
+ *  (range −2…+2; only sign matters for bonus gating). Each lean grants
+ *  exactly one type of +30%, never both. Neutral (industrialism = 0)
+ *  countries grant neither. If the companion endpoint is unreachable,
+ *  industrialism defaults to 0 — the +30% bonuses just don't fire, which
+ *  under-counts rather than wrong-counts.
  *
- *  We no longer compute bonuses locally; region/country fetches are kept
- *  for display only (region/country names, flags, tax labels).
+ *  This model was verified against in-game tooltips for Guinea-Bissau/lead
+ *  (+56), Jordan/concrete (no +30), India/cookedFish (+20.5), Serbia/steak
+ *  (+20), South Africa/steel (+34.25), Peru/lead deposit (+30 not +60),
+ *  Ireland/grain deposit (+60), and others. Do NOT re-introduce a +30 on
+ *  food items for industrialist countries — that was the bug.
  * ═══════════════════════════════════════════════════════════════════ */
 const AdvisorTool = (() => {
   const companyUrlFor = id => `${GAME_BASE}/company/${id}`;
@@ -43,6 +57,20 @@ const AdvisorTool = (() => {
   const OPTIMAL_THRESHOLD = 2;
   const HUGE_THRESHOLD    = 20;
 
+  // Companion endpoint for industrialism. Lives on Hattorius's
+  // warerastats.io, proxied through the same worker that fronts the
+  // gateway. Set in the merged tool's CFG block; here we derive it from
+  // the existing tRPC base so we don't need a second config knob.
+  const WARERASTATS_BASE = (typeof CFG !== 'undefined' && CFG.API_BASE)
+    ? CFG.API_BASE.replace(/\/trpc\/?$/, '') + '/warerastats'
+    : 'https://warera-proxy.toie.workers.dev/warerastats';
+
+  // Flat country-level deposit bonus, used when an active matching deposit
+  // exists AND the country is agrarian-leaning. Defaults to 30 (observed
+  // in gameConfig); overwritten at runtime if game config exposes a
+  // different number.
+  let GAME_DEPOSIT_BONUS = 30;
+
   const $grid     = document.getElementById('adv-grid');
   const $hint     = document.getElementById('adv-hint');
   const $username = document.getElementById('adv-username');
@@ -54,31 +82,6 @@ const AdvisorTool = (() => {
   let lastResult = null;
 
   const adv_trpc = (endpoint, input) => trpc(endpoint, input, { retry: true });
-
-  // Some endpoints aren't on the warerastats gateway and have to be
-  // proxied directly to the game's API (api3.warera.io) via the worker's
-  // /warera/* route. These use POST + batched tRPC format. PROXY_BASE
-  // mirrors what `trpc()` uses internally; if you ever change the worker
-  // host, update both places.
-  const PROXY_BASE = 'https://warera-proxy.toie.workers.dev';
-  const GAME_API_ENDPOINTS = new Set([
-    'company.getProductionBonus',
-    'company.getRecommendedRegionIdsByItemCode',
-  ]);
-  async function adv_call(endpoint, input) {
-    if (!GAME_API_ENDPOINTS.has(endpoint)) {
-      return adv_trpc(endpoint, input);
-    }
-    const url = `${PROXY_BASE}/warera/trpc/${endpoint}?batch=1`;
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ '0': input }),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status} on ${endpoint}`);
-    const json = await res.json();
-    return json?.[0]?.result?.data;
-  }
 
   let USER_ENDPOINT = null;
   async function fetchUser(userId) {
@@ -99,14 +102,10 @@ const AdvisorTool = (() => {
   /**
    * Resolve a username to the correct user ID.
    *
-   * search.searchAnything is a fuzzy/relevance search across all entity
-   * types. It returns userIds, but the top-ranked one is NOT guaranteed
-   * to be an exact username match. Taking userIds[0] blindly was the
-   * source of the "wrong companies" bug.
-   *
-   * Strategy: pull profiles for the top N candidates and find the one
-   * whose username matches the requested string exactly (case-insensitive).
-   * Fall back to looser matching only if nothing's exact.
+   * search.searchAnything is fuzzy/relevance-ranked across all entities,
+   * so userIds[0] is NOT guaranteed to be an exact username match. We
+   * pull profiles for the top N and pick the one whose username matches
+   * exactly (case-insensitive). Fallback only when nothing can be verified.
    */
   async function resolveUserId(username) {
     const search = await adv_trpc('search.searchAnything', { searchText: username });
@@ -148,6 +147,77 @@ const AdvisorTool = (() => {
     );
   }
 
+  function isDepositActive(dep) {
+    if (!dep) return false;
+    const now = Date.now();
+    const starts = dep.startsAt ? new Date(dep.startsAt).getTime() : 0;
+    const ends   = dep.endsAt   ? new Date(dep.endsAt).getTime()   : 0;
+    return now >= starts && now <= ends;
+  }
+
+  function ethicsLean(country) {
+    const ind = country?.industrialism;
+    if (typeof ind !== 'number' || ind === 0) return 'neutral';
+    return ind > 0 ? 'industrialist' : 'agrarian';
+  }
+
+  /**
+   * Compute the four-component production bonus for a (country, region,
+   * item) combination. Returns null if country is unknown.
+   *
+   * The asymmetric gating below is the heart of the model and was verified
+   * against many in-game tooltips. Do not change without re-verifying:
+   *
+   *   • Strategic + Specialisation (+30) fire on the country's SPEC item
+   *     when it's industrialist-leaning. They don't fire on deposits.
+   *   • Deposit + DepositCountry (+30) fire when there's an active
+   *     matching deposit AND the country does NOT specialise in this item.
+   *     The +30 only applies if the country is agrarian-leaning.
+   */
+  function computeBonus(country, region, itemCode) {
+    if (!country) return null;
+
+    const isSpecialised = country.specializedItem === itemCode;
+    const lean          = ethicsLean(country);
+
+    const strategic = isSpecialised
+      ? (country.strategicResources?.bonuses?.productionPercent || 0)
+      : 0;
+    const specialisation = isSpecialised && lean === 'industrialist' ? 30 : 0;
+
+    const hasMatchingDeposit = !isSpecialised
+      && !!region?.deposit
+      && region.deposit.type === itemCode
+      && isDepositActive(region.deposit);
+    const deposit        = hasMatchingDeposit ? (region.deposit.bonusPercent || 0) : 0;
+    const depositCountry = hasMatchingDeposit && lean === 'agrarian' ? GAME_DEPOSIT_BONUS : 0;
+
+    const total   = strategic + specialisation + deposit + depositCountry;
+    const tax     = country.taxes?.income ?? 0;
+    const netMult = (1 + total / 100) * (1 - tax / 100);
+    const depositEndsAt = hasMatchingDeposit ? region.deposit.endsAt : null;
+    return { strategic, specialisation, deposit, depositCountry, depositEndsAt, lean, total, tax, netMult };
+  }
+
+  async function loadCountriesParallel(countries) {
+    const byId = {};
+    const total = countries.length;
+    const chunk = 25;
+    let done = 0;
+    for (let i = 0; i < total; i += chunk) {
+      const slice = countries.slice(i, i + chunk);
+      await Promise.all(slice.map(async c => {
+        try {
+          const country = await adv_trpc('country.getCountryById', { countryId: c._id });
+          if (country) byId[c._id] = country;
+        } catch (e) { /* skip individual failures */ }
+        done++;
+      }));
+      steps.setStep(3, 'active', { count: `${done}/${total}` });
+    }
+    return byId;
+  }
+
   async function analyse(username) {
     steps.setStep(1, 'active', { sub: `Searching for "${username}"` });
     const resolved = await resolveUserId(username);
@@ -171,106 +241,90 @@ const AdvisorTool = (() => {
       });
     });
 
-    // Pull company details + their *current* bonuses in parallel. The bonus
-    // call is the game's own server-side calculation, so it captures every
-    // rule (ethics, deposits, future modifiers) without us re-implementing.
-    steps.setStep(2, 'active', { sub: `Loading ${companyIds.length} company details + bonuses`, count: `0/${companyIds.length}` });
+    steps.setStep(2, 'active', {
+      sub: `Loading ${companyIds.length} company details`,
+      count: `0/${companyIds.length}`
+    });
     let loaded = 0;
     const companies = await Promise.all(companyIds.map(async id => {
-      const [details, bonus] = await Promise.all([
-        adv_trpc('company.getById', { companyId: id }),
-        adv_call('company.getProductionBonus', { companyId: id }).catch(() => null),
-      ]);
+      const c = await adv_trpc('company.getById', { companyId: id });
       loaded++;
-      steps.setStep(2, 'active', { sub: 'Loading company details + bonuses', count: `${loaded}/${companyIds.length}` });
-      if (!details) return null;
-      return { ...details, _bonus: bonus };
+      steps.setStep(2, 'active', { count: `${loaded}/${companyIds.length}` });
+      return c;
     }));
     steps.setStep(2, 'done', { count: `${companies.filter(Boolean).length} loaded` });
 
-    // Region/country data is now display-only (names, flags, tax). The
-    // bonus math comes from the API.
-    steps.setStep(3, 'active', { sub: 'Loading regions and countries' });
-    const [regionsObj, allCountriesRaw] = await Promise.all([
+    // Regions + country list + gameConfig + warerastats companion endpoint
+    // (for industrialism) all in parallel. Companion endpoint fails open:
+    // empty array → industrialism defaults to 0 → no +30% bonuses fire,
+    // but everything else still works.
+    steps.setStep(3, 'active', { sub: 'Loading regions, countries, and game config' });
+    const [regionsObj, allCountriesRaw, gameConfig, warerastatsCountries] = await Promise.all([
       adv_trpc('region.getRegionsObject', {}),
       adv_trpc('country.getAllCountries', {}),
+      adv_trpc('gameConfig.getGameConfig', {}).catch(() => null),
+      fetch(`${WARERASTATS_BASE}/countries`).then(r => r.json()).catch(() => []),
     ]);
+    const cfgDepBonus = gameConfig?.company?.depositResourceBonus;
+    if (typeof cfgDepBonus === 'number') GAME_DEPOSIT_BONUS = cfgDepBonus;
     const allCountries = Array.isArray(allCountriesRaw)
       ? allCountriesRaw
       : (allCountriesRaw?.items || []);
-    const countryById = {};
-    allCountries.forEach(c => { if (c?._id) countryById[c._id] = c; });
 
-    // One recommendation lookup per distinct item the user produces.
-    const itemCodes = [...new Set(companies.filter(Boolean).map(c => c.itemCode))];
-    steps.setStep(3, 'active', { sub: `Loading top regions for ${itemCodes.length} item type${itemCodes.length === 1 ? '' : 's'}`, count: `0/${itemCodes.length}` });
-    let topLoaded = 0;
-    const topByItem = {};
-    await Promise.all(itemCodes.map(async code => {
-      try {
-        const list = await adv_call('company.getRecommendedRegionIdsByItemCode', {
-          itemCode: code,
-          includeDeposit: true,
-        });
-        topByItem[code] = Array.isArray(list) ? list : [];
-      } catch {
-        topByItem[code] = [];
+    const industrialismById = {};
+    (Array.isArray(warerastatsCountries) ? warerastatsCountries : []).forEach(c => {
+      if (c && c.countryId != null && c.industrialism != null) {
+        industrialismById[c.countryId] = c.industrialism;
       }
-      topLoaded++;
-      steps.setStep(3, 'active', { count: `${topLoaded}/${itemCodes.length}` });
-    }));
-    steps.setStep(3, 'done', { count: `${itemCodes.length} item${itemCodes.length === 1 ? '' : 's'}` });
+    });
+
+    steps.setStep(3, 'active', {
+      sub: `Loading bonuses for ${allCountries.length} countries`,
+      count: `0/${allCountries.length}`
+    });
+    const countryById = await loadCountriesParallel(allCountries);
+    Object.values(countryById).forEach(c => {
+      if (c && c._id in industrialismById) c.industrialism = industrialismById[c._id];
+    });
+    steps.setStep(3, 'done', { count: `${allCountries.length} loaded` });
+
+    const regionsByCountry = {};
+    Object.values(regionsObj).forEach(r => {
+      if (!r?.country) return;
+      (regionsByCountry[r.country] = regionsByCountry[r.country] || []).push(r);
+    });
 
     const analyses = companies.filter(Boolean).map(c => {
-      const a = analyseCompany(c, regionsObj, countryById, topByItem[c.itemCode] || []);
+      const a = analyseCompany(c, regionsObj, regionsByCountry, countryById);
       a.userWorksHere = ownCompaniesWhereUserWorks.has(c._id);
       return a;
     });
     return { username: resolved.username, userId, analyses };
   }
 
-  /**
-   * Build a side object the renderer understands from a (region, bonus)
-   * pair. `bonus` is the API shape: { strategicBonus, depositBonus,
-   * ethicSpecializationBonus, ethicDepositBonus, total, taxPercent?,
-   * depositEndAt?, itemCode? }.
-   */
-  function makeSide(region, country, bonus) {
-    const total = bonus?.total ?? 0;
-    const tax = bonus?.taxPercent ?? country?.taxes?.income ?? 0;
-    const netMult = (1 + total / 100) * (1 - tax / 100);
-    return {
-      country,
-      region,
-      strategic:        bonus?.strategicBonus ?? 0,
-      specialisation:   bonus?.ethicSpecializationBonus ?? 0,
-      deposit:          bonus?.depositBonus ?? 0,
-      depositCountry:   bonus?.ethicDepositBonus ?? 0,
-      depositEndsAt:    bonus?.depositEndAt || null,
-      total,
-      tax,
-      netMult,
-    };
-  }
-
-  function analyseCompany(company, allRegions, countryById, topRegions) {
+  function analyseCompany(company, allRegions, regionsByCountry, countryById) {
     const currentRegion  = allRegions[company.region];
     const currentCountry = currentRegion ? countryById[currentRegion.country] : null;
-    const current = company._bonus
-      ? makeSide(currentRegion, currentCountry, company._bonus)
+    const currentBonus   = computeBonus(currentCountry, currentRegion, company.itemCode);
+
+    // Enumerate every (country, region) pair. Most produce 0 bonus and
+    // get filtered later by sort; the search space is small enough that
+    // brute force is cleaner than per-country shortlisting.
+    const candidates = [];
+    for (const cid in countryById) {
+      const country = countryById[cid];
+      if (!country) continue;
+      const regs = regionsByCountry[cid] || [];
+      for (const region of regs) {
+        const bonus = computeBonus(country, region, company.itemCode);
+        if (!bonus) continue;
+        candidates.push({ country, region, ...bonus });
+      }
+    }
+
+    const current = currentBonus
+      ? { country: currentCountry, region: currentRegion, ...currentBonus }
       : null;
-
-    // Map top-region API entries to sides. They include their own bonus
-    // breakdown, so no further computation is needed.
-    const candidates = topRegions
-      .map(t => {
-        const r = allRegions[t.regionId];
-        if (!r) return null;
-        const country = countryById[r.country];
-        return makeSide(r, country, t);
-      })
-      .filter(Boolean);
-
     return { company, current, candidates };
   }
 
@@ -329,7 +383,7 @@ const AdvisorTool = (() => {
     if (!side || !side.country) return `<div class="side"><div style="color:var(--muted)">Unknown location</div></div>`;
     const breakdown = [];
     if (side.strategic)       breakdown.push(`Strategic resources: +${fmt(side.strategic)}%`);
-    if (side.specialisation)  breakdown.push(`Industrialism: +${fmt(side.specialisation)}%`);
+    if (side.specialisation)  breakdown.push(`Industrialism: +${side.specialisation}%`);
     if (side.deposit) {
       const ttl = side.depositEndsAt ? new Date(side.depositEndsAt).getTime() - Date.now() : null;
       const left = (ttl !== null && ttl > 0) ? ` (${formatDuration(ttl)} left)` : '';
@@ -531,8 +585,6 @@ const AdvisorTool = (() => {
      * @param {URLSearchParams} [params]
      */
     activate(params) {
-      // Hash params take precedence; fall back to ?u= on the search string
-      // so any old links with the bare query string still work.
       const u = (params && params.get('u'))
              || new URLSearchParams(location.search).get('u');
       if (u && $username.value !== u) {

@@ -28,15 +28,6 @@ const AdvisorTool = (() => {
   const OPTIMAL_THRESHOLD = 2;
   const HUGE_THRESHOLD    = 20;
 
-  let GAME_DEPOSIT_BONUS = 30;
-
-  function ethicsLean(country) {
-    const ind = country?.industrialism ?? 0;
-    if (ind < 0) return 'agrarian';
-    if (ind > 0) return 'industrialist';
-    return null;
-  }
-
   const $grid     = document.getElementById('adv-grid');
   const $hint     = document.getElementById('adv-hint');
   const $username = document.getElementById('adv-username');
@@ -73,28 +64,41 @@ const AdvisorTool = (() => {
     return now >= starts && now <= ends;
   }
 
+  /**
+   * Production bonus has two components in the current game:
+   *   1. Strategic resources: the country's `productionPercent`, applied when
+   *      the item matches the country's `specializedItem`.
+   *   2. Regional deposit: the deposit's `bonusPercent`, applied when the
+   *      country does NOT specialise in this item AND the region has an
+   *      active matching deposit.
+   *
+   * The previous version of this code also applied a +30% "industrialism"
+   * bonus on top, gated by warerastats's `industrialism` field. That bonus
+   * does not exist in the current game — verified against in-game country
+   * tooltips for Bulgaria (10%), Croatia (21.25%), and Italy (31%). All
+   * three match `productionPercent` exactly with no industrialism
+   * stacking. The warerastats fetch and the `industrialism` field on the
+   * country object are kept for future use, but no longer affect the math.
+   */
   function computeBonus(country, region, itemCode) {
     if (!country) return null;
     const isSpecialised = country.specializedItem === itemCode;
-    const lean          = ethicsLean(country);
 
     const strategic = isSpecialised
       ? (country.strategicResources?.bonuses?.productionPercent || 0)
       : 0;
-    const specialisation = isSpecialised && lean === 'industrialist' ? 30 : 0;
 
     const hasMatchingDeposit = !isSpecialised
       && !!region?.deposit
       && region.deposit.type === itemCode
       && isDepositActive(region.deposit);
-    const deposit        = hasMatchingDeposit ? (region.deposit.bonusPercent || 0) : 0;
-    const depositCountry = hasMatchingDeposit && lean === 'agrarian' ? GAME_DEPOSIT_BONUS : 0;
+    const deposit = hasMatchingDeposit ? (region.deposit.bonusPercent || 0) : 0;
 
-    const total   = strategic + specialisation + deposit + depositCountry;
+    const total   = strategic + deposit;
     const tax     = country.taxes?.income ?? 0;
     const netMult = (1 + total / 100) * (1 - tax / 100);
     const depositEndsAt = hasMatchingDeposit ? region.deposit.endsAt : null;
-    return { strategic, specialisation, deposit, depositCountry, depositEndsAt, lean, total, tax, netMult };
+    return { strategic, deposit, depositEndsAt, total, tax, netMult };
   }
 
   async function loadCountriesParallel(countries) {
@@ -202,14 +206,15 @@ const AdvisorTool = (() => {
     steps.setStep(2, 'done', { count: `${companies.length} loaded` });
 
     steps.setStep(3, 'active', { sub: 'Loading regions, countries, and game config' });
-    const [regionsObj, allCountriesRaw, gameConfig, warerastatsCountries] = await Promise.all([
+    // warerastats is still fetched so that `industrialism` is available on
+    // country objects for any future logic that wants it; the current
+    // bonus calculation does not use it.
+    const [regionsObj, allCountriesRaw, _gameConfig, warerastatsCountries] = await Promise.all([
       adv_trpc('region.getRegionsObject', {}),
       adv_trpc('country.getAllCountries', {}),
       adv_trpc('gameConfig.getGameConfig', {}).catch(() => null),
       fetch(`${WARERASTATS_BASE}/countries`).then(r => r.json()).catch(() => []),
     ]);
-    const cfgDepBonus = gameConfig?.company?.depositResourceBonus;
-    if (typeof cfgDepBonus === 'number') GAME_DEPOSIT_BONUS = cfgDepBonus;
     const allCountries = Array.isArray(allCountriesRaw)
       ? allCountriesRaw
       : (allCountriesRaw?.items || []);
@@ -319,14 +324,12 @@ const AdvisorTool = (() => {
   function renderSide(side, label, compareWith, userWorksHere) {
     if (!side || !side.country) return `<div class="side"><div style="color:var(--muted)">Unknown location</div></div>`;
     const breakdown = [];
-    if (side.strategic)       breakdown.push(`Strategic resources: +${fmt(side.strategic)}%`);
-    if (side.specialisation)  breakdown.push(`Industrialism: +${side.specialisation}%`);
+    if (side.strategic) breakdown.push(`Strategic resources: +${fmt(side.strategic)}%`);
     if (side.deposit) {
       const ttl = side.depositEndsAt ? new Date(side.depositEndsAt).getTime() - Date.now() : null;
       const left = (ttl !== null && ttl > 0) ? ` (${formatDuration(ttl)} left)` : '';
       breakdown.push(`Regional deposit: +${side.deposit}%${left}`);
     }
-    if (side.depositCountry)  breakdown.push(`Industrialism: +${side.depositCountry}%`);
     const taxClass = side.tax >= 12 ? 'tax-high' : side.tax >= 8 ? 'tax-mid' : 'tax-low';
 
     const inlineDelta = (delta, higherIsBetter, threshold = 0.05) => {

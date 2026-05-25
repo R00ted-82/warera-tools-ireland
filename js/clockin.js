@@ -34,18 +34,14 @@ const ClockInTool = (() => {
   const GROUP_WINDOW_MS       = 4 * 60_000; // cycles within 4 min → one episode
   const INITIAL_EPISODE_LIMIT = 5;
 
-  // Payroll projection. Two flavours:
-  //  • 3h and 6h windows project forward based on each worker's actual
-  //    ₿/hour during their ACTIVE STRETCHES — runs of clock-in episodes
-  //    within ACTIVE_STRETCH_GAP_MS of each other. This filters out
-  //    overnight gaps, so logging in after a quiet stretch doesn't tank
-  //    the forecast.
-  //  • 10h window is the energy-capped theoretical ceiling: action cost
-  //    is flat 10 energy; energy regens 10% of max per hour, so 10h is
-  //    one full bar refill regardless of an individual's energy cap.
-  const ACTION_ENERGY_COST     = 10;
-  const ACTIVE_STRETCH_GAP_MS  = 6 * 3_600_000; // 6h gap → new stretch
-  const MIN_EPISODES_PER_STRETCH = 2;            // single bursts ignored
+  // Payroll projection. Simple model:
+  //  • 3h and 6h windows: take the worker's actual ₿ paid over the
+  //    last 24h, divide by 24 to get an hourly rate, multiply by the
+  //    window. Sums across all workers.
+  //  • 10h window: theoretical ceiling — every worker burns through
+  //    their full energy bar in 10h (one full refill from empty,
+  //    since regen is 10% of max per hour).
+  const ACTION_ENERGY_COST = 10;
   const PROJECTION_WINDOWS = [
     { hours: 3,  mode: 'pace' },
     { hours: 6,  mode: 'pace' },
@@ -347,77 +343,8 @@ const ClockInTool = (() => {
     return { total, contributors, unknown };
   }
 
-  /** Group a worker's punches into active stretches.
-   *  Operates on EPISODES, not raw punches — a single clock-in moment
-   *  produces several wage txns within seconds, and treating those as
-   *  a "stretch" with duration ~0 gives nonsense rates. Episodes are
-   *  the right unit: each episode is one clock-in moment with combined
-   *  ₿ paid.
-   *
-   *  A new stretch starts when the gap between consecutive episodes
-   *  exceeds ACTIVE_STRETCH_GAP_MS. Each stretch tracks first → last
-   *  episode timestamp and the total ₿ paid across all its episodes. */
-  function buildActiveStretches(punches) {
-    if (!punches || punches.length === 0) return [];
-    // Roll punches into episodes first. groupIntoEpisodes expects a
-    // cutoff; pass -Infinity to include everything.
-    const episodes = groupIntoEpisodes(punches, -Infinity);
-    if (episodes.length === 0) return [];
-    // groupIntoEpisodes returns newest-first; reverse to walk chrono.
-    const chrono = episodes.slice().reverse();
-    const stretches = [];
-    let current = null;
-    for (const ep of chrono) {
-      if (current && (ep.at - current.endAt) <= ACTIVE_STRETCH_GAP_MS) {
-        current.endAt = ep.at;
-        current.total += (ep.totalAmount || 0);
-        current.episodes += 1;
-      } else {
-        if (current) stretches.push(current);
-        current = {
-          startAt: ep.at,
-          endAt: ep.at,
-          total: ep.totalAmount || 0,
-          episodes: 1,
-        };
-      }
-    }
-    if (current) stretches.push(current);
-    return stretches;
-  }
-
-  /** Average ₿/hour across a worker's active stretches.
-   *  Single-episode stretches are dropped (no measurable duration).
-   *  Returns 0 when no usable stretch exists. */
-  function activeRatePerHour(worker) {
-    const stretches = buildActiveStretches(worker.punches || [])
-      .filter(s => s.episodes >= MIN_EPISODES_PER_STRETCH);
-    if (stretches.length === 0) return 0;
-    let sumRate = 0;
-    for (const s of stretches) {
-      const durHours = Math.max((s.endAt - s.startAt) / 3_600_000, 1/60); // floor at 1 min
-      sumRate += s.total / durHours;
-    }
-    return sumRate / stretches.length;
-  }
-
-  /** Pace-based payroll using active-stretch rates. */
-  function projectPacePayroll(workers, hours) {
-    let total = 0;
-    let contributors = 0;
-    let inactive = 0;
-    for (const w of workers) {
-      const rate = activeRatePerHour(w);
-      if (rate <= 0) { inactive++; continue; }
-      total += rate * hours;
-      contributors++;
-    }
-    return { total, contributors, inactive };
-  }
-
-  /** Total actually paid in the last N hours across all workers.
-   *  This is ground truth — sums the wage transactions we already pulled.
-   *  Used as the reference number to validate the projections against. */
+  /** Total ₿ paid across all workers in the last N hours.
+   *  Sums wage transactions we already pulled — no extra API calls. */
   function actualPayrollInLastHours(workers, hours, now) {
     const cutoff = now - (hours * 3_600_000);
     let total = 0;
@@ -429,6 +356,13 @@ const ClockInTool = (() => {
     return total;
   }
 
+  /** Pace-based projection: ₿ paid in last 24h / 24 × window hours.
+   *  Treats the whole roster as one bucket — simple and stable. */
+  function projectPacePayroll(workers, hours, now) {
+    const last24h = actualPayrollInLastHours(workers, 24, now);
+    return last24h / 24 * hours;
+  }
+
   function renderProjection(workers, now) {
     if (!$projection) return;
     if (!workers.length) {
@@ -438,9 +372,6 @@ const ClockInTool = (() => {
     $projection.style.display = '';
 
     const cards = PROJECTION_WINDOWS.map(({ hours, mode }) => {
-      // "Last Nh actual" reference kept under each card — it's the
-      // most useful number on the panel: a real, factual figure the
-      // user can immediately recognise.
       const actualSameWindow = actualPayrollInLastHours(workers, hours, now);
       const actualLine = `<div class="clockin-proj-actual">Last ${hours}h: ₿${actualSameWindow.toLocaleString(undefined, {maximumFractionDigits: 2})} actual</div>`;
 
@@ -454,11 +385,11 @@ const ClockInTool = (() => {
           </div>
         `;
       }
-      const { total } = projectPacePayroll(workers, hours);
+      const projected = projectPacePayroll(workers, hours, now);
       return `
         <div class="clockin-proj-card">
           <div class="clockin-proj-label">Next ${hours}h</div>
-          <div class="clockin-proj-value">₿${total.toLocaleString(undefined, {maximumFractionDigits: 2})}</div>
+          <div class="clockin-proj-value">₿${projected.toLocaleString(undefined, {maximumFractionDigits: 2})}</div>
           ${actualLine}
         </div>
       `;

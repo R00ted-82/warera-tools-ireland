@@ -266,62 +266,53 @@
       </div>
     </div>
 
-    
-
     <div id="clockin-workers" class="clockin-worker-list"></div>
 
     <div id="clockin-projection" class="clockin-projection" style="display:none"></div>
-    
-    <!--
-  REPLACEMENT for the <details class="howto"> block in the clockin
-  section of index.html. Adds a "Projected payroll" subsection between
-  "Episodes vs. individual cycles" and "Things to know", and adds one
-  line to the data-source paragraph at the bottom mentioning the
-  energy/production stats used for the projection.
--->
-<details class="howto">
-  <summary>How this works</summary>
-  <div class="howto-body">
-    <h4>The short version</h4>
-    <p>Every time one of your workers does a work cycle, you pay them a wage. That wage is timestamped and stored in the game's transaction history. We pull those timestamps for each of your workers, group them into clock-in episodes, and plot them on a 48-hour timeline.</p>
 
-    <h4>What the colours mean</h4>
-    <ul>
-      <li><strong style="color:var(--accent)">Active</strong> — clocked in within the last 24 hours. They're working.</li>
-      <li><strong style="color:var(--warn)">Slowing</strong> — last clock-in was 24 to 48 hours ago. Worth a nudge.</li>
-      <li><strong style="color:var(--danger)">Idle</strong> — no clock-ins in the last 48 hours. They've stopped showing up.</li>
-    </ul>
+    <details class="howto">
+      <summary>How this works</summary>
+      <div class="howto-body">
+        <h4>The short version</h4>
+        <p>Every time one of your workers does a work cycle, you pay them a wage. That wage is timestamped and stored in the game's transaction history. We pull those timestamps for each of your workers, group them into clock-in episodes, and plot them on a 48-hour timeline.</p>
 
-    <h4>What the timeline shows</h4>
-    <p>The line under each worker is the last 48 hours, with "now" on the right and 48h ago on the left. Each green dot is one clock-in episode. Hover a dot to see the exact time, production points earned, and ₿ paid.</p>
-    <p>Lots of dots bunched together means a busy worker. A gap on the right means they've been quiet recently. Click <em>Show detail</em> on a worker to see each episode listed individually with the rest periods between them.</p>
+        <h4>What the colours mean</h4>
+        <ul>
+          <li><strong style="color:var(--accent)">Active</strong> — clocked in within the last 24 hours. They're working.</li>
+          <li><strong style="color:var(--warn)">Slowing</strong> — last clock-in was 24 to 48 hours ago. Worth a nudge.</li>
+          <li><strong style="color:var(--danger)">Idle</strong> — no clock-ins in the last 48 hours. They've stopped showing up.</li>
+        </ul>
 
-    <h4>Episodes vs. individual cycles</h4>
-    <p>A worker can do several work cycles back-to-back in quick succession — the game settles these as separate wage transactions but they all happen at roughly the same moment. To keep the timeline readable, cycles that happen within 4 minutes of each other are grouped into a single <strong>episode</strong>. The displayed production points and ₿ are the combined totals for the episode, so nothing gets lost — it's just shown as one dot instead of a cluster of overlapping ones.</p>
+        <h4>What the timeline shows</h4>
+        <p>The line under each worker is the last 48 hours, with "now" on the right and 48h ago on the left. Each green dot is one clock-in episode. Hover a dot to see the exact time, production points earned, and ₿ paid.</p>
+        <p>Lots of dots bunched together means a busy worker. A gap on the right means they've been quiet recently. Click <em>Show detail</em> on a worker to see each episode listed individually with the rest periods between them.</p>
 
-    <h4>Projected payroll</h4>
-    <p>The panel under the worker list answers: <em>roughly how much will I pay out over the next few hours?</em> Three figures:</p>
-    <ul>
-      <li><strong>Next 3h / Next 6h</strong> — a forecast based on each worker's pace during their <em>active stretches</em> (runs of clock-ins less than 6 hours apart). Using only active stretches means a quiet overnight gap doesn't drag the forecast down — we're projecting "what they earn when they're working", scaled to the window.</li>
-      <li><strong>Next 10h (if maxed)</strong> — the theoretical ceiling. Assumes every worker drains their full energy bar in the window. Energy regenerates at 10% of max per hour and each work action costs 10 energy, so 10 hours is one full bar refill from empty — the natural ceiling regardless of how big a worker's bar is. Rarely what actually happens, but useful as a "worst case" cap.</li>
-    </ul>
-    <p>Each card also shows the <strong>actual</strong> ₿ paid in the matching window (last 3h, last 6h, last 10h) — handy for sanity-checking the forecast against ground truth.</p>
+        <h4>Episodes vs. individual cycles</h4>
+        <p>A worker can do several work cycles back-to-back in quick succession — the game settles these as separate wage transactions but they all happen at roughly the same moment. To keep the timeline readable, cycles that happen within 4 minutes of each other are grouped into a single <strong>episode</strong>. The displayed production points and ₿ are the combined totals for the episode, so nothing gets lost — it's just shown as one dot instead of a cluster of overlapping ones.</p>
 
-    <h4>Things to know</h4>
-    <ul>
-      <li><strong>One worker, one employer.</strong> In War Era a worker can only hold one work contract at a time, so every wage they receive is from you — that's why the clock-ins shown are real and complete.</li>
-      <li><strong>Dot density isn't effort.</strong> A high-wage worker does fewer (but bigger) cycles than a low-wage one. Two workers with very different dot counts can be putting in the same hours.</li>
-      <li><strong>Empty timeline isn't a fired employee.</strong> If someone's on contract with you but hasn't clocked in for 48h, you'll still see their card — just with no dots. They're idle, not gone.</li>
-      <li><strong>The last few minutes may be missing.</strong> The data is scraped from the game, so very fresh clock-ins might not appear until the next scrape.</li>
-    </ul>
+        <h4>Projected payroll</h4>
+        <p>The panel under the worker list answers: <em>roughly how much will I pay out over the next few hours?</em> Three figures:</p>
+        <ul>
+          <li><strong>Next 3h / Next 6h</strong> — based on your average payroll rate over the last 24 hours. Total ₿ paid in the last day, divided by 24, multiplied by the window. A simple "if the next few hours look like the average of yesterday".</li>
+          <li><strong>Next 10h (if maxed)</strong> — the absolute ceiling. Assumes every worker drains their full energy bar in the window. Energy regenerates at 10% of max per hour and each work action costs 10 energy, so 10 hours is one full bar refill from empty — the natural ceiling regardless of how big a worker's bar is. Rarely what actually happens, but useful as a "worst case" cap.</li>
+        </ul>
+        <p>Each card also shows the <strong>actual</strong> ₿ paid in the matching window (last 3h, last 6h, last 10h) — useful for spotting whether you're currently in a busier or quieter stretch than the 24h average suggests.</p>
 
-    <h4>Sharing a view</h4>
-    <p>Once you've loaded your roster, the URL updates to include your username (e.g. <code>#clockin?u=toie</code>). Bookmark it or share it — opening that link will reload the same view straight away.</p>
+        <h4>Things to know</h4>
+        <ul>
+          <li><strong>One worker, one employer.</strong> In War Era a worker can only hold one work contract at a time, so every wage they receive is from you — that's why the clock-ins shown are real and complete.</li>
+          <li><strong>Dot density isn't effort.</strong> A high-wage worker does fewer (but bigger) cycles than a low-wage one. Two workers with very different dot counts can be putting in the same hours.</li>
+          <li><strong>Empty timeline isn't a fired employee.</strong> If someone's on contract with you but hasn't clocked in for 48h, you'll still see their card — just with no dots. They're idle, not gone.</li>
+          <li><strong>The last few minutes may be missing.</strong> The data is scraped from the game, so very fresh clock-ins might not appear until the next scrape.</li>
+        </ul>
 
-    <h4>For the curious: where the data comes from</h4>
-    <p>Under the hood, this calls a few endpoints on the War Era Gateway: <code>search.searchAnything</code> and <code>user.getUserLite</code> to find your account, <code>company.getCompanies</code> + <code>worker.getWorkers</code> for your roster, and <code>transaction.getPaginatedTransactions</code> (filtered to <code>wage</code>) for each worker's recent clock-ins. We also keep each worker's energy and production stats from the same <code>user.getUserLite</code> call (no extra requests) for the "if maxed" ceiling. Wage transactions are modelled as trades — the worker sells their labour (<code>sellerId</code>), you buy it (<code>buyerId</code>) — so we keep only the ones where the worker is the seller to filter out their own outgoing payroll if they also employ people. The whole thing runs in your browser. Nothing is stored.</p>
-  </div>
-</details>
+        <h4>Sharing a view</h4>
+        <p>Once you've loaded your roster, the URL updates to include your username (e.g. <code>#clockin?u=toie</code>). Bookmark it or share it — opening that link will reload the same view straight away.</p>
+
+        <h4>For the curious: where the data comes from</h4>
+        <p>Under the hood, this calls a few endpoints on the War Era Gateway: <code>search.searchAnything</code> and <code>user.getUserLite</code> to find your account, <code>company.getCompanies</code> + <code>worker.getWorkers</code> for your roster, and <code>transaction.getPaginatedTransactions</code> (filtered to <code>wage</code>) for each worker's recent clock-ins. We also keep each worker's energy and production stats from the same <code>user.getUserLite</code> call (no extra requests) for the "if maxed" ceiling. Wage transactions are modelled as trades — the worker sells their labour (<code>sellerId</code>), you buy it (<code>buyerId</code>) — so we keep only the ones where the worker is the seller, AND you're the buyer, to filter out their own outgoing payroll and any work they did for other employers. The whole thing runs in your browser. Nothing is stored.</p>
+      </div>
+    </details>
   </section>
 
   <!-- ─── Buddy System view (encrypted; MoECON password required) ───── -->

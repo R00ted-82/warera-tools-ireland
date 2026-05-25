@@ -150,7 +150,7 @@ const ClockInTool = (() => {
   }
 
   /* ── Wage transaction loader ────────────────────────────── */
-  async function loadWagesForWorker(workerId) {
+  async function loadWagesForWorker(workerId, employerId) {
     const cutoff = Date.now() - WINDOW_MS;
     const punches = [];
     let cursor = null;
@@ -183,8 +183,18 @@ const ClockInTool = (() => {
         if (!isFinite(t)) continue;
         if (t < cutoff) { seenOlder = true; break; }
 
-        // Worker must be the seller (the side that did the work).
+        // Two filters here, both required:
+        //   1. Worker must be the seller (they did the work). Filters
+        //      out the worker's own outgoing payroll if they employ
+        //      people too.
+        //   2. Employer must be the buyer (you paid for the work). If
+        //      a worker holds multiple contracts (which the game now
+        //      allows in practice — e.g. M0JTA8A working for several
+        //      employers), this keeps only the wages YOU paid them.
+        //      Without this, the projection inflates with other
+        //      employers' payroll.
         if (tx.sellerId !== workerId) { filteredOut++; continue; }
+        if (employerId && tx.buyerId !== employerId) { filteredOut++; continue; }
 
         punches.push({
           at: t,
@@ -199,7 +209,7 @@ const ClockInTool = (() => {
     }
 
     if (filteredOut > 0) {
-      console.log(`[clockin] ${workerId}: filtered ${filteredOut} buy-side wages`);
+      console.log(`[clockin] ${workerId}: filtered ${filteredOut} non-matching wages`);
     }
     punches.sort((a, b) => b.at - a.at);
     return punches;
@@ -289,7 +299,7 @@ const ClockInTool = (() => {
     for (let i = 0; i < workerIds.length; i += txConcurrency) {
       const batch = workerIds.slice(i, i + txConcurrency);
       await Promise.all(batch.map(async uid => {
-        workerMap.get(uid).punches = await loadWagesForWorker(uid);
+        workerMap.get(uid).punches = await loadWagesForWorker(uid, resolved.userId);
         txDone++;
         steps.setStep(4, 'active', { count: `${txDone}/${workerIds.length}` });
       }));

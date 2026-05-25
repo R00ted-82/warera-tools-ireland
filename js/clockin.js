@@ -277,9 +277,14 @@ const ClockInTool = (() => {
           //   energy.hourlyBarRegen  → regen per hour (10% of max)
           //   production.value       → PP generated per work action
           if (u?.skills) {
-            w.energyNow   = u.skills.energy?.currentBarValue ?? null;
-            w.energyRegen = u.skills.energy?.hourlyBarRegen ?? null;
-            w.production  = u.skills.production?.value ?? null;
+            // Stats needed for the "if maxed" 10h ceiling:
+            //   energy.value → max energy (used for full-bar action count)
+            //   production.value → PP generated per work action
+            // currentBarValue / hourlyRegen aren't used anymore — the
+            // ceiling models "what they could do with a full bar",
+            // independent of where the bar happens to sit right now.
+            w.energyMax  = u.skills.energy?.value ?? null;
+            w.production = u.skills.production?.value ?? null;
           }
         } catch { /* skip — projection will mark this worker as unknown */ }
         done++;
@@ -313,28 +318,29 @@ const ClockInTool = (() => {
 
   /* ── Payroll projection ─────────────────────────────────── */
 
-  /** Max actions a worker can perform over N hours, given current
-   *  energy and regen rate. The bar drains as they work, so total
-   *  energy spent = currentEnergy + (hours × regen). Returns 0 if
-   *  stats are missing. */
-  function maxActionsOverHours(w, hours) {
-    if (w.energyNow == null || w.energyRegen == null) return 0;
-    const totalEnergy = w.energyNow + (hours * w.energyRegen);
-    return Math.floor(totalEnergy / ACTION_ENERGY_COST);
+  /** Max actions a worker can perform when their bar is FULL.
+   *  Used for the 10h "if maxed" ceiling, which models "if everyone
+   *  was idle for 10h so their bars filled completely, then burned
+   *  through everything". No regen factor — the bar is capped at max,
+   *  so being idle longer than 10h doesn't add anything.
+   *  Returns 0 if stats are missing. */
+  function maxActionsFromFullBar(w) {
+    if (w.energyMax == null) return 0;
+    return Math.floor(w.energyMax / ACTION_ENERGY_COST);
   }
 
-  /** Theoretical max payroll: everyone burns through their full
-   *  available energy in the window. */
-  function projectMaxPayroll(workers, hours) {
+  /** Theoretical max payroll if every worker started at full energy
+   *  and drained their bar to zero. */
+  function projectMaxPayroll(workers) {
     let total = 0;
     let contributors = 0;
     let unknown = 0;
     for (const w of workers) {
-      if (w.wage == null || w.production == null || w.energyNow == null) {
+      if (w.wage == null || w.production == null || w.energyMax == null) {
         unknown++;
         continue;
       }
-      const actions = maxActionsOverHours(w, hours);
+      const actions = maxActionsFromFullBar(w);
       if (actions === 0) continue;
       const fidelityMult = 1 + ((w.fidelity || 0) / 100);
       total += actions * w.production * fidelityMult * w.wage;
@@ -376,7 +382,7 @@ const ClockInTool = (() => {
       const actualLine = `<div class="clockin-proj-actual">Last ${hours}h: ₿${actualSameWindow.toLocaleString(undefined, {maximumFractionDigits: 2})} actual</div>`;
 
       if (mode === 'max') {
-        const { total } = projectMaxPayroll(workers, hours);
+        const { total } = projectMaxPayroll(workers);
         return `
           <div class="clockin-proj-card max">
             <div class="clockin-proj-label">Next ${hours}h <span class="max-tag">if maxed</span></div>

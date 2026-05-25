@@ -294,7 +294,7 @@
         <p>The panel under the worker list answers: <em>roughly how much will I pay out over the next few hours?</em> Three figures:</p>
         <ul>
           <li><strong>Next 3h / Next 6h</strong> — based on your average payroll rate over the last 24 hours. Total ₿ paid in the last day, divided by 24, multiplied by the window. A simple "if the next few hours look like the average of yesterday".</li>
-          <li><strong>Next 10h (if maxed)</strong> — the absolute ceiling. Assumes every worker drains their full energy bar in the window. Energy regenerates at 10% of max per hour and each work action costs 10 energy, so 10 hours is one full bar refill from empty — the natural ceiling regardless of how big a worker's bar is. Rarely what actually happens, but useful as a "worst case" cap.</li>
+          <li><strong>Next 10h (if maxed)</strong> — assumes every worker has been idle long enough for their energy bar to fill completely, then comes back and burns through it all. Each worker's max energy ÷ 10 (the cost of one work action) gives their number of clicks. The 10-hour window matters because energy regenerates at 10% of max per hour, so 10 hours is exactly how long it takes for an empty bar to fill back up — being idle for longer doesn't accumulate more. This is the worst-case payroll if the whole roster cashed out today.</li>
         </ul>
         <p>Each card also shows the <strong>actual</strong> ₿ paid in the matching window (last 3h, last 6h, last 10h) — useful for spotting whether you're currently in a busier or quieter stretch than the 24h average suggests.</p>
 

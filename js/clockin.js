@@ -17,16 +17,28 @@
  *  wages where W is on either side. A clock-in for W = sellerId === W;
  *  the buy-side entries are W's own payroll if W also employs people
  *  (mutual employment is allowed) and get filtered out.
+ *
+ *  Payroll projection: alongside the timeline, the top of the view
+ *  shows projected payroll over 3h / 6h / 10h. Per-worker formula:
+ *    actions(h) = floor((currentEnergy + h × hourlyRegen) / 10)
+ *    payroll(h) = Σ actions × production × (1 + fidelity/100) × wage
+ *  All inputs come from calls already made — no new endpoints.
  * ═══════════════════════════════════════════════════════════════════ */
 const ClockInTool = (() => {
   /* ── Config ─────────────────────────────────────────────── */
-  const WINDOW_HOURS         = 48;
-  const WINDOW_MS            = WINDOW_HOURS * 3600 * 1000;
-  const ACTIVE_THRESHOLD_MS  = 24 * 3600 * 1000;
-  const TX_PAGE_LIMIT        = 100;
-  const MAX_TX_PAGES         = 6;          // safety cap per worker
-  const GROUP_WINDOW_MS      = 4 * 60_000; // cycles within 4 min → one episode
+  const WINDOW_HOURS          = 48;
+  const WINDOW_MS             = WINDOW_HOURS * 3600 * 1000;
+  const ACTIVE_THRESHOLD_MS   = 24 * 3600 * 1000;
+  const TX_PAGE_LIMIT         = 100;
+  const MAX_TX_PAGES          = 6;          // safety cap per worker
+  const GROUP_WINDOW_MS       = 4 * 60_000; // cycles within 4 min → one episode
   const INITIAL_EPISODE_LIMIT = 5;
+
+  // Payroll projection: action cost is flat 10 energy. Energy regen is
+  // 10% of max per hour, so 10h is the natural max projection window
+  // (one full bar refill from empty regardless of energy cap).
+  const ACTION_ENERGY_COST = 10;
+  const PROJECTION_WINDOWS = [3, 6, 10];
 
   /* ── DOM ────────────────────────────────────────────────── */
   const $username    = document.getElementById('clockin-username');
@@ -34,6 +46,7 @@ const ClockInTool = (() => {
   const $hint        = document.getElementById('clockin-hint');
   const $summary     = document.getElementById('clockin-summary');
   const $sumWorkers  = document.getElementById('clockin-sum-workers');
+  const $projection  = document.getElementById('clockin-projection');
   const $workers     = document.getElementById('clockin-workers');
   const $filterIdle  = document.getElementById('clockin-filter-idle');
   const $sortRecent  = document.getElementById('clockin-sort-recent');
@@ -200,13 +213,20 @@ const ClockInTool = (() => {
       throw new Error(`"${resolved.username}" owns no companies`);
     }
 
-    // Worker map: userId -> { id, name }
+    // Worker map: userId -> { id, name, wage, fidelity, ... }
+    // wage/fidelity come straight off the worker.getWorkers response;
+    // they're needed for the payroll projection. A worker only holds
+    // one contract, so the first values we see are authoritative.
     const workerMap = new Map();
     for (const entry of (workersData?.workersPerCompany || [])) {
       for (const w of (entry.workers || [])) {
         const uid = typeof w === 'string' ? w : (w.user || w._id || w.userId);
         if (!uid) continue;
-        if (!workerMap.has(uid)) workerMap.set(uid, { id: uid, name: null });
+        if (!workerMap.has(uid)) {
+          const wage     = (w && typeof w === 'object' && typeof w.wage === 'number')     ? w.wage     : null;
+          const fidelity = (w && typeof w === 'object' && typeof w.fidelity === 'number') ? w.fidelity : 0;
+          workerMap.set(uid, { id: uid, name: null, wage, fidelity });
+        }
       }
     }
 
@@ -222,9 +242,9 @@ const ClockInTool = (() => {
 
     steps.setStep(2, 'done', { count: `${companyIds.length} companies · ${workerMap.size} workers` });
 
-    // Step 3: resolve worker usernames
+    // Step 3: resolve worker usernames + capture stats for projection
     const workerIds = [...workerMap.keys()];
-    steps.setStep(3, 'active', { sub: 'Resolving worker usernames', count: `0/${workerIds.length}` });
+    steps.setStep(3, 'active', { sub: 'Resolving worker profiles', count: `0/${workerIds.length}` });
     const concurrency = 10;
     let done = 0;
     for (let i = 0; i < workerIds.length; i += concurrency) {
@@ -232,8 +252,18 @@ const ClockInTool = (() => {
       await Promise.all(batch.map(async uid => {
         try {
           const u = await ci_trpc('user.getUserLite', { userId: uid });
-          if (u?.username) workerMap.get(uid).name = u.username;
-        } catch { /* skip */ }
+          const w = workerMap.get(uid);
+          if (u?.username) w.name = u.username;
+          // Stats needed for payroll projection. All in skills.{stat}:
+          //   energy.currentBarValue → current energy available
+          //   energy.hourlyBarRegen  → regen per hour (10% of max)
+          //   production.value       → PP generated per work action
+          if (u?.skills) {
+            w.energyNow   = u.skills.energy?.currentBarValue ?? null;
+            w.energyRegen = u.skills.energy?.hourlyBarRegen ?? null;
+            w.production  = u.skills.production?.value ?? null;
+          }
+        } catch { /* skip — projection will mark this worker as unknown */ }
         done++;
         steps.setStep(3, 'active', { count: `${done}/${workerIds.length}` });
       }));
@@ -261,6 +291,68 @@ const ClockInTool = (() => {
     };
     render();
     steps.fadeOut(800);
+  }
+
+  /* ── Payroll projection ─────────────────────────────────── */
+
+  /** Max actions a worker can perform over N hours, given current
+   *  energy and regen rate. The bar drains as they work, so total
+   *  energy spent = currentEnergy + (hours × regen). Returns 0 if
+   *  stats are missing. */
+  function maxActionsOverHours(w, hours) {
+    if (w.energyNow == null || w.energyRegen == null) return 0;
+    const totalEnergy = w.energyNow + (hours * w.energyRegen);
+    return Math.floor(totalEnergy / ACTION_ENERGY_COST);
+  }
+
+  /** Payroll owed across all workers if they all max out over N hours. */
+  function projectPayroll(workers, hours) {
+    let total = 0;
+    let contributors = 0;
+    let unknown = 0;
+    for (const w of workers) {
+      if (w.wage == null || w.production == null || w.energyNow == null) {
+        unknown++;
+        continue;
+      }
+      const actions = maxActionsOverHours(w, hours);
+      if (actions === 0) continue;
+      const fidelityMult = 1 + ((w.fidelity || 0) / 100);
+      total += actions * w.production * fidelityMult * w.wage;
+      contributors++;
+    }
+    return { total, contributors, unknown };
+  }
+
+  function renderProjection(workers) {
+    if (!$projection) return; // graceful if HTML not yet added
+    if (!workers.length) {
+      $projection.style.display = 'none';
+      return;
+    }
+    $projection.style.display = '';
+
+    const cards = PROJECTION_WINDOWS.map(h => {
+      const { total, contributors, unknown } = projectPayroll(workers, h);
+      const isMax = h === 10;
+      const subParts = [`${contributors}/${workers.length} workers`];
+      if (unknown > 0) subParts.push(`<span class="warn">${unknown} unknown</span>`);
+      return `
+        <div class="clockin-proj-card${isMax ? ' max' : ''}">
+          <div class="clockin-proj-label">Next ${h}h${isMax ? ' <span class="max-tag">max</span>' : ''}</div>
+          <div class="clockin-proj-value">₿${total.toLocaleString(undefined, {maximumFractionDigits: 2})}</div>
+          <div class="clockin-proj-sub">${subParts.join(' · ')}</div>
+        </div>
+      `;
+    }).join('');
+
+    $projection.innerHTML = `
+      <div class="clockin-proj-head">
+        <div class="clockin-proj-title">Projected payroll if everyone maxes out</div>
+        <div class="clockin-proj-hint">Ceiling: each worker burns through their full available energy in the window.</div>
+      </div>
+      <div class="clockin-proj-grid">${cards}</div>
+    `;
   }
 
   /* ── Rendering ──────────────────────────────────────────── */
@@ -417,6 +509,10 @@ const ClockInTool = (() => {
     $summary.style.display = '';
     $hint.classList.add('hidden');
 
+    // Projection panel (uses unfiltered workers — the projection is
+    // about your whole roster, not just the currently-shown subset).
+    renderProjection(workers);
+
     if (!shown.length) {
       $workers.innerHTML = `<div class="status">No workers match the current filter.</div>`;
       return;
@@ -462,6 +558,7 @@ const ClockInTool = (() => {
     setStatus('');
     $workers.innerHTML = '';
     $summary.style.display = 'none';
+    if ($projection) $projection.style.display = 'none';
     steps.reset();
     state = null;
     try {

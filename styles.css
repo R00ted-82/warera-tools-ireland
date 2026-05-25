@@ -899,3 +899,56 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
   .clockin-ep-meta   { grid-column: 2; grid-row: 2; }
   .clockin-ep-gap    { grid-column: 1 / -1; grid-row: 3; padding-top: 2px; }
 }
+
+/* ───────────────────────────────────────────────────────────────────
+ *  Clock-In: payroll projection panel
+ *  Sits between the summary bar and the worker list. Three cards
+ *  showing total ₿ owed if every worker maxes out their energy over
+ *  3h / 6h / 10h. Reuses the same panel/border/colour variables as
+ *  the rest of the tool — no new colours introduced.
+ * ─────────────────────────────────────────────────────────────────── */
+.clockin-projection {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 18px; margin-bottom: 16px;
+}
+.clockin-proj-head { margin-bottom: 12px; }
+.clockin-proj-title {
+  font-size: 13px; font-weight: 600; color: var(--text);
+}
+.clockin-proj-hint {
+  font-size: 12px; color: var(--muted); margin-top: 3px;
+}
+.clockin-proj-grid {
+  display: grid; gap: 10px;
+  grid-template-columns: repeat(3, 1fr);
+}
+.clockin-proj-card {
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: 6px;
+  padding: 12px 14px;
+}
+.clockin-proj-card.max { border-color: rgba(96, 165, 250, 0.35); }
+.clockin-proj-label {
+  font-size: 11px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.04em;
+  display: flex; align-items: center; gap: 6px;
+}
+.clockin-proj-label .max-tag {
+  background: rgba(96, 165, 250, 0.15); color: var(--link);
+  padding: 1px 6px; border-radius: 3px;
+  font-size: 9px; font-weight: 600; letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.clockin-proj-value {
+  font-size: 22px; font-weight: 600; margin-top: 4px;
+  font-variant-numeric: tabular-nums; color: var(--accent);
+}
+.clockin-proj-sub {
+  font-size: 11px; color: var(--muted); margin-top: 2px;
+}
+.clockin-proj-sub .warn { color: var(--warn); }
+
+@media (max-width: 640px) {
+  .clockin-projection { padding: 12px 14px; }
+  .clockin-proj-grid { grid-template-columns: 1fr; gap: 8px; }
+  .clockin-proj-value { font-size: 20px; }
+}

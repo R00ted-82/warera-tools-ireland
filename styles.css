@@ -882,7 +882,9 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
  * colours introduced. */
 .clockin-projection {
   background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
-  padding: 14px 18px; margin-bottom: 16px;
+  padding: 14px 18px;
+  margin-top: 24px;     /* breathing room above when sitting under the */
+  margin-bottom: 16px;  /* worker list, like the howto disclosure does */
 }
 .clockin-proj-head { margin-bottom: 12px; }
 .clockin-proj-title {

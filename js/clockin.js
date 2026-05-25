@@ -337,30 +337,37 @@ const ClockInTool = (() => {
     return { total, contributors, unknown };
   }
 
-  /** Group a worker's punches into active stretches. Walks the punches
-   *  newest-first (as stored) and starts a new stretch when consecutive
-   *  episodes are more than ACTIVE_STRETCH_GAP_MS apart. Each stretch
-   *  collects its total ₿ and timespan (first → last episode in stretch).
+  /** Group a worker's punches into active stretches.
+   *  Operates on EPISODES, not raw punches — a single clock-in moment
+   *  produces several wage txns within seconds, and treating those as
+   *  a "stretch" with duration ~0 gives nonsense rates. Episodes are
+   *  the right unit: each episode is one clock-in moment with combined
+   *  ₿ paid.
    *
-   *  Single-episode stretches are returned but flagged via `.episodes`
-   *  so the rate calc can ignore them (one instant point has no rate). */
+   *  A new stretch starts when the gap between consecutive episodes
+   *  exceeds ACTIVE_STRETCH_GAP_MS. Each stretch tracks first → last
+   *  episode timestamp and the total ₿ paid across all its episodes. */
   function buildActiveStretches(punches) {
     if (!punches || punches.length === 0) return [];
-    // Punches arrive newest-first; reverse to walk chronologically.
-    const chrono = punches.slice().reverse();
+    // Roll punches into episodes first. groupIntoEpisodes expects a
+    // cutoff; pass -Infinity to include everything.
+    const episodes = groupIntoEpisodes(punches, -Infinity);
+    if (episodes.length === 0) return [];
+    // groupIntoEpisodes returns newest-first; reverse to walk chrono.
+    const chrono = episodes.slice().reverse();
     const stretches = [];
     let current = null;
-    for (const p of chrono) {
-      if (current && (p.at - current.endAt) <= ACTIVE_STRETCH_GAP_MS) {
-        current.endAt = p.at;
-        current.total += (p.amount || 0);
+    for (const ep of chrono) {
+      if (current && (ep.at - current.endAt) <= ACTIVE_STRETCH_GAP_MS) {
+        current.endAt = ep.at;
+        current.total += (ep.totalAmount || 0);
         current.episodes += 1;
       } else {
         if (current) stretches.push(current);
         current = {
-          startAt: p.at,
-          endAt: p.at,
-          total: p.amount || 0,
+          startAt: ep.at,
+          endAt: ep.at,
+          total: ep.totalAmount || 0,
           episodes: 1,
         };
       }

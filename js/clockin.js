@@ -34,11 +34,20 @@ const ClockInTool = (() => {
   const GROUP_WINDOW_MS       = 4 * 60_000; // cycles within 4 min → one episode
   const INITIAL_EPISODE_LIMIT = 5;
 
-  // Payroll projection: action cost is flat 10 energy. Energy regen is
-  // 10% of max per hour, so 10h is the natural max projection window
-  // (one full bar refill from empty regardless of energy cap).
+  // Payroll projection. Two flavours:
+  //  • 3h and 6h windows project forward based on each worker's actual
+  //    ₿/hour over the last RECENT_PACE_HOURS — what they've genuinely
+  //    been doing, not what they could do.
+  //  • 10h window is the energy-capped theoretical ceiling: action cost
+  //    is flat 10 energy; energy regens 10% of max per hour, so 10h is
+  //    one full bar refill regardless of an individual's energy cap.
   const ACTION_ENERGY_COST = 10;
-  const PROJECTION_WINDOWS = [3, 6, 10];
+  const RECENT_PACE_HOURS  = 24;
+  const PROJECTION_WINDOWS = [
+    { hours: 3,  mode: 'pace' },
+    { hours: 6,  mode: 'pace' },
+    { hours: 10, mode: 'max'  },
+  ];
 
   /* ── DOM ────────────────────────────────────────────────── */
   const $username    = document.getElementById('clockin-username');
@@ -305,8 +314,9 @@ const ClockInTool = (() => {
     return Math.floor(totalEnergy / ACTION_ENERGY_COST);
   }
 
-  /** Payroll owed across all workers if they all max out over N hours. */
-  function projectPayroll(workers, hours) {
+  /** Theoretical max payroll: everyone burns through their full
+   *  available energy in the window. */
+  function projectMaxPayroll(workers, hours) {
     let total = 0;
     let contributors = 0;
     let unknown = 0;
@@ -324,22 +334,55 @@ const ClockInTool = (() => {
     return { total, contributors, unknown };
   }
 
-  function renderProjection(workers) {
-    if (!$projection) return; // graceful if HTML not yet added
+  /** Pace-based payroll: each worker's ₿/hour across their last
+   *  RECENT_PACE_HOURS of wage activity, scaled to the window.
+   *  Workers with no recent activity contribute 0. */
+  function projectPacePayroll(workers, hours, now) {
+    const cutoff = now - (RECENT_PACE_HOURS * 3_600_000);
+    let total = 0;
+    let contributors = 0;
+    let inactive = 0;
+    for (const w of workers) {
+      const recent = (w.punches || []).filter(p => p.at >= cutoff);
+      if (recent.length === 0) { inactive++; continue; }
+      const recentTotal = recent.reduce((s, p) => s + (p.amount || 0), 0);
+      const ratePerHour = recentTotal / RECENT_PACE_HOURS;
+      const projected = ratePerHour * hours;
+      if (projected > 0) {
+        total += projected;
+        contributors++;
+      }
+    }
+    return { total, contributors, inactive };
+  }
+
+  function renderProjection(workers, now) {
+    if (!$projection) return;
     if (!workers.length) {
       $projection.style.display = 'none';
       return;
     }
     $projection.style.display = '';
 
-    const cards = PROJECTION_WINDOWS.map(h => {
-      const { total, contributors, unknown } = projectPayroll(workers, h);
-      const isMax = h === 10;
-      const subParts = [`${contributors}/${workers.length} workers`];
-      if (unknown > 0) subParts.push(`<span class="warn">${unknown} unknown</span>`);
+    const cards = PROJECTION_WINDOWS.map(({ hours, mode }) => {
+      if (mode === 'max') {
+        const { total, contributors, unknown } = projectMaxPayroll(workers, hours);
+        const subParts = [`${contributors}/${workers.length} workers`];
+        if (unknown > 0) subParts.push(`<span class="warn">${unknown} unknown</span>`);
+        return `
+          <div class="clockin-proj-card max">
+            <div class="clockin-proj-label">Next ${hours}h <span class="max-tag">ceiling</span></div>
+            <div class="clockin-proj-value">₿${total.toLocaleString(undefined, {maximumFractionDigits: 2})}</div>
+            <div class="clockin-proj-sub">${subParts.join(' · ')}</div>
+          </div>
+        `;
+      }
+      const { total, contributors, inactive } = projectPacePayroll(workers, hours, now);
+      const subParts = [`${contributors}/${workers.length} active`];
+      if (inactive > 0) subParts.push(`<span class="muted">${inactive} idle</span>`);
       return `
-        <div class="clockin-proj-card${isMax ? ' max' : ''}">
-          <div class="clockin-proj-label">Next ${h}h${isMax ? ' <span class="max-tag">max</span>' : ''}</div>
+        <div class="clockin-proj-card">
+          <div class="clockin-proj-label">Next ${hours}h</div>
           <div class="clockin-proj-value">₿${total.toLocaleString(undefined, {maximumFractionDigits: 2})}</div>
           <div class="clockin-proj-sub">${subParts.join(' · ')}</div>
         </div>
@@ -348,8 +391,11 @@ const ClockInTool = (() => {
 
     $projection.innerHTML = `
       <div class="clockin-proj-head">
-        <div class="clockin-proj-title">Projected payroll if everyone maxes out</div>
-        <div class="clockin-proj-hint">Ceiling: each worker burns through their full available energy in the window.</div>
+        <div class="clockin-proj-title">Projected payroll</div>
+        <div class="clockin-proj-hint">
+          The 3h and 6h figures project each worker's ₿/hour over the last 24h forward into the window.
+          The 10h <strong>ceiling</strong> is the theoretical max if every worker burned through their full energy bar — useful as a "worst case" reference, but rarely what actually happens.
+        </div>
       </div>
       <div class="clockin-proj-grid">${cards}</div>
     `;
@@ -511,7 +557,7 @@ const ClockInTool = (() => {
 
     // Projection panel (uses unfiltered workers — the projection is
     // about your whole roster, not just the currently-shown subset).
-    renderProjection(workers);
+    renderProjection(workers, now);
 
     if (!shown.length) {
       $workers.innerHTML = `<div class="status">No workers match the current filter.</div>`;

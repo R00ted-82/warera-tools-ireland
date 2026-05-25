@@ -6,6 +6,8 @@
  *    #mu?filter=open      MU tool with the "Has slots" filter applied
  *    #advisor             Migration Advisor (empty)
  *    #advisor?u=toie      Migration Advisor auto-running for "toie"
+ *    #clockin             Employee Clock-In Monitor (empty)
+ *    #clockin?u=toie      Clock-In Monitor auto-running for "toie"
  *
  *  Params live inside the hash (after a literal '?') so the whole route
  *  is portable as one fragment and survives static hosting that doesn't
@@ -22,7 +24,7 @@
  *  and clicking the brand title does the same.
  * ═══════════════════════════════════════════════════════════════════ */
 (() => {
-  const VALID = new Set(['home', 'mu', 'advisor', 'buddy', 'battle-orders']);
+  const VALID = new Set(['home', 'mu', 'advisor', 'clockin', 'buddy', 'battle-orders']);
   const DEFAULT_VIEW = 'home';
   const views = document.querySelectorAll('.view');
   const $backLink = document.querySelector('.back-link');
@@ -31,6 +33,7 @@
     home: null,
     mu: MUTool,
     advisor: AdvisorTool,
+    clockin: ClockInTool,
     buddy: BuddySystemGate,
     'battle-orders': BattleOrdersGate,
   };

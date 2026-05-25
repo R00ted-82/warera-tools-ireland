@@ -622,3 +622,280 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
   background: rgba(251, 191, 36, 0.15);
   color: var(--warn);
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+ *  EMPLOYEE CLOCK-IN MONITOR
+ *  Styles scoped with clockin- prefix to avoid colliding with the rest
+ *  of the portal. Reuses existing CSS variables (--bg, --panel, --accent,
+ *  --warn, --danger, --link, --muted, --text, --border, --accent-dim).
+ * ═══════════════════════════════════════════════════════════════════ */
+
+/* Summary bar */
+.clockin-summary-bar {
+  display: flex; flex-wrap: wrap; gap: 8px 18px;
+  align-items: center; margin-bottom: 18px;
+  padding: 14px 18px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+}
+.clockin-sum-stat { display: flex; flex-direction: column; gap: 2px; }
+.clockin-sum-stat .k {
+  color: var(--muted); font-size: 11px;
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.clockin-sum-stat .v {
+  font-size: 15px; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.clockin-sum-stat .v .sub {
+  font-size: 12px; font-weight: 400;
+  color: var(--muted); margin-left: 6px;
+}
+.clockin-sum-stat .v .sub .pos { color: var(--accent); font-weight: 600; }
+.clockin-sum-stat .v .sub .neg { color: var(--danger); font-weight: 600; }
+.clockin-sum-stat .v .sub .sep { opacity: 0.5; margin: 0 4px; }
+.clockin-spacer { flex: 1; }
+.clockin-filter-group {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+}
+.clockin-filter-toggle {
+  display: flex; align-items: center; gap: 6px;
+  cursor: pointer; user-select: none;
+  color: var(--muted); font-size: 12px;
+}
+.clockin-filter-toggle input { margin: 0; cursor: pointer; }
+.clockin-sort-group {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.clockin-sort-group label {
+  padding: 5px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  color: var(--muted);
+  background: var(--panel-2);
+  user-select: none;
+}
+.clockin-sort-group label:hover { color: var(--text); }
+.clockin-sort-group input { position: absolute; opacity: 0; pointer-events: none; }
+.clockin-sort-group input:checked + label {
+  background: var(--accent-dim); color: var(--accent);
+}
+.clockin-sort-group label + input + label { border-left: 1px solid var(--border); }
+
+/* Worker cards */
+.clockin-worker-list { display: flex; flex-direction: column; gap: 8px; }
+
+.clockin-worker-card {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+  overflow: hidden;
+}
+.clockin-worker-head {
+  padding: 12px 16px;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+.clockin-worker-name {
+  font-weight: 600; font-size: 14px;
+  display: flex; align-items: center; gap: 8px;
+  min-width: 0;
+}
+.clockin-worker-name a { color: inherit; text-decoration: none; }
+.clockin-worker-name a:hover { color: var(--link); text-decoration: underline; }
+.clockin-link-icon {
+  color: var(--muted); padding: 2px;
+  display: inline-flex; align-items: center; line-height: 0;
+}
+.clockin-link-icon:hover { color: var(--link); }
+.clockin-link-icon svg { width: 12px; height: 12px; }
+
+.clockin-worker-meta {
+  color: var(--muted); font-size: 12px;
+  display: flex; gap: 14px; flex-wrap: wrap;
+  margin-left: auto;
+}
+.clockin-item { display: inline-flex; align-items: center; gap: 4px; }
+.clockin-item strong {
+  color: var(--text); font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.clockin-ago { color: var(--accent); }
+.clockin-ago.warn   { color: var(--warn); }
+.clockin-ago.danger { color: var(--danger); }
+.clockin-ago.never  { color: var(--muted); font-style: italic; }
+
+/* Timeline */
+.clockin-worker-timeline {
+  padding: 4px 16px 14px;
+  border-top: 1px solid var(--border);
+}
+.clockin-timeline-track {
+  position: relative;
+  height: 28px;
+  margin-top: 14px;
+  overflow: visible;
+}
+.clockin-timeline-track::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0; right: 0;
+  height: 2px;
+  background: var(--border);
+  transform: translateY(-50%);
+  border-radius: 1px;
+}
+.clockin-timeline-now {
+  position: absolute; top: -3px; bottom: -3px;
+  width: 2px;
+  background: var(--link);
+  border-radius: 1px;
+  z-index: 2;
+}
+.clockin-timeline-now::after {
+  content: 'now';
+  position: absolute; top: -16px;
+  transform: translateX(-50%);
+  color: var(--link); font-size: 10px;
+  font-weight: 600;
+  background: var(--bg);
+  padding: 0 4px;
+  white-space: nowrap;
+}
+.clockin-punch {
+  position: absolute;
+  top: 50%;
+  width: 10px; height: 10px;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  cursor: help;
+  transition: transform 0.15s, box-shadow 0.15s;
+  z-index: 1;
+}
+.clockin-punch:hover {
+  transform: translate(-50%, -50%) scale(1.4);
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.25);
+  z-index: 3;
+}
+.clockin-timeline-axis {
+  position: relative;
+  height: 18px;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.clockin-axis-tick {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.clockin-axis-tick::before {
+  content: '';
+  position: absolute;
+  top: -4px; left: 50%;
+  width: 1px; height: 4px;
+  background: var(--border);
+}
+.clockin-no-punches {
+  color: var(--muted); font-style: italic; font-size: 12px;
+  padding: 8px 0 4px;
+}
+
+/* Collapsible episode detail */
+.clockin-ep-detail { margin-top: 12px; }
+.clockin-ep-detail > summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 11px;
+  list-style: none;
+  user-select: none;
+  padding: 4px 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.clockin-ep-detail > summary::-webkit-details-marker { display: none; }
+.clockin-ep-detail > summary::before {
+  content: '▸';
+  transition: transform 0.15s;
+  display: inline-block;
+  font-size: 9px;
+}
+.clockin-ep-detail[open] > summary::before { transform: rotate(90deg); }
+.clockin-ep-detail > summary:hover { color: var(--text); }
+
+/* Episode list */
+.clockin-ep-list {
+  margin-top: 10px;
+  display: flex; flex-direction: column;
+  gap: 1px;
+  background: var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.clockin-ep {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 4px 14px;
+  padding: 8px 12px;
+  background: var(--panel-2);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.clockin-ep-time   { color: var(--text); font-weight: 500; white-space: nowrap; }
+.clockin-ep-ago    { color: var(--muted); font-size: 11px; white-space: nowrap; }
+.clockin-ep-amount { color: var(--accent); font-weight: 600; white-space: nowrap; text-align: right; }
+.clockin-ep-meta   { color: var(--muted); font-size: 11px; white-space: nowrap; text-align: right; }
+.clockin-ep-gap {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 11px;
+  font-style: italic;
+  white-space: nowrap;
+  padding-top: 2px;
+  border-top: 1px dashed var(--border);
+  margin-top: 4px;
+}
+.clockin-ep-gap.long { color: var(--warn); font-style: normal; }
+.clockin-show-more {
+  background: var(--panel);
+  border: none;
+  color: var(--muted);
+  font-size: 11px;
+  padding: 8px 12px;
+  cursor: pointer;
+  text-align: center;
+  font-family: inherit;
+}
+.clockin-show-more:hover { color: var(--link); background: var(--panel-2); }
+
+/* Mobile: filters wrap to their own row; episodes collapse to 2 columns. */
+@media (max-width: 720px) {
+  .clockin-summary-bar { gap: 10px 16px; }
+  .clockin-spacer { display: none; }
+  .clockin-filter-group {
+    width: 100%;
+    justify-content: space-between;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    gap: 10px;
+  }
+  .clockin-worker-meta { margin-left: 0; width: 100%; gap: 10px; }
+
+  .clockin-ep {
+    grid-template-columns: 1fr auto;
+    gap: 2px 12px;
+    padding: 10px 12px;
+  }
+  .clockin-ep-time   { grid-column: 1; grid-row: 1; }
+  .clockin-ep-amount { grid-column: 2; grid-row: 1; }
+  .clockin-ep-ago    { grid-column: 1; grid-row: 2; }
+  .clockin-ep-meta   { grid-column: 2; grid-row: 2; }
+  .clockin-ep-gap    { grid-column: 1 / -1; grid-row: 3; padding-top: 2px; }
+}

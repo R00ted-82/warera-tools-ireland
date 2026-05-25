@@ -43,12 +43,20 @@
             <span class="tool-link">Open Migration Advisor →</span>
           </div>
         </a>
+        <a class="tool-card" href="#clockin">
+          <div class="tool-card-icon">⏱</div>
+          <div class="tool-card-body">
+            <h3>Employee Clock-In Monitor</h3>
+            <p>Enter your username to see when each of your workers last clocked in. 48h timeline with episode breakdowns of production points and ₿ paid.</p>
+            <span class="tool-link">Open Clock-In Monitor →</span>
+          </div>
+        </a>
         <a class="tool-card" href="#buddy">
           <div class="tool-card-icon">🤝</div>
           <div class="tool-card-body">
-            <h3>Irish Buddy System <span class="lock-pill" title="Encrypted, MoECON-only access">🔒 MoECON only</span></h3>
+            <h3>Irish Buddy System Monitor <span class="lock-pill" title="Encrypted, MoECON-only access">🔒 MoECON only</span></h3>
             <p>Reciprocal employment tracker. Buddy pairs, strays, and suggested pairings to maximise Irish production. Requires the MoECON password.</p>
-            <span class="tool-link">Open Buddy System →</span>
+            <span class="tool-link">Open Buddy System Monitor →</span>
           </div>
         </a>
         <a class="tool-card" href="#battle-orders">
@@ -187,11 +195,121 @@
     </details>
   </section>
 
+  <!-- ─── Employee Clock-In Monitor view ────────────────────────── -->
+  <section class="view" data-view="clockin">
+    <div class="tool-header">
+      <div class="title-block">
+        <h2><span>⏱</span> Employee Clock-In Monitor</h2>
+        <p>See when each of your workers last clocked in. Wage transactions are the source of truth.</p>
+      </div>
+      <div class="controls">
+        <input id="clockin-username" type="text" placeholder="Your War Era username" autocomplete="off" spellcheck="false" />
+        <button id="clockin-go">Track</button>
+      </div>
+    </div>
+
+    <div id="clockin-steps" class="steps hidden">
+      <div class="step" data-state="pending" data-step="1">
+        <div class="step-icon"></div>
+        <div class="step-body">
+          <div class="step-title">Resolve username</div>
+          <div class="step-sub"></div>
+        </div>
+        <div class="step-count"></div>
+      </div>
+      <div class="step" data-state="pending" data-step="2">
+        <div class="step-icon"></div>
+        <div class="step-body">
+          <div class="step-title">Load companies &amp; workers</div>
+          <div class="step-sub"></div>
+        </div>
+        <div class="step-count"></div>
+      </div>
+      <div class="step" data-state="pending" data-step="3">
+        <div class="step-icon"></div>
+        <div class="step-body">
+          <div class="step-title">Resolve worker usernames</div>
+          <div class="step-sub"></div>
+        </div>
+        <div class="step-count"></div>
+      </div>
+      <div class="step" data-state="pending" data-step="4">
+        <div class="step-icon"></div>
+        <div class="step-body">
+          <div class="step-title">Pull recent wage transactions</div>
+          <div class="step-sub"></div>
+        </div>
+        <div class="step-count"></div>
+      </div>
+    </div>
+
+    <div id="clockin-status" class="status hidden"></div>
+    <div id="clockin-hint" class="hint">Enter your War Era username above to begin.</div>
+
+    <div id="clockin-summary" class="clockin-summary-bar" style="display:none">
+      <div class="clockin-sum-stat">
+        <span class="k">Workers</span>
+        <span class="v" id="clockin-sum-workers">0</span>
+      </div>
+      <div class="clockin-spacer"></div>
+      <div class="clockin-filter-group">
+        <label class="clockin-filter-toggle">
+          <input type="checkbox" id="clockin-filter-idle" />
+          <span>Only idle</span>
+        </label>
+        <div class="clockin-sort-group" role="radiogroup" aria-label="Sort workers">
+          <input type="radio" name="clockin-sortby" id="clockin-sort-recent" checked />
+          <label for="clockin-sort-recent">Recent first</label>
+          <input type="radio" name="clockin-sortby" id="clockin-sort-idle" />
+          <label for="clockin-sort-idle">Idle longest</label>
+        </div>
+      </div>
+    </div>
+
+    <div id="clockin-workers" class="clockin-worker-list"></div>
+
+    <details class="howto">
+      <summary>How this works</summary>
+      <div class="howto-body">
+        <h4>The short version</h4>
+        <p>Every time one of your workers does a work cycle, you pay them a wage. That wage is timestamped and stored in the game's transaction history. We pull those timestamps for each of your workers, group them into clock-in episodes, and plot them on a 48-hour timeline.</p>
+
+        <h4>What the colours mean</h4>
+        <ul>
+          <li><strong style="color:var(--accent)">Active</strong> — clocked in within the last 24 hours. They're working.</li>
+          <li><strong style="color:var(--warn)">Slowing</strong> — last clock-in was 24 to 48 hours ago. Worth a nudge.</li>
+          <li><strong style="color:var(--danger)">Idle</strong> — no clock-ins in the last 48 hours. They've stopped showing up.</li>
+        </ul>
+
+        <h4>What the timeline shows</h4>
+        <p>The line under each worker is the last 48 hours, with "now" on the right and 48h ago on the left. Each green dot is one clock-in episode. Hover a dot to see the exact time, production points earned, and ₿ paid.</p>
+        <p>Lots of dots bunched together means a busy worker. A gap on the right means they've been quiet recently. Click <em>Show detail</em> on a worker to see each episode listed individually with the rest periods between them.</p>
+
+        <h4>Episodes vs. individual cycles</h4>
+        <p>A worker can do several work cycles back-to-back in quick succession — the game settles these as separate wage transactions but they all happen at roughly the same moment. To keep the timeline readable, cycles that happen within 4 minutes of each other are grouped into a single <strong>episode</strong>. The displayed production points and ₿ are the combined totals for the episode, so nothing gets lost — it's just shown as one dot instead of a cluster of overlapping ones.</p>
+
+        <h4>Things to know</h4>
+        <ul>
+          <li><strong>One worker, one employer.</strong> In War Era a worker can only hold one work contract at a time, so every wage they receive is from you — that's why the clock-ins shown are real and complete.</li>
+          <li><strong>Dot density isn't effort.</strong> A high-wage worker does fewer (but bigger) cycles than a low-wage one. Two workers with very different dot counts can be putting in the same hours.</li>
+          <li><strong>Empty timeline isn't a fired employee.</strong> If someone's on contract with you but hasn't clocked in for 48h, you'll still see their card — just with no dots. They're idle, not gone.</li>
+          <li><strong>The last few minutes may be missing.</strong> The data is scraped from the game, so very fresh clock-ins might not appear until the next scrape.</li>
+        </ul>
+
+        <h4>Sharing a view</h4>
+        <p>Once you've loaded your roster, the URL updates to include your username (e.g. <code>#clockin?u=toie</code>). Bookmark it or share it — opening that link will reload the same view straight away.</p>
+
+        <h4>For the curious: where the data comes from</h4>
+        <p>Under the hood, this calls a few endpoints on the War Era Gateway: <code>search.searchAnything</code> and <code>user.getUserLite</code> to find your account, <code>company.getCompanies</code> + <code>worker.getWorkers</code> for your roster, and <code>transaction.getPaginatedTransactions</code> (filtered to <code>wage</code>) for each worker's recent clock-ins. Wage transactions are modelled as trades — the worker sells their labour (<code>sellerId</code>), you buy it (<code>buyerId</code>) — so we keep only the ones where the worker is the seller to filter out their own outgoing payroll if they also employ people. The whole thing runs in your browser. Nothing is stored.</p>
+      </div>
+    </details>
+  </section>
+
   <!-- ─── Buddy System view (encrypted; MoECON password required) ───── -->
   <section class="view" data-view="buddy">
     <div class="tool-header">
       <div class="title-block">
-        <h2><span>🤝</span> Irish Buddy System</h2>
+        <h2><span>🤝</span> Irish Buddy System Monitor</h2>
         <p>Reciprocal employment tracker. Who's working for whom inside the Irish economy. Restricted access for the Irish Minister of Economy.</p>
       </div>
       <div class="controls" id="buddy-controls">
@@ -248,6 +366,7 @@
 <script src="js/shared.js"></script>
 <script src="js/mu.js"></script>
 <script src="js/advisor.js"></script>
+<script src="js/clockin.js"></script>
 <script src="js/buddy.js"></script>
 <script src="js/battle-orders.js"></script>
 <script src="js/router.js"></script>

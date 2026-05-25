@@ -875,38 +875,11 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
 }
 .clockin-show-more:hover { color: var(--link); background: var(--panel-2); }
 
-/* Mobile: filters wrap to their own row; episodes collapse to 2 columns. */
-@media (max-width: 720px) {
-  .clockin-summary-bar { gap: 10px 16px; }
-  .clockin-spacer { display: none; }
-  .clockin-filter-group {
-    width: 100%;
-    justify-content: space-between;
-    padding-top: 10px;
-    border-top: 1px solid var(--border);
-    gap: 10px;
-  }
-  .clockin-worker-meta { margin-left: 0; width: 100%; gap: 10px; }
-
-  .clockin-ep {
-    grid-template-columns: 1fr auto;
-    gap: 2px 12px;
-    padding: 10px 12px;
-  }
-  .clockin-ep-time   { grid-column: 1; grid-row: 1; }
-  .clockin-ep-amount { grid-column: 2; grid-row: 1; }
-  .clockin-ep-ago    { grid-column: 1; grid-row: 2; }
-  .clockin-ep-meta   { grid-column: 2; grid-row: 2; }
-  .clockin-ep-gap    { grid-column: 1 / -1; grid-row: 3; padding-top: 2px; }
-}
-
-/* ───────────────────────────────────────────────────────────────────
- *  Clock-In: payroll projection panel
- *  Sits between the summary bar and the worker list. Three cards
- *  showing total ₿ owed if every worker maxes out their energy over
- *  3h / 6h / 10h. Reuses the same panel/border/colour variables as
- *  the rest of the tool — no new colours introduced.
- * ─────────────────────────────────────────────────────────────────── */
+/* Payroll projection panel — sits between the summary bar and the
+ * worker list. Two cards show pace-based projections (3h, 6h) derived
+ * from each worker's last 24h of wages; the third is the energy-cap
+ * theoretical ceiling (10h). Uses existing variables only — no new
+ * colours introduced. */
 .clockin-projection {
   background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
   padding: 14px 18px; margin-bottom: 16px;
@@ -945,10 +918,58 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
 .clockin-proj-sub {
   font-size: 11px; color: var(--muted); margin-top: 2px;
 }
-.clockin-proj-sub .warn { color: var(--warn); }
+.clockin-proj-sub .warn  { color: var(--warn); }
+.clockin-proj-sub .muted { opacity: 0.7; }
+
+/* Mobile clock-in adjustments — keep everything below the 720px
+ * breakpoint in one place so the file's easier to scan.
+ * - 720px: summary-bar filters wrap, worker meta drops to full-width,
+ *          episode list collapses from 4 columns to 2.
+ * - 640px: projection grid drops from 3 cols to 2, with the ceiling
+ *          card spanning both columns of row 2.
+ * - 380px: projection grid drops to a single column for very narrow
+ *          screens (iPhone SE, foldables). */
+@media (max-width: 720px) {
+  .clockin-summary-bar { gap: 10px 16px; }
+  .clockin-spacer { display: none; }
+  .clockin-filter-group {
+    width: 100%;
+    justify-content: space-between;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    gap: 10px;
+  }
+  .clockin-worker-meta { margin-left: 0; width: 100%; gap: 10px; }
+
+  .clockin-ep {
+    grid-template-columns: 1fr auto;
+    gap: 2px 12px;
+    padding: 10px 12px;
+  }
+  .clockin-ep-time   { grid-column: 1; grid-row: 1; }
+  .clockin-ep-amount { grid-column: 2; grid-row: 1; }
+  .clockin-ep-ago    { grid-column: 1; grid-row: 2; }
+  .clockin-ep-meta   { grid-column: 2; grid-row: 2; }
+  .clockin-ep-gap    { grid-column: 1 / -1; grid-row: 3; padding-top: 2px; }
+}
 
 @media (max-width: 640px) {
   .clockin-projection { padding: 12px 14px; }
-  .clockin-proj-grid { grid-template-columns: 1fr; gap: 8px; }
-  .clockin-proj-value { font-size: 20px; }
+  .clockin-proj-head { margin-bottom: 10px; }
+  .clockin-proj-title { font-size: 13px; }
+  .clockin-proj-hint { font-size: 11.5px; line-height: 1.45; }
+  .clockin-proj-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .clockin-proj-card.max { grid-column: 1 / -1; }
+  .clockin-proj-card { padding: 10px 12px; }
+  .clockin-proj-label { font-size: 10.5px; }
+  .clockin-proj-value { font-size: 18px; margin-top: 3px; }
+  .clockin-proj-sub { font-size: 10.5px; }
+}
+
+@media (max-width: 380px) {
+  .clockin-proj-grid { grid-template-columns: 1fr; }
+  .clockin-proj-card.max { grid-column: auto; }
 }

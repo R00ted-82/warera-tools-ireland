@@ -1,376 +1,654 @@
-<!DOCTYPE html>
-<html lang="en-GB">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>War Era tools · An Irish player's toolkit</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'%3E%3Crect width='1' height='2' fill='%23009A49'/%3E%3Crect x='1' width='1' height='2' fill='white'/%3E%3Crect x='2' width='1' height='2' fill='%23FF7900'/%3E%3C/svg%3E" />
-<link rel="stylesheet" href="styles.css" />
-</head>
-<body>
+/* ═══════════════════════════════════════════════════════════════════
+ *  EMPLOYEE CLOCK-IN MONITOR
+ *
+ *  Pulls each of an employer's workers and reads their recent wage
+ *  transactions to build a 48h timeline of clock-ins.
+ *
+ *  Data model: wage transactions are TRADES.
+ *    {
+ *      _id, createdAt, transactionType: 'wage',
+ *      sellerId,  // the WORKER (sold their labour)
+ *      buyerId,   // the EMPLOYER (bought the labour)
+ *      quantity,  // labour quantity
+ *      money,     // wage paid
+ *    }
+ *
+ *  Querying transaction.getPaginatedTransactions with userId=W returns
+ *  wages where W is on either side. A clock-in for W = sellerId === W;
+ *  the buy-side entries are W's own payroll if W also employs people
+ *  (mutual employment is allowed) and get filtered out.
+ *
+ *  Payroll projection: alongside the timeline, the top of the view
+ *  shows projected payroll over 3h / 6h / 10h. Per-worker formula:
+ *    actions(h) = floor((currentEnergy + h × hourlyRegen) / 10)
+ *    payroll(h) = Σ actions × production × (1 + fidelity/100) × wage
+ *  All inputs come from calls already made — no new endpoints.
+ * ═══════════════════════════════════════════════════════════════════ */
+const ClockInTool = (() => {
+  /* ── Config ─────────────────────────────────────────────── */
+  const WINDOW_HOURS          = 48;
+  const WINDOW_MS             = WINDOW_HOURS * 3600 * 1000;
+  const ACTIVE_THRESHOLD_MS   = 24 * 3600 * 1000;
+  const TX_PAGE_LIMIT         = 100;
+  const MAX_TX_PAGES          = 6;          // safety cap per worker
+  const GROUP_WINDOW_MS       = 4 * 60_000; // cycles within 4 min → one episode
+  const INITIAL_EPISODE_LIMIT = 5;
 
-<header>
-  <div class="header-top">
-    <a class="brand" href="#home">
-      <h1>🇮🇪 War Era tools</h1>
-      <div class="sub">An Irish player's toolkit</div>
-    </a>
-    <a class="back-link" href="#home" hidden>← Home</a>
-  </div>
-</header>
+  // Payroll projection. Two flavours:
+  //  • 3h and 6h windows project forward based on each worker's actual
+  //    ₿/hour over the last RECENT_PACE_HOURS — what they've genuinely
+  //    been doing, not what they could do.
+  //  • 10h window is the energy-capped theoretical ceiling: action cost
+  //    is flat 10 energy; energy regens 10% of max per hour, so 10h is
+  //    one full bar refill regardless of an individual's energy cap.
+  const ACTION_ENERGY_COST = 10;
+  const RECENT_PACE_HOURS  = 24;
+  const PROJECTION_WINDOWS = [
+    { hours: 3,  mode: 'pace' },
+    { hours: 6,  mode: 'pace' },
+    { hours: 10, mode: 'max'  },
+  ];
 
-<main>
-  <!-- ─── Home view (landing page) ──────────────────────────────── -->
-  <section class="view" data-view="home">
-    <div class="home">
-      <p class="lede">
-        <em>Fáilte</em> A small collection of tools for Irish players of <a href="https://app.warera.io/" target="_blank" rel="noopener">War Era</a>.
-      </p>
-      <div class="tool-cards">
-        <a class="tool-card" href="#mu">
-          <div class="tool-card-icon">🔫</div>
-          <div class="tool-card-body">
-            <h3>Irish Military Units</h3>
-            <p>Every MU owned by an Irish citizen, in Ireland, with a majority of Irish citizens. Filter by whether they have open slots, and see who's already inside.</p>
-            <span class="tool-link">Open Irish MUs →</span>
+  /* ── DOM ────────────────────────────────────────────────── */
+  const $username    = document.getElementById('clockin-username');
+  const $run         = document.getElementById('clockin-go');
+  const $hint        = document.getElementById('clockin-hint');
+  const $summary     = document.getElementById('clockin-summary');
+  const $sumWorkers  = document.getElementById('clockin-sum-workers');
+  const $projection  = document.getElementById('clockin-projection');
+  const $workers     = document.getElementById('clockin-workers');
+  const $filterIdle  = document.getElementById('clockin-filter-idle');
+  const $sortRecent  = document.getElementById('clockin-sort-recent');
+  const $sortIdle    = document.getElementById('clockin-sort-idle');
+  const steps        = makeSteps(document.getElementById('clockin-steps'));
+  const setStatus    = makeStatus(document.getElementById('clockin-status'));
+
+  /* ── State ──────────────────────────────────────────────── */
+  let state = null; // { ownerUsername, workers: [...], generatedAt }
+  let running = false;
+
+  const ci_trpc = (endpoint, input) => trpc(endpoint, input, { retry: true, timeoutMs: 20000 });
+
+  /* ── Formatting helpers (tool-specific) ─────────────────── */
+  function fmtAgo(ms) {
+    if (ms == null || !isFinite(ms)) return null;
+    if (ms < 60_000) return 'just now';
+    if (ms < 3_600_000) return `${Math.floor(ms / 60_000)}m ago`;
+    if (ms < 86_400_000) {
+      const h = Math.floor(ms / 3_600_000);
+      const m = Math.floor((ms % 3_600_000) / 60_000);
+      return m > 0 ? `${h}h ${m}m ago` : `${h}h ago`;
+    }
+    const d = Math.floor(ms / 86_400_000);
+    return `${d}d ago`;
+  }
+  function fmtTime(d) {
+    if (!d) return '';
+    return d.toLocaleString(undefined, {
+      weekday: 'short', hour: '2-digit', minute: '2-digit',
+    });
+  }
+  function fmtGap(ms) {
+    if (ms < 60_000) return `${Math.round(ms / 1000)}s`;
+    if (ms < 3_600_000) return `${Math.round(ms / 60_000)}m`;
+    if (ms < 86_400_000) {
+      const h = Math.floor(ms / 3_600_000);
+      const m = Math.round((ms % 3_600_000) / 60_000);
+      return m > 0 ? `${h}h ${m}m` : `${h}h`;
+    }
+    const d = Math.floor(ms / 86_400_000);
+    const h = Math.round((ms % 86_400_000) / 3_600_000);
+    return h > 0 ? `${d}d ${h}h` : `${d}d`;
+  }
+  const userUrl = id => `${GAME_BASE}/user/${id}`;
+
+  /* ── Username resolution ─────────────────────────────────
+   *  Same exact-match pattern as the advisor. We can't share its
+   *  helper because the advisor's version uses its own setStep panel
+   *  and has its own endpoint-discovery; this is the simpler form. */
+  async function resolveUserId(username) {
+    const search = await ci_trpc('search.searchAnything', { searchText: username });
+    const candidateIds = search?.userIds || [];
+    if (!candidateIds.length) {
+      throw new Error(`No user found matching "${username}"`);
+    }
+    steps.setStep(1, 'active', {
+      sub: `Verifying among ${candidateIds.length} match${candidateIds.length === 1 ? '' : 'es'}`,
+      count: `0/${Math.min(candidateIds.length, 10)}`,
+    });
+
+    const top = candidateIds.slice(0, 10);
+    let checked = 0;
+    const profiles = await Promise.all(top.map(async id => {
+      try {
+        const u = await ci_trpc('user.getUserLite', { userId: id });
+        checked++;
+        steps.setStep(1, 'active', { count: `${checked}/${top.length}` });
+        return u;
+      } catch {
+        checked++;
+        steps.setStep(1, 'active', { count: `${checked}/${top.length}` });
+        return null;
+      }
+    }));
+    const known = profiles.filter(Boolean);
+    const normalise = s => (s || '').toLowerCase().trim();
+    const target = normalise(username);
+    const exact = known.find(u => normalise(u.username) === target);
+    if (exact) return { userId: exact._id, username: exact.username, exact: true };
+    if (!known.length) {
+      return { userId: candidateIds[0], username, exact: false };
+    }
+    const found = known.map(u => u.username).filter(Boolean);
+    throw new Error(
+      `No exact match for "${username}". Search returned: ` +
+      `${found.slice(0, 5).join(', ')}${found.length > 5 ? '…' : ''}`
+    );
+  }
+
+  /* ── Wage transaction loader ────────────────────────────── */
+  async function loadWagesForWorker(workerId) {
+    const cutoff = Date.now() - WINDOW_MS;
+    const punches = [];
+    let cursor = null;
+    let pages = 0;
+    let seenOlder = false;
+    let filteredOut = 0;
+
+    while (pages < MAX_TX_PAGES && !seenOlder) {
+      const input = {
+        userId: workerId,
+        transactionType: 'wage',
+        limit: TX_PAGE_LIMIT,
+      };
+      if (cursor) input.cursor = cursor;
+
+      let page;
+      try {
+        page = await ci_trpc('transaction.getPaginatedTransactions', input);
+      } catch (e) {
+        console.warn(`[clockin] worker ${workerId} page ${pages} failed:`, e.message);
+        break;
+      }
+      pages++;
+
+      const items = page?.items || [];
+      if (!items.length) break;
+
+      for (const tx of items) {
+        const t = new Date(tx.createdAt).getTime();
+        if (!isFinite(t)) continue;
+        if (t < cutoff) { seenOlder = true; break; }
+
+        // Worker must be the seller (the side that did the work).
+        if (tx.sellerId !== workerId) { filteredOut++; continue; }
+
+        punches.push({
+          at: t,
+          amount: tx.money,
+          quantity: tx.quantity,
+          buyerId: tx.buyerId,
+        });
+      }
+
+      cursor = page?.nextCursor ?? null;
+      if (!cursor) break;
+    }
+
+    if (filteredOut > 0) {
+      console.log(`[clockin] ${workerId}: filtered ${filteredOut} buy-side wages`);
+    }
+    punches.sort((a, b) => b.at - a.at);
+    return punches;
+  }
+
+  /* ── Main pipeline ──────────────────────────────────────── */
+  async function analyse(username) {
+    steps.setStep(1, 'active', { sub: `Searching for "${username}"` });
+    const resolved = await resolveUserId(username);
+    steps.setStep(1, 'done', {
+      count: resolved.exact ? `→ ${resolved.username}` : `→ ${resolved.username} (unverified)`,
+    });
+
+    steps.setStep(2, 'active', { sub: 'Fetching companies and worker roster' });
+    const [companyList, workersData] = await Promise.all([
+      ci_trpc('company.getCompanies', { userId: resolved.userId, perPage: 100 }),
+      ci_trpc('worker.getWorkers',    { userId: resolved.userId }),
+    ]);
+
+    const companyIds = (companyList?.items || [])
+      .map(c => typeof c === 'string' ? c : c?._id).filter(Boolean);
+    if (!companyIds.length) {
+      throw new Error(`"${resolved.username}" owns no companies`);
+    }
+
+    // Worker map: userId -> { id, name, wage, fidelity, ... }
+    // wage/fidelity come straight off the worker.getWorkers response;
+    // they're needed for the payroll projection. A worker only holds
+    // one contract, so the first values we see are authoritative.
+    const workerMap = new Map();
+    for (const entry of (workersData?.workersPerCompany || [])) {
+      for (const w of (entry.workers || [])) {
+        const uid = typeof w === 'string' ? w : (w.user || w._id || w.userId);
+        if (!uid) continue;
+        if (!workerMap.has(uid)) {
+          const wage     = (w && typeof w === 'object' && typeof w.wage === 'number')     ? w.wage     : null;
+          const fidelity = (w && typeof w === 'object' && typeof w.fidelity === 'number') ? w.fidelity : 0;
+          workerMap.set(uid, { id: uid, name: null, wage, fidelity });
+        }
+      }
+    }
+
+    if (workerMap.size === 0) {
+      steps.setStep(2, 'done', { count: `${companyIds.length} companies · 0 workers` });
+      steps.setStep(3, 'done', { sub: 'No workers to resolve' });
+      steps.setStep(4, 'done', { sub: 'No transactions to pull' });
+      state = { ownerUsername: resolved.username, workers: [], generatedAt: Date.now() };
+      render();
+      steps.fadeOut(400);
+      return;
+    }
+
+    steps.setStep(2, 'done', { count: `${companyIds.length} companies · ${workerMap.size} workers` });
+
+    // Step 3: resolve worker usernames + capture stats for projection
+    const workerIds = [...workerMap.keys()];
+    steps.setStep(3, 'active', { sub: 'Resolving worker profiles', count: `0/${workerIds.length}` });
+    const concurrency = 10;
+    let done = 0;
+    for (let i = 0; i < workerIds.length; i += concurrency) {
+      const batch = workerIds.slice(i, i + concurrency);
+      await Promise.all(batch.map(async uid => {
+        try {
+          const u = await ci_trpc('user.getUserLite', { userId: uid });
+          const w = workerMap.get(uid);
+          if (u?.username) w.name = u.username;
+          // Stats needed for payroll projection. All in skills.{stat}:
+          //   energy.currentBarValue → current energy available
+          //   energy.hourlyBarRegen  → regen per hour (10% of max)
+          //   production.value       → PP generated per work action
+          if (u?.skills) {
+            w.energyNow   = u.skills.energy?.currentBarValue ?? null;
+            w.energyRegen = u.skills.energy?.hourlyBarRegen ?? null;
+            w.production  = u.skills.production?.value ?? null;
+          }
+        } catch { /* skip — projection will mark this worker as unknown */ }
+        done++;
+        steps.setStep(3, 'active', { count: `${done}/${workerIds.length}` });
+      }));
+    }
+    steps.setStep(3, 'done', { count: `${workerIds.length} resolved` });
+
+    // Step 4: pull wage transactions
+    steps.setStep(4, 'active', { sub: 'Pulling wage transactions', count: `0/${workerIds.length}` });
+    let txDone = 0;
+    const txConcurrency = 5;
+    for (let i = 0; i < workerIds.length; i += txConcurrency) {
+      const batch = workerIds.slice(i, i + txConcurrency);
+      await Promise.all(batch.map(async uid => {
+        workerMap.get(uid).punches = await loadWagesForWorker(uid);
+        txDone++;
+        steps.setStep(4, 'active', { count: `${txDone}/${workerIds.length}` });
+      }));
+    }
+    steps.setStep(4, 'done', { count: `${workerIds.length} done` });
+
+    state = {
+      ownerUsername: resolved.username,
+      workers: [...workerMap.values()],
+      generatedAt: Date.now(),
+    };
+    render();
+    steps.fadeOut(800);
+  }
+
+  /* ── Payroll projection ─────────────────────────────────── */
+
+  /** Max actions a worker can perform over N hours, given current
+   *  energy and regen rate. The bar drains as they work, so total
+   *  energy spent = currentEnergy + (hours × regen). Returns 0 if
+   *  stats are missing. */
+  function maxActionsOverHours(w, hours) {
+    if (w.energyNow == null || w.energyRegen == null) return 0;
+    const totalEnergy = w.energyNow + (hours * w.energyRegen);
+    return Math.floor(totalEnergy / ACTION_ENERGY_COST);
+  }
+
+  /** Theoretical max payroll: everyone burns through their full
+   *  available energy in the window. */
+  function projectMaxPayroll(workers, hours) {
+    let total = 0;
+    let contributors = 0;
+    let unknown = 0;
+    for (const w of workers) {
+      if (w.wage == null || w.production == null || w.energyNow == null) {
+        unknown++;
+        continue;
+      }
+      const actions = maxActionsOverHours(w, hours);
+      if (actions === 0) continue;
+      const fidelityMult = 1 + ((w.fidelity || 0) / 100);
+      total += actions * w.production * fidelityMult * w.wage;
+      contributors++;
+    }
+    return { total, contributors, unknown };
+  }
+
+  /** Pace-based payroll: each worker's ₿/hour across their last
+   *  RECENT_PACE_HOURS of wage activity, scaled to the window.
+   *  Workers with no recent activity contribute 0. */
+  function projectPacePayroll(workers, hours, now) {
+    const cutoff = now - (RECENT_PACE_HOURS * 3_600_000);
+    let total = 0;
+    let contributors = 0;
+    let inactive = 0;
+    for (const w of workers) {
+      const recent = (w.punches || []).filter(p => p.at >= cutoff);
+      if (recent.length === 0) { inactive++; continue; }
+      const recentTotal = recent.reduce((s, p) => s + (p.amount || 0), 0);
+      const ratePerHour = recentTotal / RECENT_PACE_HOURS;
+      const projected = ratePerHour * hours;
+      if (projected > 0) {
+        total += projected;
+        contributors++;
+      }
+    }
+    return { total, contributors, inactive };
+  }
+
+  function renderProjection(workers, now) {
+    if (!$projection) return;
+    if (!workers.length) {
+      $projection.style.display = 'none';
+      return;
+    }
+    $projection.style.display = '';
+
+    const cards = PROJECTION_WINDOWS.map(({ hours, mode }) => {
+      if (mode === 'max') {
+        const { total, contributors, unknown } = projectMaxPayroll(workers, hours);
+        const subParts = [`${contributors}/${workers.length} workers`];
+        if (unknown > 0) subParts.push(`<span class="warn">${unknown} unknown</span>`);
+        return `
+          <div class="clockin-proj-card max">
+            <div class="clockin-proj-label">Next ${hours}h <span class="max-tag">ceiling</span></div>
+            <div class="clockin-proj-value">₿${total.toLocaleString(undefined, {maximumFractionDigits: 2})}</div>
+            <div class="clockin-proj-sub">${subParts.join(' · ')}</div>
           </div>
-        </a>
-        <a class="tool-card" href="#advisor">
-          <div class="tool-card-icon">🏭</div>
-          <div class="tool-card-body">
-            <h3>Company Migration Advisor</h3>
-            <p>Enter your username and see whether each of your companies is in its best country, and how much extra output or take-home a move would buy you.</p>
-            <span class="tool-link">Open Migration Advisor →</span>
+        `;
+      }
+      const { total, contributors, inactive } = projectPacePayroll(workers, hours, now);
+      const subParts = [`${contributors}/${workers.length} active`];
+      if (inactive > 0) subParts.push(`<span class="muted">${inactive} idle</span>`);
+      return `
+        <div class="clockin-proj-card">
+          <div class="clockin-proj-label">Next ${hours}h</div>
+          <div class="clockin-proj-value">₿${total.toLocaleString(undefined, {maximumFractionDigits: 2})}</div>
+          <div class="clockin-proj-sub">${subParts.join(' · ')}</div>
+        </div>
+      `;
+    }).join('');
+
+    $projection.innerHTML = `
+      <div class="clockin-proj-head">
+        <div class="clockin-proj-title">Projected payroll</div>
+        <div class="clockin-proj-hint">
+          The 3h and 6h figures project each worker's ₿/hour over the last 24h forward into the window.
+          The 10h <strong>ceiling</strong> is the theoretical max if every worker burned through their full energy bar — useful as a "worst case" reference, but rarely what actually happens.
+        </div>
+      </div>
+      <div class="clockin-proj-grid">${cards}</div>
+    `;
+  }
+
+  /* ── Rendering ──────────────────────────────────────────── */
+  function statusClass(lastMs) {
+    if (lastMs == null) return 'never';
+    if (lastMs < ACTIVE_THRESHOLD_MS) return '';
+    if (lastMs < WINDOW_MS) return 'warn';
+    return 'danger';
+  }
+  function statusLabel(lastMs) {
+    if (lastMs == null) return 'Never (48h window)';
+    if (lastMs < ACTIVE_THRESHOLD_MS) return 'Active';
+    if (lastMs < WINDOW_MS) return 'Slowing';
+    return 'Idle';
+  }
+
+  function groupIntoEpisodes(punches, cutoff) {
+    const visible = punches.filter(p => p.at >= cutoff);
+    const grouped = [];
+    for (const p of visible) {
+      const last = grouped[grouped.length - 1];
+      if (last && Math.abs(last.at - p.at) <= GROUP_WINDOW_MS) {
+        last.count += 1;
+        last.totalAmount += (p.amount || 0);
+        last.totalQty    += (p.quantity || 0);
+        if (p.at < last.startAt) last.startAt = p.at;
+      } else {
+        grouped.push({
+          at: p.at, startAt: p.at,
+          count: 1,
+          totalAmount: p.amount || 0,
+          totalQty: p.quantity || 0,
+        });
+      }
+    }
+    return grouped;
+  }
+
+  function renderTimeline(episodes, now) {
+    const cutoff = now - WINDOW_MS;
+    const ticks = episodes.map(g => {
+      const pct = ((g.at - cutoff) / WINDOW_MS) * 100;
+      const d = new Date(g.at);
+      const qStr      = g.totalQty > 0    ? ` · ${g.totalQty} production points` : '';
+      const amountStr = g.totalAmount > 0 ? ` · ₿${g.totalAmount.toLocaleString(undefined, {maximumFractionDigits: 4})}` : '';
+      const title = `${fmtTime(d)}${qStr}${amountStr}`;
+      return `<div class="clockin-punch" style="left: ${pct.toFixed(2)}%" title="${escapeHtml(title)}"></div>`;
+    }).join('');
+
+    const axisTicks = [];
+    for (let h = WINDOW_HOURS; h >= 0; h -= 12) {
+      const pct = ((WINDOW_HOURS - h) / WINDOW_HOURS) * 100;
+      const label = h === 0 ? 'now' : `-${h}h`;
+      axisTicks.push(`<div class="clockin-axis-tick" style="left:${pct}%">${label}</div>`);
+    }
+    return `
+      <div class="clockin-timeline-track">
+        ${ticks}
+        <div class="clockin-timeline-now" style="right: 0"></div>
+      </div>
+      <div class="clockin-timeline-axis">${axisTicks.join('')}</div>
+    `;
+  }
+
+  function renderEpisodeList(episodes, now) {
+    if (!episodes.length) return '';
+    const rows = episodes.map((ep, i) => {
+      const d = new Date(ep.at);
+      const ago = fmtAgo(now - ep.at);
+      const older = episodes[i + 1];
+      let gapHtml = '';
+      if (older) {
+        const gapMs = ep.at - older.at;
+        const longGap = gapMs > 60 * 60_000;
+        gapHtml = `<div class="clockin-ep-gap ${longGap ? 'long' : ''}" title="Time between previous clock-in and this one">↓ ${fmtGap(gapMs)} rest before</div>`;
+      }
+      const meta = ep.totalQty > 0 ? `${ep.totalQty} production points` : '';
+      return `
+        <div class="clockin-ep">
+          <div class="clockin-ep-time">${fmtTime(d)}</div>
+          <div class="clockin-ep-ago">${escapeHtml(ago)}</div>
+          <div class="clockin-ep-amount">₿${ep.totalAmount.toLocaleString(undefined, {maximumFractionDigits: 4})}</div>
+          <div class="clockin-ep-meta">${escapeHtml(meta)}</div>
+          ${gapHtml}
+        </div>
+      `;
+    });
+
+    const overflow = episodes.length > INITIAL_EPISODE_LIMIT;
+    const visible  = rows.slice(0, INITIAL_EPISODE_LIMIT).join('');
+    const hidden   = overflow ? `<div class="clockin-ep-hidden" style="display:none">${rows.slice(INITIAL_EPISODE_LIMIT).join('')}</div>` : '';
+    const moreBtn  = overflow
+      ? `<button class="clockin-show-more" onclick="(function(b){var h=b.previousElementSibling;h.style.display='flex';h.style.flexDirection='column';b.remove();})(this)">Show ${episodes.length - INITIAL_EPISODE_LIMIT} older episode${episodes.length - INITIAL_EPISODE_LIMIT === 1 ? '' : 's'}</button>`
+      : '';
+
+    return `<div class="clockin-ep-list">${visible}${hidden}${moreBtn}</div>`;
+  }
+
+  function renderWorkerTimelineSection(punches, now) {
+    const cutoff = now - WINDOW_MS;
+    const episodes = groupIntoEpisodes(punches, cutoff);
+    if (episodes.length === 0) {
+      return `
+        <div class="clockin-worker-timeline">
+          ${renderTimeline([], now)}
+          <div class="clockin-no-punches">No clock-ins recorded in the last ${WINDOW_HOURS} hours.</div>
+        </div>
+      `;
+    }
+    const summaryLabel = episodes.length === 1
+      ? 'Show detail for 1 episode'
+      : `Show detail for ${episodes.length} episodes`;
+    return `
+      <div class="clockin-worker-timeline">
+        ${renderTimeline(episodes, now)}
+        <details class="clockin-ep-detail">
+          <summary>${summaryLabel}</summary>
+          ${renderEpisodeList(episodes, now)}
+        </details>
+      </div>
+    `;
+  }
+
+  function render() {
+    if (!state) return;
+    const now = Date.now();
+    const workers = state.workers.slice();
+
+    workers.forEach(w => {
+      const last = (w.punches || [])[0];
+      w._lastMs = last ? (now - last.at) : null;
+    });
+
+    let shown = workers;
+    if ($filterIdle.checked) {
+      shown = shown.filter(w => w._lastMs == null || w._lastMs >= ACTIVE_THRESHOLD_MS);
+    }
+    if ($sortIdle.checked) {
+      shown.sort((a, b) => (b._lastMs ?? Infinity) - (a._lastMs ?? Infinity));
+    } else {
+      shown.sort((a, b) => (a._lastMs ?? Infinity) - (b._lastMs ?? Infinity));
+    }
+
+    // Composite "Workers N (X active · Y idle)" — omit zero parts.
+    const activeCount = workers.filter(w => w._lastMs != null && w._lastMs < ACTIVE_THRESHOLD_MS).length;
+    const idleCount   = workers.filter(w => w._lastMs == null || w._lastMs >= WINDOW_MS).length;
+    const subParts = [];
+    if (activeCount > 0) subParts.push(`<span class="pos">${activeCount} active</span>`);
+    if (idleCount > 0)   subParts.push(`<span class="neg">${idleCount} idle</span>`);
+    const sub = subParts.length
+      ? `<span class="sub">(${subParts.join('<span class="sep">·</span>')})</span>`
+      : '';
+    $sumWorkers.innerHTML = `${workers.length}${sub}`;
+    $summary.style.display = '';
+    $hint.classList.add('hidden');
+
+    // Projection panel (uses unfiltered workers — the projection is
+    // about your whole roster, not just the currently-shown subset).
+    renderProjection(workers, now);
+
+    if (!shown.length) {
+      $workers.innerHTML = `<div class="status">No workers match the current filter.</div>`;
+      return;
+    }
+    $workers.innerHTML = shown.map(w => {
+      const cls = statusClass(w._lastMs);
+      const label = statusLabel(w._lastMs);
+      const ago = w._lastMs == null ? 'never' : fmtAgo(w._lastMs);
+      const nameLink = w.name
+        ? `<a href="${userUrl(w.id)}" target="_blank" rel="noopener">${escapeHtml(w.name)}</a>`
+        : `<span style="color:var(--muted)">user ${escapeHtml(w.id).slice(-6)}</span>`;
+      const externalIcon = `<a class="clockin-link-icon" href="${userUrl(w.id)}" target="_blank" rel="noopener" title="Open profile in War Era"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>`;
+      return `
+        <div class="clockin-worker-card">
+          <div class="clockin-worker-head">
+            <div class="clockin-worker-name">${nameLink}${externalIcon}</div>
+            <div class="clockin-worker-meta">
+              <span class="clockin-item"><span class="clockin-ago ${cls}">${escapeHtml(label)}</span></span>
+              <span class="clockin-item">Last clock-in: <strong>${escapeHtml(ago)}</strong></span>
+            </div>
           </div>
-        </a>
-        <a class="tool-card" href="#clockin">
-          <div class="tool-card-icon">⏱</div>
-          <div class="tool-card-body">
-            <h3>Employee Clock-In Monitor</h3>
-            <p>Enter your username to see when each of your workers last clocked in. 48h timeline with episode breakdowns of production points and ₿ paid.</p>
-            <span class="tool-link">Open Clock-In Monitor →</span>
-          </div>
-        </a>
-        <a class="tool-card" href="#buddy">
-          <div class="tool-card-icon">🤝</div>
-          <div class="tool-card-body">
-            <h3>Irish Buddy System Monitor <span class="lock-pill" title="Encrypted, MoECON-only access">🔒 MoECON only</span></h3>
-            <p>Reciprocal employment tracker. Buddy pairs, strays, and suggested pairings to maximise Irish production. Requires the MoECON password.</p>
-            <span class="tool-link">Open Buddy System Monitor →</span>
-          </div>
-        </a>
-        <a class="tool-card" href="#battle-orders">
-          <div class="tool-card-icon">⚔️</div>
-          <div class="tool-card-body">
-            <h3>Battle Orders <span class="lock-pill" title="Encrypted, MoD-only access">🔒 MoD only</span></h3>
-            <p>Live tracker for active battles. Country pills, MU order compliance, one-click Discord push for commanders. Requires the MoD password.</p>
-            <span class="tool-link">Open Battle Orders →</span>
-          </div>
-        </a>
-      </div>
-    </div>
-  </section>
-
-  <!-- ─── Irish Military Units view ─────────────────────────────── -->
-  <section class="view" data-view="mu">
-    <div class="tool-header">
-      <div class="title-block">
-        <h2><span>🇮🇪</span> Irish Military Units</h2>
-        <p>Owned by Irish citizens, in Ireland, with a majority of Irish citizens.</p>
-      </div>
-      <div class="controls">
-        <div class="seg" id="mu-filter">
-          <button class="seg-btn active" data-mu-filter="all">All</button>
-          <button class="seg-btn" data-mu-filter="open">Has slots</button>
-          <button class="seg-btn" data-mu-filter="full">Full</button>
+          ${renderWorkerTimelineSection(w.punches || [], now)}
         </div>
-        <button id="mu-refresh">Refresh</button>
-      </div>
-    </div>
+      `;
+    }).join('');
+  }
 
-    <div id="mu-steps" class="steps hidden">
-      <div class="step" data-state="pending" data-step="1">
-        <div class="step-icon"></div>
-        <div class="step-body">
-          <div class="step-title">Fetching military units</div>
-          <div class="step-sub"></div>
-        </div>
-        <div class="step-count"></div>
-      </div>
-      <div class="step" data-state="pending" data-step="2">
-        <div class="step-icon"></div>
-        <div class="step-body">
-          <div class="step-title">Finding Irish citizens</div>
-          <div class="step-sub"></div>
-        </div>
-        <div class="step-count"></div>
-      </div>
-      <div class="step" data-state="pending" data-step="3">
-        <div class="step-icon"></div>
-        <div class="step-body">
-          <div class="step-title">Resolving usernames</div>
-          <div class="step-sub"></div>
-        </div>
-        <div class="step-count"></div>
-      </div>
-    </div>
-    <div id="mu-status" class="status hidden"></div>
-    <div id="mu-grid" class="mu-grid"></div>
-    <details class="howto">
-      <summary>How MUs are selected</summary>
-      <div class="howto-body">
-        <ul>
-          <li><strong>Owner nationality.</strong> The MU's owner must currently be an Irish citizen. Owners who've migrated away get filtered out, even if they founded the MU.</li>
-          <li><strong>MU country.</strong> When the MU exposes its own country (under <code>countryId</code>, <code>country</code>, <code>nationalityId</code>, or <code>nationality</code>), it must be set to Ireland. MUs without any country field skip this check rather than being dropped, so missing data doesn't wipe the list.</li>
-          <li><strong>Member majority.</strong> At least half of the MU's members must be Irish. MUs with a mostly foreign roster are dropped even when the owner is local.</li>
-          <li>In the expanded members list, Irish citizens are marked 🇮🇪 and non-citizens are marked 🌍 and dimmed. The <strong>Irish</strong> stat on each card shows the ratio.</li>
-        </ul>
-      </div>
-    </details>
-  </section>
+  /* ── Wire-up ────────────────────────────────────────────── */
+  async function run() {
+    if (running) return;
+    const u = $username.value.trim();
+    if (!u) { $username.focus(); return; }
 
-  <!-- ─── Migration Advisor view ────────────────────────────────── -->
-  <section class="view" data-view="advisor">
-    <div class="tool-header">
-      <div class="title-block">
-        <h2><span>🏭</span> Company Migration Advisor</h2>
-        <p>Find a better country for each of your companies.</p>
-      </div>
-      <div class="controls">
-        <input id="adv-username" type="text" placeholder="Your War Era username" autocomplete="off" spellcheck="false" />
-        <button id="adv-go">Analyse</button>
-      </div>
-    </div>
+    // Update the hash so this view is shareable.
+    const newHash = `#clockin?u=${encodeURIComponent(u)}`;
+    if (location.hash !== newHash) {
+      history.replaceState(null, '', newHash + location.search);
+    }
 
-    <div id="adv-steps" class="steps hidden">
-      <div class="step" data-state="pending" data-step="1">
-        <div class="step-icon"></div>
-        <div class="step-body">
-          <div class="step-title">Finding user</div>
-          <div class="step-sub"></div>
-        </div>
-        <div class="step-count"></div>
-      </div>
-      <div class="step" data-state="pending" data-step="2">
-        <div class="step-icon"></div>
-        <div class="step-body">
-          <div class="step-title">Loading user's companies</div>
-          <div class="step-sub"></div>
-        </div>
-        <div class="step-count"></div>
-      </div>
-      <div class="step" data-state="pending" data-step="3">
-        <div class="step-icon"></div>
-        <div class="step-body">
-          <div class="step-title">Loading country data</div>
-          <div class="step-sub"></div>
-        </div>
-        <div class="step-count"></div>
-      </div>
-    </div>
-    <div id="adv-status" class="status hidden"></div>
-    <div id="adv-hint" class="hint">Enter your War Era username above to begin.</div>
-    <div id="adv-grid" class="adv-grid"></div>
-    <details class="howto hidden" id="adv-howto">
-      <summary>How this works</summary>
-      <div class="howto-body">
-        <ul>
-          <li><strong>Production bonus</strong> has up to four components. Strategic resources and regional deposits are flat country/region facts; the two +30% bonuses are gated by the country's <strong>industrialism</strong> lean, a signed integer the game exposes via the warerastats data feed (range −2…+2 in current data, with 0 = neutral). The gating is asymmetric: <em>industrialist-leaning</em> (ind &gt; 0) countries grant the +30 on their specialised item; <em>agrarian-leaning</em> (ind &lt; 0) countries grant the +30 on matching regional deposits; <em>neutral</em> (ind = 0) countries grant neither. Each lean grants exactly one type of +30%, never both.
-            <ul style="margin-top: 4px;">
-              <li><strong>Strategic resources:</strong> the country's <code>productionPercent</code>, fires when the item matches the country's <code>specializedItem</code>. Independent of industrialism.</li>
-              <li><strong>+30% Industrialism (specialisation):</strong> fires alongside strategic resources only when the country is industrialist-leaning AND specialises in the item.</li>
-              <li><strong>Regional deposit</strong> (the deposit's <code>bonusPercent</code>, typically +30%): fires when the country does NOT specialise in this item AND the region has an active matching deposit.</li>
-              <li><strong>+30% Industrialism (deposit):</strong> fires alongside a regional deposit only when the country is agrarian-leaning.</li>
-            </ul>
-          </li>
-          <li><strong>Industrialism is read directly,</strong> not inferred. The signed integer comes from the warerastats companion endpoint. If warerastats is unreachable, the tool degrades gracefully: industrialism defaults to 0 for all countries.</li>
-          <li><strong>Income tax</strong> is deducted from <em>workers'</em> wages, not from the owner's share of production. So whether tax directly affects you depends on whether you actually work in the company.</li>
-          <li><strong>You work here</strong> (badge shown on the card): ranking uses your take-home, <code>(1 + bonus%) × (1 − income tax%)</code>.</li>
-          <li><strong>No badge:</strong> you own the company but don't work in it. Ranking uses raw output, <code>1 + bonus%</code>.</li>
-          <li><strong>The percentage on each verdict pill is a relative increase</strong>, not a percentage-point change.</li>
-          <li><strong>Numbers shown are regional/country bonuses only.</strong> Company-level upgrades aren't location-dependent, so totals here may be lower than what the game shows on your company.</li>
-          <li>Not modelled: migration cost, active wars or sanctions, worker recruitment effects of high tax, market and sales taxes, or political shifts.</li>
-        </ul>
-      </div>
-    </details>
-  </section>
+    running = true;
+    $run.disabled = true;
+    $hint.classList.add('hidden');
+    setStatus('');
+    $workers.innerHTML = '';
+    $summary.style.display = 'none';
+    if ($projection) $projection.style.display = 'none';
+    steps.reset();
+    state = null;
+    try {
+      await analyse(u);
+      // If the resolved name differs in case, rewrite the hash with the
+      // canonical form so refresh-by-URL stays stable.
+      if (state?.ownerUsername && state.ownerUsername !== u) {
+        const fixed = `#clockin?u=${encodeURIComponent(state.ownerUsername)}`;
+        if (location.hash !== fixed) history.replaceState(null, '', fixed + location.search);
+      }
+    } catch (e) {
+      steps.markActiveAsError(e.message);
+      const friendly = isTransientError(e)
+        ? `The data server is having a moment (${e.message}). Wait a few seconds and try again.`
+        : `Error: ${e.message}`;
+      setStatus(friendly, true);
+    } finally {
+      running = false;
+      $run.disabled = false;
+    }
+  }
 
-  <!-- ─── Employee Clock-In Monitor view ────────────────────────── -->
-  <section class="view" data-view="clockin">
-    <div class="tool-header">
-      <div class="title-block">
-        <h2><span>⏱</span> Employee Clock-In Monitor</h2>
-        <p>See when each of your workers last clocked in. Wage transactions are the source of truth.</p>
-      </div>
-      <div class="controls">
-        <input id="clockin-username" type="text" placeholder="Your War Era username" autocomplete="off" spellcheck="false" />
-        <button id="clockin-go">Track</button>
-      </div>
-    </div>
+  $run.addEventListener('click', run);
+  $username.addEventListener('keydown', e => { if (e.key === 'Enter') run(); });
+  $filterIdle.addEventListener('change', () => state && render());
+  $sortRecent.addEventListener('change', () => state && render());
+  $sortIdle.addEventListener('change',   () => state && render());
 
-    <div id="clockin-steps" class="steps hidden">
-      <div class="step" data-state="pending" data-step="1">
-        <div class="step-icon"></div>
-        <div class="step-body">
-          <div class="step-title">Resolve username</div>
-          <div class="step-sub"></div>
-        </div>
-        <div class="step-count"></div>
-      </div>
-      <div class="step" data-state="pending" data-step="2">
-        <div class="step-icon"></div>
-        <div class="step-body">
-          <div class="step-title">Load companies &amp; workers</div>
-          <div class="step-sub"></div>
-        </div>
-        <div class="step-count"></div>
-      </div>
-      <div class="step" data-state="pending" data-step="3">
-        <div class="step-icon"></div>
-        <div class="step-body">
-          <div class="step-title">Resolve worker usernames</div>
-          <div class="step-sub"></div>
-        </div>
-        <div class="step-count"></div>
-      </div>
-      <div class="step" data-state="pending" data-step="4">
-        <div class="step-icon"></div>
-        <div class="step-body">
-          <div class="step-title">Pull recent wage transactions</div>
-          <div class="step-sub"></div>
-        </div>
-        <div class="step-count"></div>
-      </div>
-    </div>
-
-    <div id="clockin-status" class="status hidden"></div>
-    <div id="clockin-hint" class="hint">Enter your War Era username above to begin.</div>
-
-    <div id="clockin-summary" class="clockin-summary-bar" style="display:none">
-      <div class="clockin-sum-stat">
-        <span class="k">Workers</span>
-        <span class="v" id="clockin-sum-workers">0</span>
-      </div>
-      <div class="clockin-spacer"></div>
-      <div class="clockin-filter-group">
-        <label class="clockin-filter-toggle">
-          <input type="checkbox" id="clockin-filter-idle" />
-          <span>Only idle</span>
-        </label>
-        <div class="clockin-sort-group" role="radiogroup" aria-label="Sort workers">
-          <input type="radio" name="clockin-sortby" id="clockin-sort-recent" checked />
-          <label for="clockin-sort-recent">Recent first</label>
-          <input type="radio" name="clockin-sortby" id="clockin-sort-idle" />
-          <label for="clockin-sort-idle">Idle longest</label>
-        </div>
-      </div>
-    </div>
-
-    <div id="clockin-projection" class="clockin-projection" style="display:none"></div>
-
-    <div id="clockin-workers" class="clockin-worker-list"></div>
-
-    <details class="howto">
-      <summary>How this works</summary>
-      <div class="howto-body">
-        <h4>The short version</h4>
-        <p>Every time one of your workers does a work cycle, you pay them a wage. That wage is timestamped and stored in the game's transaction history. We pull those timestamps for each of your workers, group them into clock-in episodes, and plot them on a 48-hour timeline.</p>
-
-        <h4>What the colours mean</h4>
-        <ul>
-          <li><strong style="color:var(--accent)">Active</strong> — clocked in within the last 24 hours. They're working.</li>
-          <li><strong style="color:var(--warn)">Slowing</strong> — last clock-in was 24 to 48 hours ago. Worth a nudge.</li>
-          <li><strong style="color:var(--danger)">Idle</strong> — no clock-ins in the last 48 hours. They've stopped showing up.</li>
-        </ul>
-
-        <h4>What the timeline shows</h4>
-        <p>The line under each worker is the last 48 hours, with "now" on the right and 48h ago on the left. Each green dot is one clock-in episode. Hover a dot to see the exact time, production points earned, and ₿ paid.</p>
-        <p>Lots of dots bunched together means a busy worker. A gap on the right means they've been quiet recently. Click <em>Show detail</em> on a worker to see each episode listed individually with the rest periods between them.</p>
-
-        <h4>Episodes vs. individual cycles</h4>
-        <p>A worker can do several work cycles back-to-back in quick succession — the game settles these as separate wage transactions but they all happen at roughly the same moment. To keep the timeline readable, cycles that happen within 4 minutes of each other are grouped into a single <strong>episode</strong>. The displayed production points and ₿ are the combined totals for the episode, so nothing gets lost — it's just shown as one dot instead of a cluster of overlapping ones.</p>
-
-        <h4>Things to know</h4>
-        <ul>
-          <li><strong>One worker, one employer.</strong> In War Era a worker can only hold one work contract at a time, so every wage they receive is from you — that's why the clock-ins shown are real and complete.</li>
-          <li><strong>Dot density isn't effort.</strong> A high-wage worker does fewer (but bigger) cycles than a low-wage one. Two workers with very different dot counts can be putting in the same hours.</li>
-          <li><strong>Empty timeline isn't a fired employee.</strong> If someone's on contract with you but hasn't clocked in for 48h, you'll still see their card — just with no dots. They're idle, not gone.</li>
-          <li><strong>The last few minutes may be missing.</strong> The data is scraped from the game, so very fresh clock-ins might not appear until the next scrape.</li>
-        </ul>
-
-        <h4>Sharing a view</h4>
-        <p>Once you've loaded your roster, the URL updates to include your username (e.g. <code>#clockin?u=toie</code>). Bookmark it or share it — opening that link will reload the same view straight away.</p>
-
-        <h4>For the curious: where the data comes from</h4>
-        <p>Under the hood, this calls a few endpoints on the War Era Gateway: <code>search.searchAnything</code> and <code>user.getUserLite</code> to find your account, <code>company.getCompanies</code> + <code>worker.getWorkers</code> for your roster, and <code>transaction.getPaginatedTransactions</code> (filtered to <code>wage</code>) for each worker's recent clock-ins. Wage transactions are modelled as trades — the worker sells their labour (<code>sellerId</code>), you buy it (<code>buyerId</code>) — so we keep only the ones where the worker is the seller to filter out their own outgoing payroll if they also employ people. The whole thing runs in your browser. Nothing is stored.</p>
-      </div>
-    </details>
-  </section>
-
-  <!-- ─── Buddy System view (encrypted; MoECON password required) ───── -->
-  <section class="view" data-view="buddy">
-    <div class="tool-header">
-      <div class="title-block">
-        <h2><span>🤝</span> Irish Buddy System Monitor</h2>
-        <p>Reciprocal employment tracker. Who's working for whom inside the Irish economy. Restricted access for the Irish Minister of Economy.</p>
-      </div>
-      <div class="controls" id="buddy-controls">
-        <!-- Refresh button + updated label injected here after unlock. -->
-      </div>
-    </div>
-
-    <div id="buddy-gate" class="bo-gate">
-      <div class="lock-icon">🔒</div>
-      <h3>Restricted access</h3>
-      <p>This tool is encrypted. Enter the MoECON password to decrypt and load it.</p>
-      <form id="buddy-gate-form" class="bo-gate-form">
-        <input id="buddy-gate-pw" type="password" placeholder="Password" autocomplete="current-password" />
-        <button id="buddy-gate-submit" type="submit" class="btn-primary">Unlock</button>
-        <div id="buddy-gate-error" class="bo-gate-error" aria-live="polite"></div>
-      </form>
-    </div>
-
-    <div id="buddy-content"><!-- Decrypted Buddy System HTML lands here. --></div>
-  </section>
-
-  <!-- ─── Battle Orders view (encrypted; MoD password required) ──── -->
-  <section class="view" data-view="battle-orders">
-    <div class="tool-header">
-      <div class="title-block">
-        <h2><span>⚔️</span> Battle Orders</h2>
-        <p>Live tracker for active battles. Country pills, MU order compliance, Discord push for commanders. Restricted access for the Irish Minister of Defense.</p>
-      </div>
-      <div class="controls" id="bo-controls">
-        <!-- Refresh button + updated label injected here after unlock. -->
-      </div>
-    </div>
-
-    <div id="bo-gate" class="bo-gate">
-      <div class="lock-icon">🔒</div>
-      <h3>Restricted access</h3>
-      <p>This tool is encrypted. Enter the MoD password to decrypt and load it.</p>
-      <form id="bo-gate-form" class="bo-gate-form">
-        <input id="bo-gate-pw" type="password" placeholder="Password" autocomplete="current-password" />
-        <button id="bo-gate-submit" type="submit" class="btn-primary">Unlock</button>
-        <div id="bo-gate-error" class="bo-gate-error" aria-live="polite"></div>
-      </form>
-    </div>
-
-    <div id="bo-content"><!-- Decrypted BO HTML lands here. --></div>
-  </section>
-</main>
-
-<footer>
-  Made with <span class="heart">♥️</span> by toie. <span class="sep">·</span> Live data via <a href="https://gateway.warerastats.io/" target="_blank" rel="noopener">War Era Gateway</a>.
-</footer>
-
-<!-- Load order matters: shared first, tools next, router last. -->
-<script src="js/shared.js"></script>
-<script src="js/mu.js"></script>
-<script src="js/advisor.js"></script>
-<script src="js/clockin.js"></script>
-<script src="js/buddy.js"></script>
-<script src="js/battle-orders.js"></script>
-<script src="js/router.js"></script>
-</body>
-</html>
+  return {
+    /**
+     * Called by the router every time this view becomes active.
+     * Idempotent: if ?u= differs from the current input, update the
+     * field and re-run; otherwise just focus the empty field.
+     * @param {URLSearchParams} [params]
+     */
+    activate(params) {
+      const u = (params && params.get('u'))
+             || new URLSearchParams(location.search).get('u');
+      if (u && $username.value !== u) {
+        $username.value = u;
+        run();
+      } else if (!$username.value) {
+        $username.focus();
+      }
+    },
+  };
+})();

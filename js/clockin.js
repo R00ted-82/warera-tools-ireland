@@ -356,6 +356,20 @@ const ClockInTool = (() => {
     return { total, contributors, inactive };
   }
 
+  /** Total actually paid in the last N hours across all workers.
+   *  This is ground truth — sums the wage transactions we already pulled.
+   *  Used as the reference number to validate the projections against. */
+  function actualPayrollInLastHours(workers, hours, now) {
+    const cutoff = now - (hours * 3_600_000);
+    let total = 0;
+    for (const w of workers) {
+      for (const p of (w.punches || [])) {
+        if (p.at >= cutoff) total += (p.amount || 0);
+      }
+    }
+    return total;
+  }
+
   function renderProjection(workers, now) {
     if (!$projection) return;
     if (!workers.length) {
@@ -364,7 +378,17 @@ const ClockInTool = (() => {
     }
     $projection.style.display = '';
 
+    // Reference number: what you actually paid in the last 24h. Sits in
+    // the header so the projections can be sanity-checked at a glance.
+    const actual24h = actualPayrollInLastHours(workers, 24, now);
+    const hourlyRate = actual24h / 24;
+
     const cards = PROJECTION_WINDOWS.map(({ hours, mode }) => {
+      // Matching "actual paid in last N hours" for the same window, as
+      // a calibration reference under each projection.
+      const actualSameWindow = actualPayrollInLastHours(workers, hours, now);
+      const actualLine = `<div class="clockin-proj-actual">Last ${hours}h actual: ₿${actualSameWindow.toLocaleString(undefined, {maximumFractionDigits: 2})}</div>`;
+
       if (mode === 'max') {
         const { total, contributors, unknown } = projectMaxPayroll(workers, hours);
         const subParts = [`${contributors}/${workers.length} workers`];
@@ -374,6 +398,7 @@ const ClockInTool = (() => {
             <div class="clockin-proj-label">Next ${hours}h <span class="max-tag">ceiling</span></div>
             <div class="clockin-proj-value">₿${total.toLocaleString(undefined, {maximumFractionDigits: 2})}</div>
             <div class="clockin-proj-sub">${subParts.join(' · ')}</div>
+            ${actualLine}
           </div>
         `;
       }
@@ -385,6 +410,7 @@ const ClockInTool = (() => {
           <div class="clockin-proj-label">Next ${hours}h</div>
           <div class="clockin-proj-value">₿${total.toLocaleString(undefined, {maximumFractionDigits: 2})}</div>
           <div class="clockin-proj-sub">${subParts.join(' · ')}</div>
+          ${actualLine}
         </div>
       `;
     }).join('');
@@ -395,6 +421,10 @@ const ClockInTool = (() => {
         <div class="clockin-proj-hint">
           The 3h and 6h figures project each worker's ₿/hour over the last 24h forward into the window.
           The 10h <strong>ceiling</strong> is the theoretical max if every worker burned through their full energy bar — useful as a "worst case" reference, but rarely what actually happens.
+          Each card also shows what you <em>actually</em> paid in the matching window — handy for sanity-checking the projection.
+        </div>
+        <div class="clockin-proj-rate">
+          Last 24h: <strong>₿${actual24h.toLocaleString(undefined, {maximumFractionDigits: 2})}</strong> · avg <strong>₿${hourlyRate.toLocaleString(undefined, {maximumFractionDigits: 2})}/h</strong>
         </div>
       </div>
       <div class="clockin-proj-grid">${cards}</div>

@@ -921,6 +921,22 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
 .clockin-proj-sub .warn  { color: var(--warn); }
 .clockin-proj-sub .muted { opacity: 0.7; }
 
+/* "Last 24h actual" reference numbers shown under each projection
+ * card + in the header. Always muted — they're calibration data, not
+ * the primary figure on each card. */
+.clockin-proj-actual {
+  font-size: 10.5px; color: var(--muted);
+  margin-top: 6px; padding-top: 6px;
+  border-top: 1px dashed var(--border);
+  font-variant-numeric: tabular-nums;
+}
+.clockin-proj-rate {
+  font-size: 11px; color: var(--muted);
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.clockin-proj-rate strong { color: var(--text); font-weight: 600; }
+
 /* Mobile clock-in adjustments — keep everything below the 720px
  * breakpoint in one place so the file's easier to scan.
  * - 720px: summary-bar filters wrap, worker meta drops to full-width,

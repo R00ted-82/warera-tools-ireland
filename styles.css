@@ -918,24 +918,16 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
 .clockin-proj-sub {
   font-size: 11px; color: var(--muted); margin-top: 2px;
 }
-.clockin-proj-sub .warn  { color: var(--warn); }
-.clockin-proj-sub .muted { opacity: 0.7; }
 
-/* "Last 24h actual" reference numbers shown under each projection
- * card + in the header. Always muted — they're calibration data, not
- * the primary figure on each card. */
+/* "Last Nh actual" reference shown under each projection card. Sits
+ * separated from the projection above with a dashed line — clearly a
+ * different kind of number (factual, not predicted). */
 .clockin-proj-actual {
-  font-size: 10.5px; color: var(--muted);
-  margin-top: 6px; padding-top: 6px;
+  font-size: 11px; color: var(--muted);
+  margin-top: 8px; padding-top: 8px;
   border-top: 1px dashed var(--border);
   font-variant-numeric: tabular-nums;
 }
-.clockin-proj-rate {
-  font-size: 11px; color: var(--muted);
-  margin-top: 4px;
-  font-variant-numeric: tabular-nums;
-}
-.clockin-proj-rate strong { color: var(--text); font-weight: 600; }
 
 /* Mobile clock-in adjustments — keep everything below the 720px
  * breakpoint in one place so the file's easier to scan.

@@ -613,8 +613,13 @@ const ClockInTool = (() => {
     const u = $username.value.trim();
     if (!u) { $username.focus(); return; }
 
-    // Update the hash so this view is shareable.
-    const newHash = `#clockin?u=${encodeURIComponent(u)}`;
+    // Update the hash so this view is shareable. Preserve any extra
+    // params (like bypass=1) the user came in with so they survive the
+    // re-write — otherwise the gate can't see them after the run starts.
+    const existingQuery = location.hash.split('?')[1] || '';
+    const params = new URLSearchParams(existingQuery);
+    params.set('u', u);
+    const newHash = `#clockin?${params.toString()}`;
     if (location.hash !== newHash) {
       history.replaceState(null, '', newHash + location.search);
     }
@@ -631,9 +636,12 @@ const ClockInTool = (() => {
     try {
       await analyse(u);
       // If the resolved name differs in case, rewrite the hash with the
-      // canonical form so refresh-by-URL stays stable.
+      // canonical form so refresh-by-URL stays stable. Same param-preserving
+      // pattern as above.
       if (state?.ownerUsername && state.ownerUsername !== u) {
-        const fixed = `#clockin?u=${encodeURIComponent(state.ownerUsername)}`;
+        const q = new URLSearchParams(location.hash.split('?')[1] || '');
+        q.set('u', state.ownerUsername);
+        const fixed = `#clockin?${q.toString()}`;
         if (location.hash !== fixed) history.replaceState(null, '', fixed + location.search);
       }
     } catch (e) {

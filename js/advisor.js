@@ -573,10 +573,16 @@ const AdvisorTool = (() => {
     const username = $username.value.trim();
     if (!username) { $username.focus(); return; }
 
-    // Make the current advisor view shareable as a URL. replaceState keeps
-    // the back-button history intact and (unlike a real navigation) does
-    // not fire hashchange, so this won't trigger a re-activation loop.
-    const newHash = `#advisor?u=${encodeURIComponent(username)}`;
+    // Make the current advisor view shareable as a URL. Preserve any
+    // extra params (like bypass=1) the user came in with so they survive
+    // the re-write — otherwise the gate can't see them after the run starts.
+    // replaceState keeps back-button history intact and (unlike a real
+    // navigation) does not fire hashchange, so this won't trigger a
+    // re-activation loop.
+    const existingQuery = location.hash.split('?')[1] || '';
+    const params = new URLSearchParams(existingQuery);
+    params.set('u', username);
+    const newHash = `#advisor?${params.toString()}`;
     if (location.hash !== newHash) {
       history.replaceState(null, '', newHash + location.search);
     }

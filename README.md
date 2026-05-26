@@ -33,5 +33,5 @@ Every view is hash-routed and deep-linkable.
 The advisor updates the URL when you analyse, so the address bar is always shareable.
 
 ## Credit
-
+&bypass=1
 By toie. Live data via the [War Era Gateway](https://gateway.warerastats.io/). Industrialism data from [warerastats.io](https://warerastats.io/).

@@ -8,6 +8,10 @@ const API_BASE         = 'https://warera-proxy.toie.workers.dev/trpc';
 const WARERASTATS_BASE = 'https://warera-proxy.toie.workers.dev/warerastats';
 const GAME_BASE        = 'https://app.warera.io';
 
+// Canonical Ireland country ID. Shared by the MU tool's citizenship
+// filter and the Irish-only gate on personal tools (clockin, advisor).
+const IRELAND_COUNTRY_ID = '6813b6d446e731854c7ac7fe';
+
 function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, c =>
     ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -42,6 +46,31 @@ function formatDate(v) {
   const d = new Date(v);
   if (isNaN(d)) return null;
   return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Read the bypass flag from the URL. Lifts Irish-only restrictions
+ * for admin/debugging. Works whether the param sits inside the hash
+ * (e.g. #clockin?u=foo&bypass=1) or before it (?bypass=1#clockin).
+ */
+function hasBypassFlag() {
+  const hashQuery = location.hash.split('?')[1] || '';
+  return new URLSearchParams(hashQuery).get('bypass') === '1'
+      || new URLSearchParams(location.search).get('bypass') === '1';
+}
+
+/**
+ * Enforces the Irish-citizens-only restriction. Throws a friendly
+ * error if the user is non-Irish and the bypass flag isn't set.
+ * Pass null/undefined country (e.g. unresolved user) to let it
+ * through — the failure mode of the resolution path is its own
+ * error and we don't want to double up.
+ */
+function enforceIrishOnly(country, username) {
+  if (hasBypassFlag()) return;
+  if (country == null) return;
+  if (country === IRELAND_COUNTRY_ID) return;
+  throw new Error(`This tool is for Irish citizens only. "${username}" is not an Irish citizen.`);
 }
 
 // Transient errors are worth retrying. Covers raw HTTP 5xx plus proxy

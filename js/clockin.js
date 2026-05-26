@@ -23,6 +23,9 @@
  *    actions(h) = floor((currentEnergy + h × hourlyRegen) / 10)
  *    payroll(h) = Σ actions × production × (1 + fidelity/100) × wage
  *  All inputs come from calls already made — no new endpoints.
+ *
+ *  Access: restricted to Irish citizens (enforceIrishOnly from
+ *  shared.js). The bypass=1 URL param lifts the restriction.
  * ═══════════════════════════════════════════════════════════════════ */
 const ClockInTool = (() => {
   /* ── Config ─────────────────────────────────────────────── */
@@ -104,7 +107,9 @@ const ClockInTool = (() => {
   /* ── Username resolution ─────────────────────────────────
    *  Same exact-match pattern as the advisor. We can't share its
    *  helper because the advisor's version uses its own setStep panel
-   *  and has its own endpoint-discovery; this is the simpler form. */
+   *  and has its own endpoint-discovery; this is the simpler form.
+   *  Returns the resolved user's `country` alongside id/username so
+   *  the Irish-only gate has it without an extra call. */
   async function resolveUserId(username) {
     const search = await ci_trpc('search.searchAnything', { searchText: username });
     const candidateIds = search?.userIds || [];
@@ -134,9 +139,9 @@ const ClockInTool = (() => {
     const normalise = s => (s || '').toLowerCase().trim();
     const target = normalise(username);
     const exact = known.find(u => normalise(u.username) === target);
-    if (exact) return { userId: exact._id, username: exact.username, exact: true };
+    if (exact) return { userId: exact._id, username: exact.username, country: exact.country, exact: true };
     if (!known.length) {
-      return { userId: candidateIds[0], username, exact: false };
+      return { userId: candidateIds[0], username, country: null, exact: false };
     }
     const found = known.map(u => u.username).filter(Boolean);
     throw new Error(
@@ -218,6 +223,11 @@ const ClockInTool = (() => {
     steps.setStep(1, 'done', {
       count: resolved.exact ? `→ ${resolved.username}` : `→ ${resolved.username} (unverified)`,
     });
+
+    // Irish-citizens-only gate. The bypass=1 URL param lifts this
+    // for admin/debugging. Non-Irish users get a hard block here,
+    // before any of the expensive worker/transaction loading runs.
+    enforceIrishOnly(resolved.country, resolved.username);
 
     steps.setStep(2, 'active', { sub: 'Fetching companies and worker roster' });
     const [companyList, workersData] = await Promise.all([

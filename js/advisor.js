@@ -33,6 +33,9 @@
  *  Ireland/grain deposit (+60), Bulgaria/steak (+10 not +40 — agrarian
  *  exclusion), and others. Do NOT re-introduce a +30 on food/agrarian items
  *  for industrialist countries — that was the bug.
+ *
+ *  Access: restricted to Irish citizens (enforceIrishOnly from
+ *  shared.js). The bypass=1 URL param lifts the restriction.
  * ═══════════════════════════════════════════════════════════════════ */
 const AdvisorTool = (() => {
   const companyUrlFor = id => `${GAME_BASE}/company/${id}`;
@@ -127,6 +130,9 @@ const AdvisorTool = (() => {
    * so userIds[0] is NOT guaranteed to be an exact username match. We
    * pull profiles for the top N and pick the one whose username matches
    * exactly (case-insensitive). Fallback only when nothing can be verified.
+   *
+   * Returns the resolved user's `country` alongside id/username so the
+   * Irish-only gate has it without an extra call.
    */
   async function resolveUserId(username) {
     const search = await adv_trpc('search.searchAnything', { searchText: username });
@@ -154,11 +160,11 @@ const AdvisorTool = (() => {
     const target = normalise(username);
 
     const exact = known.find(u => normalise(u.username) === target);
-    if (exact) return { userId: exact._id, username: exact.username, exact: true };
+    if (exact) return { userId: exact._id, username: exact.username, country: exact.country, exact: true };
 
     if (!known.length) {
       console.warn('[advisor] Could not verify usernames; falling back to top search result.');
-      return { userId: candidateIds[0], username, exact: false };
+      return { userId: candidateIds[0], username, country: null, exact: false };
     }
 
     const found = known.map(u => u.username).filter(Boolean);
@@ -252,6 +258,11 @@ const AdvisorTool = (() => {
     steps.setStep(1, 'done', {
       count: resolved.exact ? `→ ${resolved.username}` : `→ ${resolved.username} (unverified)`
     });
+
+    // Irish-citizens-only gate. The bypass=1 URL param lifts this
+    // for admin/debugging. Non-Irish users get a hard block here,
+    // before any of the expensive company/country loading runs.
+    enforceIrishOnly(resolved.country, resolved.username);
 
     steps.setStep(2, 'active', { sub: 'Fetching company list' });
     const [companyList, workersData] = await Promise.all([

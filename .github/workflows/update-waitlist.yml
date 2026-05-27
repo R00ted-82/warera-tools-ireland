@@ -24,6 +24,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: waitlist-write
+  cancel-in-progress: false
+  
 jobs:
   # ────────────────────────────────────────────────────────────────
   # Triggered by the tool when a user submits their username

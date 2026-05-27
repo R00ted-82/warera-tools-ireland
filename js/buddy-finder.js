@@ -309,7 +309,7 @@ const BuddyFinderTool = (() => {
           <li>Click their name to open their War Era profile.</li>
           <li>Use the in-game <strong>message</strong> button to DM them. Below is a starter message you can copy.</li>
           <li>If they agree, you each post a job offer at <strong>minimum wage</strong> and hire each other.</li>
-          <li>Once paired, come back here and remove yourself from the waiting list (if you joined it).</li>
+          <li>That's it, you will be automatically removed when you start working for eachother.</li>
         </ol>
         <div class="bf-dm-template" id="bf-dm-template">${escapeHtml(dmTemplate)}</div>
         <div class="bf-dm-actions">

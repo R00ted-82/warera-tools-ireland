@@ -983,3 +983,44 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
   .clockin-proj-grid { grid-template-columns: 1fr; }
   .clockin-proj-card.max { grid-column: auto; }
 }
+
+/* Company chip on each worker card — reuses the global .icon-box
+ * from the advisor (same item icon styling). Sits between the
+ * worker name and the meta row, wrapping below on narrow cards. */
+.clockin-company {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--muted); text-decoration: none;
+  font-size: 12px;
+  padding: 2px 8px 2px 2px;
+  border-radius: 6px;
+  background: var(--panel-2);
+  transition: color 0.15s, background 0.15s;
+}
+.clockin-company:hover {
+  color: var(--text); background: #20262e;
+  text-decoration: none;
+}
+.clockin-company .icon-box {
+  width: 20px; height: 20px; border-radius: 4px;
+}
+.clockin-company .icon-box img { width: 14px; height: 14px; }
+.clockin-company .icon-box .fallback {
+  width: 14px; height: 14px; font-size: 12px;
+}
+.clockin-company-name {
+  font-weight: 500; color: var(--text);
+}
+
+/* Skill chips — sit inside .clockin-item alongside the existing
+ * status pill and "Last clock-in" entries. The icon takes a per-skill
+ * accent colour so production, energy, etc. are scannable. */
+.clockin-skill-icon {
+  width: 11px; height: 11px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--muted);
+}
+.clockin-skill-icon svg { width: 11px; height: 11px; }
+.clockin-skill-icon[data-skill="production"] { color: #c7a875; }    /* pickaxe gold */
+.clockin-skill-icon[data-skill="energy"]     { color: var(--warn); } /* bolt yellow */
+.clockin-skill-icon[data-skill="strength"]   { color: #f4a48f; }
+.clockin-skill-icon[data-skill="damage"]     { color: var(--danger); }

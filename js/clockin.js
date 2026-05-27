@@ -102,19 +102,47 @@ const ClockInTool = (() => {
     const h = Math.round((ms % 86_400_000) / 3_600_000);
     return h > 0 ? `${d}d ${h}h` : `${d}d`;
   }
-  const userUrl = id => `${GAME_BASE}/user/${id}`;
+  const userUrl    = id => `${GAME_BASE}/user/${id}`;
+  const companyUrl = id => `${GAME_BASE}/company/${id}`;
+
+  // Small integer formatter for the skill chips. Production can be
+  // fractional (e.g. 22.5) so we keep at most one decimal and strip
+  // trailing zeros.
+  function fmtSkill(n) {
+    if (n == null || !isFinite(n)) return '–';
+    if (n >= 100) return Math.round(n).toString();
+    const rounded = Math.round(n * 10) / 10;
+    return Number.isInteger(rounded) ? rounded.toString() : rounded.toFixed(1);
+  }
 
   /* ── Username resolution ─────────────────────────────────
    *  Same exact-match pattern as the advisor. We can't share its
    *  helper because the advisor's version uses its own setStep panel
    *  and has its own endpoint-discovery; this is the simpler form.
    *  Returns the resolved user's `country` alongside id/username so
-   *  the Irish-only gate has it without an extra call. */
+   *  the Irish-only gate has it without an extra call.
+   *
+   *  Error wording is careful to distinguish three failure modes:
+   *    1. Search returned no IDs → could be "user really doesn't
+   *       exist" OR "API blip returning empty". We hedge with
+   *       "couldn't find — does the username exist?" rather than
+   *       flatly claiming non-existence, since the API is known to
+   *       blip and "user does not exist" sends people on goose-
+   *       chases when the real issue is upstream.
+   *    2. Search returned IDs but every getUserLite failed → the
+   *       upstream user endpoint is down. Surface this explicitly
+   *       instead of silently falling back to an unverified id.
+   *    3. Search returned profiles but none matched the typed name
+   *       → show what we got back, like before.
+   */
   async function resolveUserId(username) {
     const search = await ci_trpc('search.searchAnything', { searchText: username });
     const candidateIds = search?.userIds || [];
     if (!candidateIds.length) {
-      throw new Error(`No user found matching "${username}"`);
+      throw new Error(
+        `Couldn't find a user called "${username}". ` +
+        `Double-check the spelling, or try again in a moment — the search API sometimes returns nothing on a hiccup.`
+      );
     }
     steps.setStep(1, 'active', {
       sub: `Verifying among ${candidateIds.length} match${candidateIds.length === 1 ? '' : 'es'}`,
@@ -140,8 +168,16 @@ const ClockInTool = (() => {
     const target = normalise(username);
     const exact = known.find(u => normalise(u.username) === target);
     if (exact) return { userId: exact._id, username: exact.username, country: exact.country, exact: true };
+
+    // Search succeeded but every profile lookup failed — almost
+    // certainly the user endpoint is having a moment. Don't fall
+    // back to an unverified candidate (we used to, and it caused
+    // misleading "wrong user" results during outages).
     if (!known.length) {
-      return { userId: candidateIds[0], username, country: null, exact: false };
+      throw new Error(
+        `Found possible matches for "${username}" but couldn't load any of their profiles. ` +
+        `The data server may be having issues — wait a few seconds and try again.`
+      );
     }
     const found = known.map(u => u.username).filter(Boolean);
     throw new Error(
@@ -245,15 +281,30 @@ const ClockInTool = (() => {
     // wage/fidelity come straight off the worker.getWorkers response;
     // they're needed for the payroll projection. A worker only holds
     // one contract, so the first values we see are authoritative.
+    //
+    // We also stash the COMPANY they work for, captured from the
+    // `entry.company` object that workersPerCompany hands us. This is
+    // already in memory — no extra API call — and lets the card show
+    // "@ Cement Plant" without resolving anything else. `entry.company`
+    // can be either an object or a bare id depending on the endpoint
+    // response shape, so we handle both.
     const workerMap = new Map();
     for (const entry of (workersData?.workersPerCompany || [])) {
+      const companyObj = (entry && typeof entry.company === 'object') ? entry.company : null;
+      const companyId  = companyObj?._id || (typeof entry?.company === 'string' ? entry.company : null);
+      const company    = companyId ? {
+        id:       companyId,
+        name:     companyObj?.name || null,
+        itemCode: companyObj?.itemCode || null,
+      } : null;
+
       for (const w of (entry.workers || [])) {
         const uid = typeof w === 'string' ? w : (w.user || w._id || w.userId);
         if (!uid) continue;
         if (!workerMap.has(uid)) {
           const wage     = (w && typeof w === 'object' && typeof w.wage === 'number')     ? w.wage     : null;
           const fidelity = (w && typeof w === 'object' && typeof w.fidelity === 'number') ? w.fidelity : 0;
-          workerMap.set(uid, { id: uid, name: null, wage, fidelity });
+          workerMap.set(uid, { id: uid, name: null, wage, fidelity, company });
         }
       }
     }
@@ -282,19 +333,17 @@ const ClockInTool = (() => {
           const u = await ci_trpc('user.getUserLite', { userId: uid });
           const w = workerMap.get(uid);
           if (u?.username) w.name = u.username;
-          // Stats needed for payroll projection. All in skills.{stat}:
-          //   energy.currentBarValue → current energy available
-          //   energy.hourlyBarRegen  → regen per hour (10% of max)
-          //   production.value       → PP generated per work action
+          // Stats needed for payroll projection + the on-card skill
+          // chips. All live under skills.{stat}.value:
+          //   energy.value     → max energy (used for full-bar action count)
+          //   production.value → PP generated per work action
+          //   strength.value   → optional, shown if present
+          //   damage.value     → optional, shown if present
           if (u?.skills) {
-            // Stats needed for the "if maxed" 10h ceiling:
-            //   energy.value → max energy (used for full-bar action count)
-            //   production.value → PP generated per work action
-            // currentBarValue / hourlyRegen aren't used anymore — the
-            // ceiling models "what they could do with a full bar",
-            // independent of where the bar happens to sit right now.
-            w.energyMax  = u.skills.energy?.value ?? null;
+            w.energyMax  = u.skills.energy?.value     ?? null;
             w.production = u.skills.production?.value ?? null;
+            w.strength   = u.skills.strength?.value   ?? null;
+            w.damage     = u.skills.damage?.value     ?? null;
           }
         } catch { /* skip — projection will mark this worker as unknown */ }
         done++;
@@ -543,6 +592,66 @@ const ClockInTool = (() => {
     `;
   }
 
+  /** Inline SVG for skill chips. 11×11 — small enough to fit inside
+   *  the existing .clockin-item rows next to the meta text without
+   *  visually competing with the "Last clock-in" / status pills. */
+  function skillIconSvg(kind) {
+    switch (kind) {
+      case 'production':
+        // Pickaxe — matches the in-game production icon.
+        return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4l6 6"/><path d="M3 21l11-11"/><path d="M9 3a9 9 0 0 1 12 12"/></svg>`;
+      case 'energy':
+        // Lightning bolt — matches the in-game energy icon.
+        return `<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg>`;
+      case 'strength':
+        return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8v8"/><path d="M18 8v8"/><path d="M3 10v4"/><path d="M21 10v4"/><path d="M6 12h12"/></svg>`;
+      case 'damage':
+        return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v4"/><path d="M12 17v4"/><path d="M3 12h4"/><path d="M17 12h4"/></svg>`;
+      default:
+        return '';
+    }
+  }
+
+  /** Skill items reuse the existing .clockin-item layout — same gap,
+   *  same font size, same colours — just with a tiny SVG instead of a
+   *  text label. Missing or zero values are silently omitted. */
+  function renderSkillItems(w) {
+    const skills = [];
+    if (w.production != null) skills.push({ kind: 'production', label: 'Production',  value: fmtSkill(w.production) });
+    if (w.energyMax  != null) skills.push({ kind: 'energy',     label: 'Max energy',  value: fmtSkill(w.energyMax)  });
+    if (w.strength != null && w.strength > 0) skills.push({ kind: 'strength', label: 'Strength', value: fmtSkill(w.strength) });
+    if (w.damage   != null && w.damage   > 0) skills.push({ kind: 'damage',   label: 'Damage',   value: fmtSkill(w.damage)   });
+    if (!skills.length) return '';
+    return skills.map(s => `
+      <span class="clockin-item clockin-skill" title="${escapeHtml(s.label)}: ${escapeHtml(s.value)}">
+        <span class="clockin-skill-icon" data-skill="${s.kind}">${skillIconSvg(s.kind)}</span>
+        <strong>${escapeHtml(s.value)}</strong>
+      </span>
+    `).join('');
+  }
+
+  /** Company chip — sits alongside the worker name. Uses the global
+   *  .icon-box class (defined for the advisor) and the shared ITEMS
+   *  table + iconHtml helper so the item icon styling stays identical
+   *  to the advisor cards. If we somehow don't have an itemCode, the
+   *  chip just shows the company name without an icon. */
+  function renderWorkerCompany(w) {
+    const c = w.company;
+    if (!c || !c.id) return '';
+    const itemIcon = (typeof iconHtml === 'function' && c.itemCode)
+      ? iconHtml(c.itemCode)
+      : '';
+    const nameHtml = c.name
+      ? escapeHtml(c.name)
+      : `Company ${escapeHtml(c.id).slice(-6)}`;
+    return `
+      <a class="clockin-company" href="${companyUrl(c.id)}" target="_blank" rel="noopener" title="Open ${escapeHtml(c.name || 'company')} in War Era">
+        ${itemIcon}
+        <span class="clockin-company-name">${nameHtml}</span>
+      </a>
+    `;
+  }
+
   function render() {
     if (!state) return;
     const now = Date.now();
@@ -592,11 +701,16 @@ const ClockInTool = (() => {
         ? `<a href="${userUrl(w.id)}" target="_blank" rel="noopener">${escapeHtml(w.name)}</a>`
         : `<span style="color:var(--muted)">user ${escapeHtml(w.id).slice(-6)}</span>`;
       const externalIcon = `<a class="clockin-link-icon" href="${userUrl(w.id)}" target="_blank" rel="noopener" title="Open profile in War Era"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>`;
+
+      const companyHtml = renderWorkerCompany(w);
+      const skillItems  = renderSkillItems(w);
       return `
         <div class="clockin-worker-card">
           <div class="clockin-worker-head">
             <div class="clockin-worker-name">${nameLink}${externalIcon}</div>
+            ${companyHtml}
             <div class="clockin-worker-meta">
+              ${skillItems}
               <span class="clockin-item"><span class="clockin-ago ${cls}">${escapeHtml(label)}</span></span>
               <span class="clockin-item">Last clock-in: <strong>${escapeHtml(ago)}</strong></span>
             </div>

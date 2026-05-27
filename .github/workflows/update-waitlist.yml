@@ -1,0 +1,329 @@
+# .github/workflows/update-waitlist.yml
+# Listens for repository_dispatch events from the buddy finder tool.
+# Validates the payload, verifies the user is an Irish citizen via the
+# warera-proxy gateway, updates waitlist.json, commits.
+#
+# The 'add' path verifies citizenship server-side. The 'remove' path
+# does not — removing a non-Irish entry that somehow snuck in is
+# desirable. The cleanup job (run daily) does its own checks.
+#
+# The gateway calls send an Origin: https://tools.we-ie.com header so the proxy's
+# CORS gate accepts them. Without that header, the proxy rejects
+# GitHub Action runners with HTTP 403.
+
+name: Update waitlist
+
+on:
+  repository_dispatch:
+    types: [waitlist-update]
+  # Daily self-cleaning job — removes anyone now in a balanced buddy pair
+  schedule:
+    - cron: '17 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  # ────────────────────────────────────────────────────────────────
+  # Triggered by the tool when a user submits their username
+  # ────────────────────────────────────────────────────────────────
+  update:
+    if: github.event_name == 'repository_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate and update waitlist
+        env:
+          ACTION: ${{ github.event.client_payload.action }}
+          USER_ID: ${{ github.event.client_payload.userId }}
+          USERNAME: ${{ github.event.client_payload.username }}
+        run: |
+          set -e
+          python3 <<'PY'
+          import json, os, re, sys, urllib.request, urllib.parse, urllib.error
+          from datetime import datetime, timezone
+
+          IRELAND_COUNTRY_ID = '6813b6d446e731854c7ac7fe'
+          ORIGIN = 'https://tools.we-ie.com'
+
+          action   = os.environ.get('ACTION', '').strip()
+          user_id  = os.environ.get('USER_ID', '').strip()
+          username = os.environ.get('USERNAME', '').strip()
+
+          # ── Structural validation ──────────────────────────────
+          if action not in ('add', 'remove'):
+              print(f'::error::Invalid action: {action!r}')
+              sys.exit(1)
+
+          # MongoDB ObjectId — 24 hex chars
+          if not re.fullmatch(r'[a-f0-9]{24}', user_id):
+              print(f'::error::Invalid userId format: {user_id!r}')
+              sys.exit(1)
+
+          # Sane username constraints
+          if not (1 <= len(username) <= 40):
+              print(f'::error::Invalid username length: {len(username)}')
+              sys.exit(1)
+          if not re.fullmatch(r'[A-Za-z0-9_\-. ]+', username):
+              print(f'::error::Invalid username characters: {username!r}')
+              sys.exit(1)
+
+          # ── Citizenship verification via warera-proxy ──────────
+          # The Origin header is what gets the proxy past its CORS gate
+          # (GitHub Action runners are otherwise rejected). We use the
+          # same pattern as the cleanup job below.
+          def trpc(method, payload, timeout=20):
+              inp = urllib.parse.quote(json.dumps(payload))
+              url = f'https://warera-proxy.toie.workers.dev/trpc/{method}?input={inp}'
+              req = urllib.request.Request(url, headers={
+                  'Origin': ORIGIN,
+                  'Accept': 'application/json',
+                  'User-Agent': 'warera-buddy-system-action/1.0',
+              })
+              with urllib.request.urlopen(req, timeout=timeout) as r:
+                  return json.load(r).get('result', {}).get('data')
+
+          # For 'remove' we don't strictly need to verify (removing a
+          # non-Irish entry that somehow snuck in is desirable). For
+          # 'add' we must check, otherwise we'd accept any 24-char hex.
+          if action == 'add':
+              try:
+                  user_data = trpc('user.getUserLite', {'userId': user_id}) or {}
+              except urllib.error.HTTPError as e:
+                  if e.code == 404:
+                      print(f'::error::No War Era user with id {user_id}')
+                      sys.exit(1)
+                  print(f'::error::Gateway returned HTTP {e.code} for {user_id}')
+                  sys.exit(1)
+              except Exception as e:
+                  print(f'::error::Gateway lookup failed: {e}')
+                  sys.exit(1)
+
+              country = user_data.get('country') or user_data.get('countryId')
+              if country != IRELAND_COUNTRY_ID:
+                  print(f'::error::User {user_id} is not an Irish citizen (country={country!r})')
+                  sys.exit(1)
+
+              # Use the canonical username from the API. The client may
+              # have sent the wrong capitalisation; the gateway has the
+              # truth. Keeps waitlist.json clean across submissions.
+              real_username = user_data.get('username')
+              if real_username:
+                  username = real_username
+
+          # ── Read existing waitlist ─────────────────────────────
+          path = 'waitlist.json'
+          try:
+              with open(path, 'r', encoding='utf-8') as f:
+                  wl = json.load(f)
+          except (FileNotFoundError, json.JSONDecodeError):
+              wl = {'entries': []}
+
+          if 'entries' not in wl or not isinstance(wl['entries'], list):
+              wl['entries'] = []
+
+          # ── Apply action ───────────────────────────────────────
+          existing = next((e for e in wl['entries'] if e.get('userId') == user_id), None)
+          now = datetime.now(timezone.utc).isoformat()
+
+          if action == 'add':
+              if existing:
+                  existing['username'] = username
+                  existing['updatedAt'] = now
+                  msg = f'Update {username} on waitlist'
+              else:
+                  wl['entries'].append({
+                      'userId': user_id,
+                      'username': username,
+                      'addedAt': now,
+                  })
+                  msg = f'Add {username} to waitlist'
+          else:  # remove
+              if not existing:
+                  print(f'::notice::{username} ({user_id}) was not on the waitlist; nothing to remove')
+                  sys.exit(0)
+              wl['entries'] = [e for e in wl['entries'] if e.get('userId') != user_id]
+              msg = f'Remove {username} from waitlist'
+
+          wl['updatedAt'] = now
+
+          # ── Write back ─────────────────────────────────────────
+          with open(path, 'w', encoding='utf-8') as f:
+              json.dump(wl, f, indent=2, ensure_ascii=False)
+              f.write('\n')
+
+          with open(os.environ['GITHUB_ENV'], 'a') as f:
+              f.write(f'COMMIT_MSG={msg}\n')
+          PY
+
+      - name: Commit changes
+        run: |
+          git add waitlist.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "${COMMIT_MSG:-Update waitlist}"
+          git push
+
+  # ────────────────────────────────────────────────────────────────
+  # Daily cleanup — remove waitlist entries whose user is now in a
+  # balanced buddy pair. Imbalanced-pair members stay on (they're
+  # shortchanged and could use a better partner).
+  #
+  # This job ALSO has the proxy-blocks-Action problem. Two paths:
+  # 1. Skip cleanup entirely and rely on manual pruning (boring).
+  # 2. Send the Origin header that the proxy expects, so the
+  #    Worker's CORS check passes. We do option 2 — the proxy
+  #    appears to accept calls with a recognised Origin even from
+  #    non-browser User-Agents.
+  # ────────────────────────────────────────────────────────────────
+  cleanup:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Clean stale waitlist entries
+        run: |
+          python3 <<'PY'
+          import json, os, sys, urllib.request, urllib.parse, urllib.error
+          from datetime import datetime, timezone
+
+          ACTIONS_PER_ENERGY = 0.343
+          ORIGIN = 'https://tools.we-ie.com'
+
+          def trpc(method, payload, timeout=20):
+              inp = urllib.parse.quote(json.dumps(payload))
+              url = f'https://warera-proxy.toie.workers.dev/trpc/{method}?input={inp}'
+              req = urllib.request.Request(url, headers={
+                  'Origin': ORIGIN,
+                  'Accept': 'application/json',
+                  'User-Agent': 'warera-buddy-system-cleanup/1.0',
+              })
+              with urllib.request.urlopen(req, timeout=timeout) as r:
+                  return json.load(r).get('result', {}).get('data')
+
+          def skill_total(user, name):
+              sk = (user or {}).get('skills', {}).get(name)
+              if not isinstance(sk, dict):
+                  return 0
+              for k in ('total', 'value', 'level'):
+                  v = sk.get(k)
+                  if isinstance(v, (int, float)):
+                      return v
+              return 0
+
+          def daily_output(user):
+              return round(skill_total(user, 'production') * skill_total(user, 'energy') * ACTIONS_PER_ENERGY)
+
+          def pair_imbalanced(a_user, b_user, a_wage, b_wage):
+              if a_wage is not None and b_wage is not None:
+                  mx = max(a_wage, b_wage); mn = min(a_wage, b_wage)
+                  if mn > 0 and mx / mn >= 2.0:
+                      return True
+                  if mx > 0 and mn == 0:
+                      return True
+              ta = daily_output(a_user); tb = daily_output(b_user)
+              mx = max(ta, tb); mn = min(ta, tb)
+              if mx - mn >= 50 and (mn == 0 or mx / mn >= 1.2):
+                  return True
+              return False
+
+          try:
+              with open('waitlist.json', 'r', encoding='utf-8') as f:
+                  wl = json.load(f)
+          except (FileNotFoundError, json.JSONDecodeError):
+              print('No waitlist.json; nothing to clean')
+              sys.exit(0)
+
+          entries = wl.get('entries', [])
+          if not entries:
+              print('Waitlist is empty')
+              sys.exit(0)
+
+          to_remove = []
+          for entry in entries:
+              uid = entry.get('userId')
+              if not uid:
+                  continue
+              try:
+                  me = trpc('user.getUserLite', {'userId': uid}) or {}
+              except Exception as e:
+                  print(f'::notice::Could not fetch {uid}: {e}; keeping on waitlist')
+                  continue
+              try:
+                  worker_res = trpc('worker.getWorkers', {'userId': uid}) or {}
+              except Exception as e:
+                  print(f'::notice::Could not fetch workers for {uid}: {e}; keeping on waitlist')
+                  continue
+
+              wpc = worker_res.get('workersPerCompany', []) or []
+              found_balanced_pair = False
+              for entry_company in wpc:
+                  for w in (entry_company.get('workers') or []):
+                      other_id = w.get('user')
+                      if not other_id:
+                          continue
+                      try:
+                          other_workers = trpc('worker.getWorkers', {'userId': other_id}) or {}
+                      except Exception:
+                          continue
+                      other_wpc = other_workers.get('workersPerCompany', []) or []
+                      reciprocates = False
+                      reverse_wage = None
+                      for oc in other_wpc:
+                          for ow in (oc.get('workers') or []):
+                              if ow.get('user') == uid:
+                                  reciprocates = True
+                                  reverse_wage = ow.get('wage')
+                                  break
+                          if reciprocates:
+                              break
+                      if reciprocates:
+                          try:
+                              other_user = trpc('user.getUserLite', {'userId': other_id}) or {}
+                          except Exception:
+                              other_user = {}
+                          if not pair_imbalanced(me, other_user, reverse_wage, w.get('wage')):
+                              found_balanced_pair = True
+                              break
+                  if found_balanced_pair:
+                      break
+
+              if found_balanced_pair:
+                  to_remove.append(entry)
+                  print(f"Removing {entry.get('username')} ({uid}) — found balanced pair")
+
+          if not to_remove:
+              print('No entries to remove')
+              sys.exit(0)
+
+          remove_ids = {e['userId'] for e in to_remove}
+          wl['entries'] = [e for e in entries if e.get('userId') not in remove_ids]
+          wl['updatedAt'] = datetime.now(timezone.utc).isoformat()
+
+          with open('waitlist.json', 'w', encoding='utf-8') as f:
+              json.dump(wl, f, indent=2, ensure_ascii=False)
+              f.write('\n')
+
+          msg = f'Auto-cleanup: removed {len(to_remove)} balanced-pair member(s)'
+          with open(os.environ['GITHUB_ENV'], 'a') as f:
+              f.write(f'COMMIT_MSG={msg}\n')
+          PY
+
+      - name: Commit cleanup
+        run: |
+          git add waitlist.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "${COMMIT_MSG:-Auto-cleanup waitlist}"
+          git push

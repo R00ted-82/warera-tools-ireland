@@ -1024,3 +1024,376 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
 .clockin-skill-icon[data-skill="energy"]     { color: var(--warn); } /* bolt yellow */
 .clockin-skill-icon[data-skill="strength"]   { color: #f4a48f; }
 .clockin-skill-icon[data-skill="damage"]     { color: var(--danger); }
+
+/* ═══════════════════════════════════════════════════════════════════
+ *  BUDDY FINDER
+ *  Scoped with bf- prefix. Reuses --bg, --panel, --panel-2, --border,
+ *  --text, --muted, --accent, --link, --warn, --danger.
+ *  Adds one bespoke colour for the "mismatched" priority badge
+ *  (orange), since the existing palette is green/yellow/red and we
+ *  need a fourth distinct accent here.
+ * ═══════════════════════════════════════════════════════════════════ */
+:root {
+  --bf-orange: #fb923c;
+  --bf-orange-bg: rgba(251, 146, 60, 0.10);
+  --bf-orange-border: rgba(251, 146, 60, 0.55);
+}
+
+/* Intro card with the buddy-system pitch */
+.bf-intro {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.bf-intro h3 {
+  margin: 0 0 8px;
+  font-size: 15px; font-weight: 600;
+  color: var(--text);
+}
+.bf-intro p {
+  margin: 0 0 8px;
+  color: var(--muted);
+}
+.bf-intro p:last-child { margin-bottom: 0; }
+.bf-intro strong { color: var(--text); font-weight: 600; }
+
+/* Maths disclosure inside the intro */
+.bf-intro details.bf-maths {
+  margin-top: 10px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.bf-intro details.bf-maths > summary {
+  cursor: pointer; padding: 8px 12px;
+  user-select: none; list-style: none;
+  font-size: 12.5px; color: var(--link);
+  transition: background 0.15s;
+}
+.bf-intro details.bf-maths > summary::-webkit-details-marker { display: none; }
+.bf-intro details.bf-maths > summary::before {
+  content: '▸';
+  color: var(--muted);
+  font-size: 10px;
+  display: inline-block;
+  width: 10px; text-align: center;
+  margin-right: 4px;
+  transition: transform 0.15s;
+}
+.bf-intro details.bf-maths[open] > summary::before { transform: rotate(90deg); }
+.bf-intro details.bf-maths > summary:hover { background: var(--bg); }
+.bf-intro details.bf-maths[open] > summary { border-bottom: 1px solid var(--border); }
+.bf-maths-body {
+  padding: 12px 14px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.bf-maths-body h4 {
+  color: var(--text); font-size: 12px; font-weight: 600;
+  margin: 10px 0 4px;
+}
+.bf-maths-body h4:first-child { margin-top: 0; }
+.bf-maths-body strong { color: var(--text); }
+.bf-maths-body ul {
+  margin: 6px 0 8px;
+  padding-left: 20px;
+}
+.bf-maths-body li { margin-bottom: 4px; }
+.bf-maths-body .num {
+  color: var(--accent); font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.bf-maths-body .neg {
+  color: var(--danger); font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.bf-maths-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 6px 0 8px;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+.bf-maths-table th, .bf-maths-table td {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+.bf-maths-table th {
+  color: var(--text); font-weight: 600;
+  background: var(--bg);
+}
+.bf-maths-table td:first-child { color: var(--text); }
+.bf-punchline {
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: rgba(74, 222, 128, 0.08);
+  border: 1px solid rgba(74, 222, 128, 0.25);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 12px;
+}
+.bf-punchline strong { color: var(--accent); }
+.bf-maths-footnote {
+  margin-top: 10px;
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+/* The two action cards (waitlist, find a buddy) */
+.bf-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 16px;
+}
+.bf-card h3 {
+  margin: 0 0 6px;
+  font-size: 15px; font-weight: 600;
+  color: var(--text);
+}
+.bf-card-sub {
+  color: var(--muted);
+  font-size: 12.5px;
+  margin: 0 0 10px;
+  line-height: 1.5;
+}
+.bf-card-sub:last-of-type { margin-bottom: 14px; }
+.bf-card-sub.warn { color: var(--warn); }
+.bf-card-sub strong { color: var(--text); font-weight: 600; }
+
+.bf-input-row {
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.bf-input-row input[type="text"] {
+  flex: 1; min-width: 0;
+  padding: 9px 12px;
+  font-size: 14px;
+}
+.bf-input-row button {
+  padding: 9px 16px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.bf-stats-line {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.bf-stats-line strong { color: var(--text); font-weight: 600; }
+
+/* Inline status messages under each card (lighter weight than the
+   shared .status panel — these appear next to a single input field) */
+.bf-inline-status {
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  margin-top: 10px;
+}
+.bf-inline-status.info {
+  background: rgba(96, 165, 250, 0.08);
+  border: 1px solid rgba(96, 165, 250, 0.25);
+  color: var(--link);
+}
+.bf-inline-status.success {
+  background: rgba(74, 222, 128, 0.10);
+  border: 1px solid rgba(74, 222, 128, 0.30);
+  color: var(--accent);
+}
+.bf-inline-status.warn {
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  color: var(--warn);
+}
+.bf-inline-status.error {
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  color: var(--danger);
+}
+.bf-inline-status.hidden { display: none; }
+.bf-inline-status strong { color: inherit; font-weight: 600; }
+
+/* Tiny inline spinner for status messages */
+.bf-spinner {
+  display: inline-block;
+  width: 12px; height: 12px;
+  border: 2px solid var(--border);
+  border-top-color: var(--link);
+  border-radius: 50%;
+  animation: bf-spin 0.6s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+@keyframes bf-spin { to { transform: rotate(360deg); } }
+
+/* Match results */
+.bf-match-results { margin-top: 16px; }
+.bf-results-head {
+  font-size: 13px; font-weight: 600;
+  margin: 0 0 10px;
+  color: var(--text);
+}
+.bf-results-head strong { color: var(--text); }
+.bf-results-head .bf-count {
+  color: var(--muted); font-weight: 400; font-size: 12px;
+}
+
+/* Player card */
+.bf-player {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  margin-bottom: 8px;
+  min-width: 0;
+}
+.bf-avatar {
+  width: 32px; height: 32px; border-radius: 4px;
+  flex-shrink: 0;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-size: 13px; font-weight: 600;
+  overflow: hidden;
+}
+.bf-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.bf-player-body { flex: 1; min-width: 0; }
+.bf-name-row {
+  display: flex; align-items: center; gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 3px;
+}
+.bf-name {
+  color: var(--text); font-weight: 600;
+  text-decoration: none;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.bf-name:hover { color: var(--link); text-decoration: none; }
+.bf-link-icon {
+  width: 11px; height: 11px;
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+.bf-name:hover .bf-link-icon { opacity: 1; }
+.bf-meta-row {
+  display: flex; align-items: center; gap: 6px 10px;
+  flex-wrap: wrap;
+  color: var(--muted); font-size: 11.5px;
+}
+.bf-stat { font-variant-numeric: tabular-nums; }
+.bf-stat strong { color: var(--text); font-weight: 600; }
+
+/* Priority badges */
+.bf-priority-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  background: rgba(74, 222, 128, 0.12);
+  border: 1px solid rgba(74, 222, 128, 0.35);
+}
+.bf-priority-badge.imbalanced {
+  color: var(--bf-orange);
+  background: var(--bf-orange-bg);
+  border-color: var(--bf-orange-border);
+}
+
+/* Empty state when no candidates */
+.bf-empty-state {
+  padding: 18px 14px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12.5px;
+  background: var(--panel-2);
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+}
+
+/* "Show more" pagination row */
+.bf-see-more-row {
+  text-align: center;
+  margin-top: 14px;
+}
+.bf-see-more-note {
+  color: var(--muted); font-size: 11.5px;
+  margin-top: 6px;
+}
+
+/* Next-steps panel after a successful match search */
+.bf-next-steps {
+  margin-top: 18px;
+  padding: 14px 16px;
+  background: rgba(74, 222, 128, 0.06);
+  border: 1px solid rgba(74, 222, 128, 0.25);
+  border-radius: 8px;
+}
+.bf-next-steps h3 {
+  margin: 0 0 8px;
+  font-size: 13px; font-weight: 600;
+  color: var(--accent);
+}
+.bf-next-steps ol {
+  margin: 0 0 12px;
+  padding-left: 20px;
+  color: var(--text);
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+.bf-next-steps ol li { margin-bottom: 4px; }
+.bf-next-steps strong { color: var(--text); font-weight: 600; }
+
+.bf-dm-template {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-top: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.bf-dm-actions {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.bf-copy-btn {
+  background: var(--accent);
+  color: #052e0e;
+  border: 1px solid var(--accent);
+  font-weight: 600;
+  font-size: 11.5px;
+  padding: 5px 10px;
+}
+.bf-copy-btn:hover:not(:disabled) {
+  background: #6ee78f;
+  border-color: #6ee78f;
+}
+.bf-copy-status {
+  color: var(--muted);
+  font-size: 11px;
+  font-style: italic;
+}
+.bf-copy-status.shown { color: var(--accent); font-style: normal; }
+
+@media (max-width: 600px) {
+  .bf-input-row { flex-direction: column; }
+  .bf-input-row button { width: 100%; }
+}

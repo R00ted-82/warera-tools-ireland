@@ -35,6 +35,14 @@
             <span class="tool-link">Open Irish MUs →</span>
           </div>
         </a>
+        <a class="tool-card" href="#buddy-finder">
+          <div class="tool-card-icon">🤝</div>
+          <div class="tool-card-body">
+            <h3>Buddy Finder</h3>
+            <p>Find a buddy for the Irish buddy system, or join the hidden waiting list. Two citizens hire each other at minimum wage so both companies gain a worker without a real wage bill.</p>
+            <span class="tool-link">Open Buddy Finder →</span>
+          </div>
+        </a>
         <a class="tool-card" href="#advisor">
           <div class="tool-card-icon">🏭</div>
           <div class="tool-card-body">
@@ -125,6 +133,152 @@
           <li><strong>Member majority.</strong> At least half of the MU's members must be Irish. MUs with a mostly foreign roster are dropped even when the owner is local.</li>
           <li>In the expanded members list, Irish citizens are marked 🇮🇪 and non-citizens are marked 🌍 and dimmed. The <strong>Irish</strong> stat on each card shows the ratio.</li>
         </ul>
+      </div>
+    </details>
+  </section>
+
+  <!-- ─── Buddy Finder view ─────────────────────────────────────── -->
+  <section class="view" data-view="buddy-finder">
+    <div class="tool-header">
+      <div class="title-block">
+        <h2><span>🤝</span> Buddy Finder</h2>
+        <p>Find a buddy for the Irish buddy system, or join the waiting list.</p>
+      </div>
+    </div>
+
+    <div class="bf-intro">
+      <h3>What's the buddy system?</h3>
+      <p>Two Irish citizens hire each other at minimum wage. Net wages roughly cancel, but both companies gain a worker, so <strong>production goes up on both sides without a real wage bill</strong>. It only works if both sides have <strong>similar skill levels</strong>. An 80⚡ player paired with a 20⚡ player is a bad deal for the bigger producer. This tool helps you find a fair match.</p>
+
+      <details class="bf-maths">
+        <summary>Show me the maths · why buddy beats working for a stranger</summary>
+        <div class="bf-maths-body">
+
+          <h4>The setup</h4>
+          <p>You and Buddy each own a company. You both work 10 times a day. Two options:</p>
+          <ul>
+            <li><strong>Stranger:</strong> you work for someone else at 0.135/click. Your own company sits idle.</li>
+            <li><strong>Buddy:</strong> you work at Buddy's for 0.092 (minimum wage). Buddy works at yours for 0.092.</li>
+          </ul>
+
+          <h4>What you and your company get per day</h4>
+          <table class="bf-maths-table">
+            <thead>
+              <tr><th></th><th>Stranger</th><th>Buddy</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>You earn (after 8% tax)</td><td><span class="num">+1.24</span></td><td><span class="num">+0.85</span></td></tr>
+              <tr><td>Your company pays out</td><td>0</td><td><span class="neg">−0.92</span></td></tr>
+              <tr><td>Your company produces</td><td>nothing</td><td>a day's work from Buddy</td></tr>
+              <tr><td><strong>Coins in pocket</strong></td><td><span class="num">+1.24</span></td><td><span class="neg">−0.07</span></td></tr>
+            </tbody>
+          </table>
+
+          <h4>So you "lose" 0.07 coins. What do you get back?</h4>
+          <p>A whole day of Buddy's work, done at your company. Roughly <strong>~160 production points</strong> if Buddy's stats are decent. That's enough to make around 16 manufactured goods (concrete, food, weapons, whatever your company builds).</p>
+          <p>Selling those goods on the market brings in <strong>way more than the 0.07 coins you "lost"</strong>. Exactly how much depends on your bonuses and current prices, but the gap is huge.</p>
+
+          <h4>One bonus tip</h4>
+          <p>Energy levels add <strong>+0.1 clicks/hour</strong>. Entrepreneurship levels add <strong>+0.05 clicks/hour</strong>. Energy is twice as good per skill point. So put your points into Energy and let someone else do the working at your company. The buddy system is how you do that.</p>
+
+          <div class="bf-punchline">
+            <strong>Bottom line:</strong> you give up 0.07 coins a day. You gain a whole day of production. Both buddies win, as long as you're roughly the same skill level.
+          </div>
+
+          <p class="bf-maths-footnote">Numbers above are rough. The shape holds for any normal pair. If your pair becomes mismatched (this tool flags it), the bigger producer is losing out; switch to someone closer to your level.</p>
+        </div>
+      </details>
+    </div>
+
+    <!-- WAITING LIST -->
+    <div class="bf-card">
+      <h3>📝 Join / leave the waiting list</h3>
+      <p class="bf-card-sub">The waiting list is <strong>hidden</strong>. Nobody can see who's on it. When someone searches for a match, the tool picks from this list first. Submit the same username again to remove yourself.</p>
+      <p class="bf-card-sub warn">⏳ Heads up: it takes about a minute for your name to actually land on the list. We're cheap b*stards trying to avoid paying for a proper backend, so the list is updated by a free GitHub job that takes its sweet time. Submit once, go make a cup of tea, you're grand.</p>
+
+      <div class="bf-input-row">
+        <input type="text" id="bf-waitlist-username" placeholder="Your in-game username" autocomplete="off" spellcheck="false" />
+        <button id="bf-waitlist-submit" class="btn-primary">Submit</button>
+      </div>
+      <div id="bf-waitlist-status" class="bf-inline-status hidden"></div>
+      <div class="bf-stats-line" id="bf-waitlist-stats"></div>
+    </div>
+
+    <!-- FIND A BUDDY -->
+    <div class="bf-card">
+      <h3>🔍 Find a buddy</h3>
+      <p class="bf-card-sub">Enter your in-game username. We'll suggest Irish citizens with similar skill levels who are available to pair up. Players on the waiting list are prioritised.</p>
+
+      <div class="bf-input-row">
+        <input type="text" id="bf-match-username" placeholder="Your in-game username" autocomplete="off" spellcheck="false" />
+        <button id="bf-match-submit" class="btn-primary">Find matches</button>
+      </div>
+
+      <div id="bf-match-steps" class="steps hidden">
+        <div class="step" data-state="pending" data-step="1">
+          <div class="step-icon"></div>
+          <div class="step-body">
+            <div class="step-title">Resolve username</div>
+            <div class="step-sub"></div>
+          </div>
+          <div class="step-count"></div>
+        </div>
+        <div class="step" data-state="pending" data-step="2">
+          <div class="step-icon"></div>
+          <div class="step-body">
+            <div class="step-title">Load Irish citizens</div>
+            <div class="step-sub"></div>
+          </div>
+          <div class="step-count"></div>
+        </div>
+        <div class="step" data-state="pending" data-step="3">
+          <div class="step-icon"></div>
+          <div class="step-body">
+            <div class="step-title">Load skill profiles</div>
+            <div class="step-sub"></div>
+          </div>
+          <div class="step-count"></div>
+        </div>
+        <div class="step" data-state="pending" data-step="4">
+          <div class="step-icon"></div>
+          <div class="step-body">
+            <div class="step-title">Detect existing pairs</div>
+            <div class="step-sub"></div>
+          </div>
+          <div class="step-count"></div>
+        </div>
+      </div>
+
+      <div id="bf-match-status" class="bf-inline-status hidden"></div>
+      <div id="bf-match-results" class="bf-match-results"></div>
+    </div>
+
+    <details class="howto">
+      <summary>How matching works · methodology</summary>
+      <div class="howto-body">
+        <h4>1. Your stats</h4>
+        <p>We look up your <strong>↗ production</strong> (PP per work click) and <strong>⚡ energy</strong> (work clicks per day). Your <strong>max daily output</strong> is roughly production × energy × 0.343 (empirically calibrated from 10%/hour energy regen × ~7 energy per work action).</p>
+
+        <h4>2. The candidate pool</h4>
+        <p>Other Irish citizens who are either:</p>
+        <ul>
+          <li><strong>On the waiting list</strong>, prioritised</li>
+          <li><strong>Currently unpaired</strong>, open to a new match</li>
+          <li><strong>Mismatched</strong>, in a pair with a large skill gap, who could use a better partner</li>
+        </ul>
+        <p>Players in <strong>balanced pairs</strong> are skipped, because pairing them would break a working arrangement.</p>
+
+        <h4>3. Ranking</h4>
+        <p>Three-tier sort: waitlist members first, then mismatched-pair members, then everyone else. Within each tier, closest skill level to yours wins.</p>
+
+        <h4>The waiting list is self-cleaning</h4>
+        <p>A daily job removes anyone who's since found a balanced buddy. People in mismatched pairs stay on, since they're getting shortchanged.</p>
+
+        <h4>What if my skills change after I'm paired?</h4>
+        <p>If a balanced pair drifts (one buddy grinds skills faster), the pair gets flagged as <strong>mismatched</strong> automatically, and both members become findable in match searches with an orange badge. You don't need to do anything. Just check back if you want a better match.</p>
+
+        <h4>The data</h4>
+        <p>Live calls to the War Era Gateway via the <code>warera-proxy</code> Cloudflare Worker. No data stored about you, except the username + userId on the waiting list (if you opt in). Everything else is computed fresh each time.</p>
       </div>
     </details>
   </section>
@@ -375,6 +529,7 @@
 <!-- Load order matters: shared first, tools next, router last. -->
 <script src="js/shared.js"></script>
 <script src="js/mu.js"></script>
+<script src="js/buddy-finder.js"></script>
 <script src="js/advisor.js"></script>
 <script src="js/clockin.js"></script>
 <script src="js/buddy.js"></script>

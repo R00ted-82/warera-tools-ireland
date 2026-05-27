@@ -24,7 +24,7 @@
  *  and clicking the brand title does the same.
  * ═══════════════════════════════════════════════════════════════════ */
 (() => {
-  const VALID = new Set(['home', 'mu', 'advisor', 'clockin', 'buddy', 'battle-orders']);
+  const VALID = new Set(['home', 'mu', 'buddy-finder', 'advisor', 'clockin', 'buddy', 'battle-orders']);
   const DEFAULT_VIEW = 'home';
   const views = document.querySelectorAll('.view');
   const $backLink = document.querySelector('.back-link');
@@ -32,11 +32,13 @@
   const tools = {
     home: null,
     mu: MUTool,
+    'buddy-finder': BuddyFinderTool,
     advisor: AdvisorTool,
     clockin: ClockInTool,
     buddy: BuddySystemGate,
     'battle-orders': BattleOrdersGate,
   };
+
   function parseRoute() {
     const raw = location.hash.replace(/^#/, '');
     const qIdx = raw.indexOf('?');
@@ -74,4 +76,4 @@
 
   const initial = parseRoute();
   setView(initial.view, { updateHash: false, params: initial.params });
-})();
+})(); 

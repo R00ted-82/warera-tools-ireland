@@ -359,17 +359,35 @@ const BuddyFinderTool = (() => {
       return;
     }
 
+    // Clear everything from any previous run — results, status, match
+    // store. Without this, a failed lookup after a previous success
+    // would leave stale matches and the "You: …" header on screen.
     $mBtn.disabled = true;
     $mResults.innerHTML = '';
+    matchStore = null;
     hideStatus($mStatus);
     steps.reset();
 
     try {
-      // Step 1: resolve username
+      // Step 1: resolve username. We MUST exit here if the lookup
+      // fails — there's no point loading the citizen pool, building
+      // worker maps, etc. just to discard them at render time.
+      // The inner try/catch separates "search itself errored" from
+      // "search returned nothing" so each gets a clearer message.
       steps.setStep(1, 'active', { sub: `Searching for "${raw}"` });
-      const me = await resolveUsername(raw);
+      let me;
+      try {
+        me = await resolveUsername(raw);
+      } catch (e) {
+        steps.markActiveAsError('Lookup failed');
+        throw new Error(
+          isTransientError(e)
+            ? `The data server is having a moment (${e.message}). Wait a few seconds and try again.`
+            : `Username lookup failed: ${e.message}`
+        );
+      }
       if (!me) {
-        steps.markActiveAsError(`No War Era user found with that name`);
+        steps.markActiveAsError('No user found with that name');
         throw new Error(`No War Era user found with username "${raw}". Check the spelling and try again.`);
       }
       steps.setStep(1, 'done', { count: `→ ${me.username}` });
@@ -534,11 +552,13 @@ const BuddyFinderTool = (() => {
       $mResults.innerHTML = html;
       wireUpInteractiveControls();
     } catch (e) {
+      // Step 1 throws already mark the active step as errored; later
+      // failures get marked here. The status pane shows the message
+      // we constructed above (already friendly), so just escape and
+      // surface it. No extra "data server" wrapping — that's already
+      // applied at the point each error is thrown where appropriate.
       steps.markActiveAsError(e.message);
-      const friendly = isTransientError(e)
-        ? `The data server is having a moment (${e.message}). Wait a few seconds and try again.`
-        : e.message;
-      showStatus($mStatus, 'error', escapeHtml(friendly));
+      showStatus($mStatus, 'error', escapeHtml(e.message));
     } finally {
       $mBtn.disabled = false;
     }

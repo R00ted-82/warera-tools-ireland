@@ -1397,3 +1397,30 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
   .bf-input-row { flex-direction: column; }
   .bf-input-row button { width: 100%; }
 }
+
+/* Waitlist pairs — surfaced matches among waitlist members */
+.bf-wl-pairs { margin-top: 16px; }
+.bf-wl-pairs.hidden { display: none; }
+.bf-wl-pairs-head {
+  margin: 0 0 10px; font-size: 14px; font-weight: 600;
+  color: var(--text);
+}
+.bf-wl-pairs-head .bf-count {
+  color: var(--muted); font-weight: 400; font-size: 12px;
+}
+.bf-wl-pair {
+  background: var(--panel-2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px; margin-bottom: 10px;
+}
+.bf-wl-pair:last-child { margin-bottom: 0; }
+.bf-wl-pair-players {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+@media (max-width: 600px) {
+  .bf-wl-pair-players { grid-template-columns: 1fr; }
+}
+.bf-wl-pair-hint {
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 12px; color: var(--muted); line-height: 1.5;
+}

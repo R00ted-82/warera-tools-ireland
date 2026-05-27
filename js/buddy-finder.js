@@ -27,6 +27,14 @@
 const BuddyFinderTool = (() => {
   const ACTIONS_PER_ENERGY = 0.343;
 
+  // Closeness threshold for ranking matches AND for surfacing
+  // waitlist-internal pairs. Same rule both places so the UX is
+  // consistent: if A and B would be shown as a pair in the waitlist
+  // box, A would also rank as a close match for B in the finder.
+  // The threshold is computed against the *smaller* of two daily
+  // outputs to be symmetric (matters for low-skill pairs).
+  const closenessThreshold = (daily) => Math.max(50, daily * 0.15);
+
   // GitHub repo backing the waitlist.
   // Using the contents API endpoint rather than jsDelivr or raw, because
   // jsDelivr caches @main for ~12h and ignores query strings on the raw
@@ -44,6 +52,7 @@ const BuddyFinderTool = (() => {
   const $wlBtn     = document.getElementById('bf-waitlist-submit');
   const $wlStatus  = document.getElementById('bf-waitlist-status');
   const $wlStats   = document.getElementById('bf-waitlist-stats');
+  const $wlPairs   = document.getElementById('bf-waitlist-pairs');
 
   const $mInput    = document.getElementById('bf-match-username');
   const $mBtn      = document.getElementById('bf-match-submit');
@@ -537,9 +546,8 @@ const BuddyFinderTool = (() => {
 
       // Tight threshold: candidates within 15% of your daily output are
       // "close matches". Anything outside is shown only on demand.
-      const closeThreshold = Math.max(50, myDaily * 0.15);
-      const closeMatches = usable.filter(c => c.delta <= closeThreshold);
-      const otherMatches = usable.filter(c => c.delta > closeThreshold);
+      const closeMatches = usable.filter(c => c.delta <= closenessThreshold(myDaily));
+      const otherMatches = usable.filter(c => c.delta >  closenessThreshold(myDaily));
 
       matchStore = { closeMatches, otherMatches, me };
 
@@ -565,10 +573,95 @@ const BuddyFinderTool = (() => {
   }
 
   /* ── Waitlist UI ────────────────────────────────────────── */
+
+  /**
+   * Pair up waitlist members whose skill levels are close enough
+   * (same 15% rule the finder uses). Iterates the waitlist in its
+   * stored order — oldest entries first — and greedily pairs each
+   * unpaired entry with the next unpaired entry within threshold.
+   *
+   * Each member can only appear in one pair. Members without a
+   * pair within threshold are dropped (their names stay hidden).
+   * Returns [{ a: user, b: user }, …].
+   */
+  function pairWaitlistMembers(profiles) {
+    const ordered = profiles
+      .filter(p => p && p.daily > 0)
+      // Keep original waitlist order (oldest first). The waitlist.json
+      // file appends new entries at the end, so the array order is
+      // already chronological.
+      .slice();
+
+    const pairs = [];
+    const taken = new Set();
+    for (let i = 0; i < ordered.length; i++) {
+      if (taken.has(i)) continue;
+      const a = ordered[i];
+      // Find the first later entry within closeness threshold of `a`.
+      // Threshold uses the smaller daily so it's symmetric.
+      for (let j = i + 1; j < ordered.length; j++) {
+        if (taken.has(j)) continue;
+        const b = ordered[j];
+        const smaller = Math.min(a.daily, b.daily);
+        const delta = Math.abs(a.daily - b.daily);
+        if (delta <= closenessThreshold(smaller)) {
+          pairs.push({ a, b });
+          taken.add(i);
+          taken.add(j);
+          break;
+        }
+      }
+    }
+    return pairs;
+  }
+
+  function renderWaitlistPairs(pairs) {
+    if (!pairs.length) {
+      $wlPairs.innerHTML = '';
+      $wlPairs.classList.add('hidden');
+      return;
+    }
+    const blocks = pairs.map(({ a, b }) => `
+      <div class="bf-wl-pair">
+        <div class="bf-wl-pair-players">
+          ${renderPlayer(a.user)}
+          ${renderPlayer(b.user)}
+        </div>
+        <div class="bf-wl-pair-hint">
+          💬 Message each other in-game, then both post a <strong>minimum-wage</strong> job offer and hire each other.
+        </div>
+      </div>
+    `).join('');
+    $wlPairs.innerHTML = `
+      <h4 class="bf-wl-pairs-head">🎯 Suggested pairs from the waiting list
+        <span class="bf-count">· ${pairs.length} match${pairs.length === 1 ? '' : 'es'} found</span>
+      </h4>
+      ${blocks}
+    `;
+    $wlPairs.classList.remove('hidden');
+  }
+
   async function updateWaitlistStats() {
     const wl = await fetchWaitlist();
     const n = wl.entries.length;
     $wlStats.innerHTML = `<strong>${n}</strong> player${n === 1 ? '' : 's'} currently on the waiting list.`;
+
+    // Try to surface paired matches among waitlist members. If fewer
+    // than two entries, skip the lite-profile fetch entirely.
+    if (n >= 2) {
+      const profiles = await mapConcurrent(wl.entries, async (entry) => {
+        try {
+          const u = await fetchUserLite(entry.userId);
+          if (!u) return null;
+          return { user: u, daily: getMaxDailyOutput(u) };
+        } catch { return null; }
+      }, 10);
+      const pairs = pairWaitlistMembers(profiles);
+      renderWaitlistPairs(pairs);
+    } else {
+      renderWaitlistPairs([]);
+    }
+
     waitlistStatsLoaded = true;
   }
 

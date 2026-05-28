@@ -225,8 +225,7 @@ const AdvisorTool = (() => {
       && !AGRARIAN_ITEMS.has(itemCode)
       ? 30 : 0;
 
-    const hasMatchingDeposit = !isSpecialised
-      && !!region?.deposit
+    const hasMatchingDeposit = !!region?.deposit
       && region.deposit.type === itemCode
       && isDepositActive(region.deposit);
     const deposit        = hasMatchingDeposit ? (region.deposit.bonusPercent || 0) : 0;

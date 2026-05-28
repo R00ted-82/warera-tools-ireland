@@ -78,7 +78,6 @@ const AdvisorTool = (() => {
   // food item is added, extend this set.
   const AGRARIAN_ITEMS = new Set([
     'steak', 'bread', 'fish', 'cookedFish', 'livestock', 'grain',
-    'coca', 'cocain',
   ]);
 
   // Companion endpoint for industrialism. Lives on Hattorius's

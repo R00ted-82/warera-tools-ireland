@@ -31,8 +31,11 @@
  *  (+56), Jordan/concrete (no +30), India/cookedFish (+20.5), Serbia/steak
  *  (+20), South Africa/steel (+34.25), Peru/lead deposit (+30 not +60),
  *  Ireland/grain deposit (+60), Bulgaria/steak (+10 not +40 — agrarian
- *  exclusion), and others. Do NOT re-introduce a +30 on food/agrarian items
- *  for industrialist countries — that was the bug.
+ *  exclusion), Brazil/coca (+45 = +15 strategic + +30 Industrialism —
+ *  plants ARE eligible, despite earlier guesswork), and others. Do NOT
+ *  re-introduce a +30 on food/agrarian items for industrialist countries —
+ *  that was the original bug. Do NOT re-add coca/cocain to AGRARIAN_ITEMS —
+ *  that was the follow-up bug.
  *
  *  Access: restricted to Irish citizens (enforceIrishOnly from
  *  shared.js). The bypass=1 URL param lifts the restriction.
@@ -72,10 +75,14 @@ const AdvisorTool = (() => {
   // ahead of it. Compare with industrial items where the +30 does fire:
   // Guinea-Bissau/lead → +56, South Africa/steel → +34.25.
   //
-  // This list includes the agrarian raw materials (fish, livestock, grain),
-  // their processed forms (cookedFish, steak, bread), and the coca/pill
-  // pair, which follow the same production model. If a future spec-eligible
-  // food item is added, extend this set.
+  // This list is strictly food: agrarian raw materials (fish, livestock,
+  // grain) and their processed forms (cookedFish, steak, bread). Plants
+  // and pills (coca, cocain) are NOT agrarian — verified against
+  // Brazil/coca: industrialism > 0, specialised in coca, in-game shows
+  // +45 = +15 strategic + +30 Industrialism. Earlier versions of this
+  // list included coca/cocain on the assumption that plants follow the
+  // food model; they don't. If a future spec-eligible food item is
+  // added, extend this set — but do not put plants/pills back in.
   const AGRARIAN_ITEMS = new Set([
     'steak', 'bread', 'fish', 'cookedFish', 'livestock', 'grain',
   ]);
@@ -209,9 +216,10 @@ const AdvisorTool = (() => {
     const strategic = isSpecialised
       ? (country.strategicResources?.bonuses?.productionPercent || 0)
       : 0;
-    // Industrialism (spec) +30 fires only for INDUSTRIAL items. Agrarian
-    // items (food, plants, pills) don't get it even when the country
-    // qualifies on lean + specialisation. See AGRARIAN_ITEMS comment.
+    // Industrialism (spec) +30 fires only for non-agrarian items. Food
+    // items (steak, bread, fish, etc.) don't get it even when the country
+    // qualifies on lean + specialisation. Plants and pills DO get it.
+    // See AGRARIAN_ITEMS comment.
     const specialisation = isSpecialised
       && lean === 'industrialist'
       && !AGRARIAN_ITEMS.has(itemCode)

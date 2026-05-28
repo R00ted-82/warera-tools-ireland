@@ -8,10 +8,14 @@
  *                      (fires when item matches country.specializedItem)
  *    specialisation  — flat +30% "Industrialism", fires when the country is
  *                      INDUSTRIALIST-leaning (industrialism > 0), the item
- *                      matches its specialisedItem, AND the item is an
- *                      INDUSTRIAL item (not food/agrarian). Verified:
- *                      Bulgaria/steak (ind=+2) does NOT get +30, but
- *                      South Africa/steel and Guinea-Bissau/lead do.
+ *                      matches its specialisedItem, AND the item is covered
+ *                      by the Fanatic Industrialist trait (which says "ammo
+ *                      or construction specialization good"). The
+ *                      AGRARIAN_ITEMS set lists items NOT covered — food,
+ *                      plants, pills. Verified: Bulgaria/steak (ind=+2)
+ *                      no +30, Morocco/cocain (Fanatic Industrialist) no
+ *                      +30, but South Africa/steel and Guinea-Bissau/lead
+ *                      and Egypt/iron all do get +30.
  *    deposit         — region.deposit.bonusPercent, fires when the region
  *                      has an active matching deposit, EXCEPT when the
  *                      country specialises in the item AND is industrialist
@@ -39,18 +43,27 @@
  *  This model was verified against in-game tooltips for Guinea-Bissau/lead
  *  (+56), Jordan/concrete (no +30), India/cookedFish (+20.5), Serbia/steak
  *  (+20), South Africa/steel (+34.25), Ireland/grain deposit (+60),
- *  Bulgaria/steak (+10 not +40 — agrarian exclusion), Brazil/coca/Recife
- *  (+45 = +15 strategic + +30 regional deposit — deposits DO stack with
- *  specialisation when country is non-industrialist), Egypt/iron/Ouham
- *  (+62 = +32 strategic + +30 specialisation, deposit suppressed when
- *  country IS industrialist), and others. Do NOT re-introduce a +30 on
- *  food/agrarian items for industrialist countries — that was the original
- *  bug. Do NOT drop the !(isSpecialised && industrialist) gate on
- *  hasMatchingDeposit — that was the second bug; Egypt/iron proves
- *  deposits don't stack with industrialist specialisation. Open question:
- *  the mirror case for agrarian-leaning countries (does an agrarian
- *  country's deposit still fire on its specialised item?) is unverified.
- *  If a Fanatic Agrarian country shows a miscount, that's where to look.
+ *  Bulgaria/steak (+10 not +40 — pills/food not covered by trait),
+ *  Morocco/cocain (+15.5 not +45.5 — Fanatic Industrialist trait does
+ *  NOT cover pills), Egypt/iron/Ouham (+62 = +32 strategic + +30
+ *  specialisation, deposit suppressed when country is industrialist),
+ *  Brazil/coca/Recife (+45 = +15 strategic + +30 deposit — deposit stacks
+ *  with non-industrialist specialisation), and others.
+ *
+ *  Bugs to NOT repeat:
+ *  - DO put food/agrarian items in AGRARIAN_ITEMS — the +30 doesn't fire
+ *    on them. Bulgaria/steak proves it.
+ *  - DO put coca and cocain in AGRARIAN_ITEMS — the Fanatic Industrialist
+ *    trait literally says "ammo or construction specialization good";
+ *    plants and pills aren't covered. Morocco/cocain proves it for pills.
+ *    Earlier we removed them based on misreading Brazil/coca, where the
+ *    +30% turned out to come from a regional deposit, not from Industrialism.
+ *  - DO keep the !(isSpecialised && industrialist) gate on hasMatchingDeposit;
+ *    Egypt/iron proves deposits don't stack with industrialist specialisation.
+ *  - Open question: the mirror case for agrarian-leaning countries (does
+ *    an agrarian country's regional deposit still fire on its specialised
+ *    item?) is unverified. If a Fanatic Agrarian country shows a miscount,
+ *    that's where to look.
  *
  *  Access: restricted to Irish citizens (enforceIrishOnly from
  *  shared.js). The bypass=1 URL param lifts the restriction.
@@ -82,24 +95,42 @@ const AdvisorTool = (() => {
   const OPTIMAL_THRESHOLD = 2;
   const HUGE_THRESHOLD    = 20;
 
-  // The +30% Industrialism (specialisation) bonus does NOT fire on
-  // agrarian items, even when the country is industrialist-leaning.
-  // Verified against Bulgaria/steak: industrialism=+2, specializedItem=steak,
-  // strategic=+10, but the game's "Move company" panel shows Bulgaria at
-  // +10% (not +40%), and Croatia (+21.25% from strategic alone) ranks
-  // ahead of it. Compare with industrial items where the +30 does fire:
-  // Guinea-Bissau/lead → +56, South Africa/steel → +34.25.
+  // The +30% "Industrialism" bonus comes from the Fanatic Industrialist
+  // ruling-party trait, which reads in-game: "All companies in your
+  // borders get +30% bonus towards ammo or construction specialization
+  // good. Deposits cannot spawn within your borders."
   //
-  // This list is strictly food: agrarian raw materials (fish, livestock,
-  // grain) and their processed forms (cookedFish, steak, bread). Plants
-  // and pills (coca, cocain) are NOT agrarian — verified against
-  // Brazil/coca: industrialism > 0, specialised in coca, in-game shows
-  // +45 = +15 strategic + +30 Industrialism. Earlier versions of this
-  // list included coca/cocain on the assumption that plants follow the
-  // food model; they don't. If a future spec-eligible food item is
-  // added, extend this set — but do not put plants/pills back in.
+  // The trait is gated by item category — it only fires on "ammo or
+  // construction" items. This set lists items that DON'T qualify (i.e.
+  // items where the +30% does NOT fire even when the country is Fanatic
+  // Industrialist and specialises in the item).
+  //
+  // Verified non-eligible:
+  //   - steak/bread/fish/cookedFish/livestock/grain (food/agrarian):
+  //     Bulgaria/steak doesn't get +30 despite ind=+2.
+  //   - cocain (pills): Morocco specialises in cocain, is Fanatic
+  //     Industrialist, in-game shows +15.5% (strategic only, no +30).
+  //   - coca (plants): no verified case of a Fanatic Industrialist
+  //     country specialising in coca AND getting +30. Added by symmetry
+  //     with pills — plants and pills aren't "ammo or construction"
+  //     either. If a counter-example shows up, drop coca from this set.
+  //
+  // Verified eligible (where +30 does fire):
+  //   - lead (ammo precursor): Guinea-Bissau/lead → +56 (=+26 strategic
+  //     + +30 Industrialism).
+  //   - steel: South Africa/steel → +34.25.
+  //   - iron: Egypt/iron → +62 (=+32 strategic + +30 Industrialism).
+  //   - heavyAmmo, ammo, lightAmmo, concrete: assumed eligible by the
+  //     trait text ("ammo or construction"); not all directly verified
+  //     but consistent with the rule.
+  //
+  // Misnamed — these aren't agrarian, they're "items the Fanatic
+  // Industrialist trait doesn't cover". Kept as AGRARIAN_ITEMS for
+  // backwards-compatibility with the rest of the file; rename if you
+  // refactor to an inclusion list of ammo/construction items.
   const AGRARIAN_ITEMS = new Set([
     'steak', 'bread', 'fish', 'cookedFish', 'livestock', 'grain',
+    'coca', 'cocain',
   ]);
 
   // Companion endpoint for industrialism. Lives on Hattorius's
@@ -233,10 +264,11 @@ const AdvisorTool = (() => {
     const strategic = isSpecialised
       ? (country.strategicResources?.bonuses?.productionPercent || 0)
       : 0;
-    // Industrialism (spec) +30 fires only for non-agrarian items. Food
-    // items (steak, bread, fish, etc.) don't get it even when the country
-    // qualifies on lean + specialisation. Plants and pills DO get it.
-    // See AGRARIAN_ITEMS comment.
+    // Industrialism (spec) +30 fires only on items covered by the Fanatic
+    // Industrialist trait ("ammo or construction"). Food, plants, and pills
+    // (in AGRARIAN_ITEMS) don't qualify even when the country specialises
+    // and is industrialist-leaning. The set name is historical — it
+    // includes more than just food now. See AGRARIAN_ITEMS comment.
     const specialisation = isSpecialised
       && lean === 'industrialist'
       && !AGRARIAN_ITEMS.has(itemCode)

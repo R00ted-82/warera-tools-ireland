@@ -12,9 +12,11 @@
  *                      INDUSTRIAL item (not food/agrarian). Verified:
  *                      Bulgaria/steak (ind=+2) does NOT get +30, but
  *                      South Africa/steel and Guinea-Bissau/lead do.
- *    deposit         — region.deposit.bonusPercent, fires when the region
- *                      has an active matching deposit AND the country does
- *                      NOT specialise in this item
+ *    deposit         — region.deposit.bonusPercent, fires whenever the
+ *                      region has an active matching deposit. Stacks with
+ *                      strategic + specialisation when the country also
+ *                      specialises in the item — verified against
+ *                      Brazil/coca/Recife: +15 strategic + +30 deposit = +45.
  *    depositCountry  — flat country-level deposit bonus (read from
  *                      gameConfig.company.depositResourceBonus, defaults
  *                      to 30), fires when there's a matching active deposit
@@ -29,13 +31,16 @@
  *
  *  This model was verified against in-game tooltips for Guinea-Bissau/lead
  *  (+56), Jordan/concrete (no +30), India/cookedFish (+20.5), Serbia/steak
- *  (+20), South Africa/steel (+34.25), Peru/lead deposit (+30 not +60),
- *  Ireland/grain deposit (+60), Bulgaria/steak (+10 not +40 — agrarian
- *  exclusion), Brazil/coca (+45 = +15 strategic + +30 Industrialism —
- *  plants ARE eligible, despite earlier guesswork), and others. Do NOT
- *  re-introduce a +30 on food/agrarian items for industrialist countries —
- *  that was the original bug. Do NOT re-add coca/cocain to AGRARIAN_ITEMS —
- *  that was the follow-up bug.
+ *  (+20), South Africa/steel (+34.25), Ireland/grain deposit (+60),
+ *  Bulgaria/steak (+10 not +40 — agrarian exclusion), Brazil/coca/Recife
+ *  (+45 = +15 strategic + +30 regional deposit — deposits DO stack with
+ *  specialisation), and others. Do NOT re-introduce a +30 on food/agrarian
+ *  items for industrialist countries — that was the original bug. Do NOT
+ *  re-add the !isSpecialised gate to hasMatchingDeposit — that was the
+ *  second bug; the original "Peru/lead +30 not +60" verification that
+ *  introduced it was misattributed (Peru is Fanatic Industrialist, which
+ *  forbids deposits from spawning, so the missing +30 was never there
+ *  to begin with).
  *
  *  Access: restricted to Irish citizens (enforceIrishOnly from
  *  shared.js). The bypass=1 URL param lifts the restriction.
@@ -225,7 +230,8 @@ const AdvisorTool = (() => {
       && !AGRARIAN_ITEMS.has(itemCode)
       ? 30 : 0;
 
-    const hasMatchingDeposit = !!region?.deposit
+    const hasMatchingDeposit = !isSpecialised
+      && !!region?.deposit
       && region.deposit.type === itemCode
       && isDepositActive(region.deposit);
     const deposit        = hasMatchingDeposit ? (region.deposit.bonusPercent || 0) : 0;

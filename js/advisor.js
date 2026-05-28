@@ -207,10 +207,12 @@ const AdvisorTool = (() => {
    * against many in-game tooltips. Do not change without re-verifying:
    *
    *   • Strategic + Specialisation (+30) fire on the country's SPEC item
-   *     when it's industrialist-leaning. They don't fire on deposits.
-   *   • Deposit + DepositCountry (+30) fire when there's an active
-   *     matching deposit AND the country does NOT specialise in this item.
-   *     The +30 only applies if the country is agrarian-leaning.
+   *     when it's industrialist-leaning.
+   *   • Deposit fires whenever there's an active matching deposit, and
+   *     stacks with strategic/specialisation when the country also
+   *     specialises in the item.
+   *   • DepositCountry (+30) additionally fires when the country is
+   *     agrarian-leaning.
    */
   function computeBonus(country, region, itemCode) {
     if (!country) return null;
@@ -230,8 +232,7 @@ const AdvisorTool = (() => {
       && !AGRARIAN_ITEMS.has(itemCode)
       ? 30 : 0;
 
-    const hasMatchingDeposit = !isSpecialised
-      && !!region?.deposit
+    const hasMatchingDeposit = !!region?.deposit
       && region.deposit.type === itemCode
       && isDepositActive(region.deposit);
     const deposit        = hasMatchingDeposit ? (region.deposit.bonusPercent || 0) : 0;

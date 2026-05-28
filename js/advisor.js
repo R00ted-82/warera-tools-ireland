@@ -12,11 +12,18 @@
  *                      INDUSTRIAL item (not food/agrarian). Verified:
  *                      Bulgaria/steak (ind=+2) does NOT get +30, but
  *                      South Africa/steel and Guinea-Bissau/lead do.
- *    deposit         — region.deposit.bonusPercent, fires whenever the
- *                      region has an active matching deposit. Stacks with
- *                      strategic + specialisation when the country also
- *                      specialises in the item — verified against
- *                      Brazil/coca/Recife: +15 strategic + +30 deposit = +45.
+ *    deposit         — region.deposit.bonusPercent, fires when the region
+ *                      has an active matching deposit, EXCEPT when the
+ *                      country specialises in the item AND is industrialist
+ *                      (in which case the deposit is suppressed; this is a
+ *                      generalisation of Fanatic Industrialist's "deposits
+ *                      cannot spawn within your borders" trait). Stacks
+ *                      with strategic when the country specialises but is
+ *                      NOT industrialist — verified Brazil/coca/Recife:
+ *                      +15 strategic + +30 deposit = +45. Does NOT stack
+ *                      when the country IS industrialist — verified
+ *                      Egypt/iron/Ouham: +32 strategic + +30 specialisation
+ *                      = +62, deposit suppressed despite being active.
  *    depositCountry  — flat country-level deposit bonus (read from
  *                      gameConfig.company.depositResourceBonus, defaults
  *                      to 30), fires when there's a matching active deposit
@@ -34,13 +41,16 @@
  *  (+20), South Africa/steel (+34.25), Ireland/grain deposit (+60),
  *  Bulgaria/steak (+10 not +40 — agrarian exclusion), Brazil/coca/Recife
  *  (+45 = +15 strategic + +30 regional deposit — deposits DO stack with
- *  specialisation), and others. Do NOT re-introduce a +30 on food/agrarian
- *  items for industrialist countries — that was the original bug. Do NOT
- *  re-add the !isSpecialised gate to hasMatchingDeposit — that was the
- *  second bug; the original "Peru/lead +30 not +60" verification that
- *  introduced it was misattributed (Peru is Fanatic Industrialist, which
- *  forbids deposits from spawning, so the missing +30 was never there
- *  to begin with).
+ *  specialisation when country is non-industrialist), Egypt/iron/Ouham
+ *  (+62 = +32 strategic + +30 specialisation, deposit suppressed when
+ *  country IS industrialist), and others. Do NOT re-introduce a +30 on
+ *  food/agrarian items for industrialist countries — that was the original
+ *  bug. Do NOT drop the !(isSpecialised && industrialist) gate on
+ *  hasMatchingDeposit — that was the second bug; Egypt/iron proves
+ *  deposits don't stack with industrialist specialisation. Open question:
+ *  the mirror case for agrarian-leaning countries (does an agrarian
+ *  country's deposit still fire on its specialised item?) is unverified.
+ *  If a Fanatic Agrarian country shows a miscount, that's where to look.
  *
  *  Access: restricted to Irish citizens (enforceIrishOnly from
  *  shared.js). The bypass=1 URL param lifts the restriction.
@@ -208,9 +218,9 @@ const AdvisorTool = (() => {
    *
    *   • Strategic + Specialisation (+30) fire on the country's SPEC item
    *     when it's industrialist-leaning.
-   *   • Deposit fires whenever there's an active matching deposit, and
-   *     stacks with strategic/specialisation when the country also
-   *     specialises in the item.
+   *   • Deposit fires whenever there's an active matching deposit, EXCEPT
+   *     when the country specialises in the item AND is industrialist
+   *     (deposit suppressed — see header comment for verification).
    *   • DepositCountry (+30) additionally fires when the country is
    *     agrarian-leaning.
    */
@@ -234,7 +244,8 @@ const AdvisorTool = (() => {
 
     const hasMatchingDeposit = !!region?.deposit
       && region.deposit.type === itemCode
-      && isDepositActive(region.deposit);
+      && isDepositActive(region.deposit)
+      && !(isSpecialised && lean === 'industrialist');
     const deposit        = hasMatchingDeposit ? (region.deposit.bonusPercent || 0) : 0;
     const depositCountry = hasMatchingDeposit && lean === 'agrarian' ? GAME_DEPOSIT_BONUS : 0;
 

@@ -1,7 +1,8 @@
 /* ═══════════════════════════════════════════════════════════════════
  *  VIEW ROUTER
  *  Hash-based routing so views are deep-linkable.
- *    #home                landing page (default)
+ *    #home                Irish tools landing (default)
+ *    #community           Community (external) tools landing
  *    #mu                  Irish Military Units
  *    #mu?filter=open      MU tool with the "Has slots" filter applied
  *    #advisor             Migration Advisor (empty)
@@ -13,24 +14,36 @@
  *  is portable as one fragment and survives static hosting that doesn't
  *  rewrite query strings.
  *
+ *  Tabs: the two landing views (home, community) show the tab bar and
+ *  hide the back-link. Every tool view hides the tabs and shows the
+ *  back-link, which returns to #home. All internal tools belong to the
+ *  Irish tab, so "back to home" is always the right destination.
+ *
  *  Idempotency: activate(params) runs every time a view becomes active,
  *  not just on first mount. Tools handle being called repeatedly: MU
  *  doesn't re-fetch its data, the advisor only re-runs if the username
  *  changed. This is what makes hash edits like #advisor to #advisor?u=toie
  *  pick up the new param without a full reload.
  *
- *  Navigation: there are no tabs. Users land on Home and click into
- *  tools via the cards. The .back-link in the header sends them back,
- *  and clicking the brand title does the same.
+ *  Navigation: two tabs sit in the header. Within the Irish tab, users
+ *  click into tools via the cards; the .back-link and the brand title
+ *  both return to #home. The Community tab is a directory of external
+ *  links that open in a new tab — it registers no tool.
  * ═══════════════════════════════════════════════════════════════════ */
 (() => {
-  const VALID = new Set(['home', 'mu', 'buddy-finder', 'advisor', 'clockin', 'buddy', 'battle-orders']);
+  const VALID = new Set([
+    'home', 'community', 'mu', 'buddy-finder',
+    'advisor', 'clockin', 'buddy', 'battle-orders',
+  ]);
+  const LANDING = new Set(['home', 'community']);
   const DEFAULT_VIEW = 'home';
   const views = document.querySelectorAll('.view');
   const $backLink = document.querySelector('.back-link');
+  const $tabs = document.getElementById('tabs');
 
   const tools = {
     home: null,
+    community: null,
     mu: MUTool,
     'buddy-finder': BuddyFinderTool,
     advisor: AdvisorTool,
@@ -58,7 +71,15 @@
   function setView(name, { updateHash = true, params = new URLSearchParams() } = {}) {
     if (!VALID.has(name)) name = DEFAULT_VIEW;
     views.forEach(v => v.classList.toggle('active', v.dataset.view === name));
-    $backLink.hidden = (name === DEFAULT_VIEW);
+
+    // Tab bar on the two landing pages, back-link inside tools.
+    const isLanding = LANDING.has(name);
+    $backLink.hidden = isLanding;
+    if ($tabs) {
+      $tabs.hidden = !isLanding;
+      $tabs.querySelectorAll('.tab').forEach(t =>
+        t.classList.toggle('active', t.dataset.tab === name));
+    }
 
     if (updateHash) writeHash(name, params);
 
@@ -76,4 +97,4 @@
 
   const initial = parseRoute();
   setView(initial.view, { updateHash: false, params: initial.params });
-})(); 
+})();

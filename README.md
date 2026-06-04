@@ -2,36 +2,203 @@
 
 An Irish player's toolkit for [War Era](https://app.warera.io/). Live at [tools.we-ie.com](https://tools.we-ie.com).
 
-## Tools
+This is a static site: plain HTML, CSS, and vanilla JavaScript with no build step, no framework, and no bundler. You edit files, refresh the page, done. Everything runs in the browser. The only backend is a thin Cloudflare Worker that proxies the game's API and holds a couple of secrets.
 
-### 🇮🇪 Irish Military Units
+## Quick start
 
-Every MU owned by an Irish citizen, in Ireland, with a majority Irish roster. Filter by whether they have open slots, see who's already inside, and click through to the game.
+Clone the repo and serve the folder over HTTP. You can't open `index.html` with `file://` because the tools use `fetch` and the Web Crypto API, both of which need a real origin.
 
-MUs need to pass three checks to appear:
-- Owner is currently an Irish citizen
-- MU's country (if exposed) is Ireland
-- At least half of the members are Irish
+```bash
+python3 -m http.server 8000
+# then open http://localhost:8000
+```
 
-### 🏭 Company Migration Advisor
+Any static server works (`npx serve`, VS Code Live Server, etc.). There is nothing to install and nothing to compile.
 
-Enter your War Era username to see whether each of your companies is in its best country, and how much extra output or take-home a move would gain you.
+## How a contributor should think about this
 
-Bonuses come from strategic resources, regional deposits, and two industrialism modifiers gated by the country's lean. Income tax only affects the ranking on companies you work in yourself.
+The site is one HTML page with several hidden "views". A hash router shows one view at a time. Each tool is a self-contained script that the router switches on when its view becomes visible. Shared plumbing (the API client, formatting helpers, the loading-step UI) lives in one file that every tool depends on.
 
-## URLs
+If you understand `shared.js` and the tool pattern below, you understand the whole codebase.
 
-Every view is hash-routed and deep-linkable.
+## File structure
 
-- `#home` → landing page
-- `#mu` → Irish Military Units
-- `#mu?filter=open` → MUs with free slots
-- `#mu?filter=full` → full MUs
-- `#advisor` → Migration Advisor, empty
-- `#advisor?u=toie` → Migration Advisor pre-loaded for a user
+```
+index.html        All views live here as <section class="view"> blocks
+styles.css        Main stylesheet (theme variables + every tool's styles)
+community.css     Styles specific to the Community tools directory
+js/
+  shared.js       Loaded first. Data layer + helpers. Tools depend on this.
+  mu.js           Irish Military Units
+  buddy-finder.js Buddy Finder (public)
+  advisor.js      Company Migration Advisor
+  clockin.js      Employee Clock-In Monitor
+  buddy.js        Buddy System Monitor (encrypted, MoE password)
+  battle-orders.js Battle Orders (encrypted, MoD password)
+  router.js       Loaded last. Hash routing + view switching.
+images/           Item icons used by the advisor and clock-in tools
+```
 
-The advisor updates the URL when you analyse, so the address bar is always shareable.
+Script load order in `index.html` matters and is fixed: `shared.js` first, then the tools, then `router.js` last. Shared helpers must exist before any tool runs, and the router must run after every tool global is defined.
+
+## Architecture
+
+### Views and routing
+
+Every view is a `<section class="view" data-view="NAME">` inside `index.html`. Only one carries the `active` class at a time; the rest are hidden by CSS.
+
+Routing is hash-based and deep-linkable. Parameters sit inside the hash after a literal `?`, so the whole route travels as one fragment and survives static hosting that doesn't rewrite query strings.
+
+```
+#home                 Irish tools landing (default)
+#community            External community tools directory
+#mu                   Irish Military Units
+#mu?filter=open       MU tool with the "Has slots" filter applied
+#advisor              Migration Advisor, empty
+#advisor?u=toie       Migration Advisor pre-loaded for a user
+#clockin?u=toie       Clock-In Monitor pre-loaded for a user
+#buddy-finder?u=toie  Buddy Finder pre-loaded for a user
+```
+
+`router.js` parses the hash into `{ view, params }`, toggles the right section active, shows or hides the tab bar and back link, and calls the tool's `activate(params)`.
+
+Two things to know about the router:
+
+1. `activate(params)` runs **every time** a view becomes active, not just the first time. Tools must be idempotent. For example, MU kicks off its data load exactly once, and the advisor only re-runs if the `?u=` value changed. This is what lets a hash edit from `#advisor` to `#advisor?u=toie` pick up the new parameter without a full reload.
+2. To register a new view you add it to the `VALID` set and the `tools` map in `router.js`. Landing pages (`home`, `community`) go in the `LANDING` set so they show the tab bar instead of the back link.
+
+### The tool pattern
+
+Every tool is an IIFE assigned to a global, returning an object with an `activate` method. That global is what `router.js` references.
+
+```js
+const MyTool = (() => {
+  // grab DOM nodes, wire up event listeners, define the pipeline
+  return {
+    activate(params) {
+      // called whenever this view opens; must be idempotent
+    }
+  };
+})();
+```
+
+Tools never touch each other. They share state only through the URL and through helpers in `shared.js`.
+
+### shared.js (read this first)
+
+`shared.js` is the contract every tool relies on. The important pieces:
+
+**Constants**
+
+```js
+API_BASE         = 'https://warera-proxy.toie.workers.dev/trpc'
+WARERASTATS_BASE = 'https://warera-proxy.toie.workers.dev/warerastats'
+GAME_BASE        = 'https://app.warera.io'
+IRELAND_COUNTRY_ID = '6813b6d446e731854c7ac7fe'
+```
+
+**`trpc(endpoint, input, { retry, timeoutMs })`** is the only way to call the game API. It builds the proxied URL, unwraps the tRPC response shape, and optionally retries transient 5xx errors. Always use it rather than calling `fetch` against the gateway directly.
+
+**`enforceIrishOnly(country, username)`** throws unless the user is an Irish citizen or the `bypass=1` URL flag is set. Personal tools call this right after resolving a username, before any expensive loading. A `null` country passes through (the resolution path reports its own error).
+
+**`makeSteps(rootEl)`** returns `{ setStep, reset, markActiveAsError, fadeOut, hide }` for driving the multi-step loading panel (the spinner-and-checkmark list you see while a tool works). The matching markup is the `.steps` block inside each view.
+
+**`makeStatus(el)`** returns a `setStatus(text, isError)` function for the single-line status message under a tool header.
+
+**Formatting helpers:** `escapeHtml`, `fmtNum`, `fmt`, `flag`, `formatDuration`, `formatDate`. Always run any user-supplied or API string through `escapeHtml` before putting it in `innerHTML`.
+
+**`isTransientError(err)`** classifies retryable failures (HTTP 502/503/504, timeouts, network errors). Use it to decide between a friendly "try again in a moment" message and a hard error.
+
+### Username resolution
+
+Several tools need to turn a typed username into a user ID. The game's `search.searchAnything` is fuzzy and relevance-ranked, so the first result is not guaranteed to be an exact match. The shared pattern, used in advisor, clock-in, and buddy-finder, is:
+
+1. Search for the text.
+2. Fetch lite profiles for the top results.
+3. Keep the one whose username matches exactly, case-insensitive.
+4. Never silently fall back to the top hit. If nothing matches, tell the user what came back.
+
+If you write a tool that resolves usernames, copy this behaviour. Falling back to an unverified result causes "wrong user" bugs during API hiccups.
+
+## Data layer
+
+All game data comes through one Cloudflare Worker at `warera-proxy.toie.workers.dev`. It exposes three routes:
+
+- `/trpc/*` proxies the War Era Gateway (tRPC).
+- `/warerastats` proxies Hattorius's warerastats data (used for country industrialism in the advisor).
+- `/waitlist-update` mutates the Buddy Finder waiting list (see below).
+
+The Worker holds the secrets (the GitHub PAT for the waitlist). The browser never sees them. The whole site otherwise runs client-side and stores nothing about users, except the username and user ID of people who opt into the waiting list.
+
+Endpoints currently in use, for reference:
+
+```
+search.searchAnything
+user.getUserLite, user.getById (+ fallbacks), user.getUsersByCountry
+company.getCompanies, company.getById
+worker.getWorkers
+transaction.getPaginatedTransactions
+mu.getManyPaginated
+region.getRegionsObject
+country.getCountryById, country.getAllCountries
+gameConfig.getGameConfig
+warerastats /countries  (industrialism, via WARERASTATS_BASE)
+```
+
+## Access control
+
+There are two separate mechanisms. Don't confuse them.
+
+**Irish-only gate.** Personal tools (advisor, clock-in, buddy-finder) call `enforceIrishOnly` to block non-Irish users. Append `?bypass=1` to the hash for admin or debugging. The MU tool doesn't gate; it filters MUs down to Irish ones instead.
+
+**Password-encrypted tools.** Buddy System Monitor (`#buddy`, MoE) and Battle Orders (`#battle-orders`, MoD) ship their entire tool (CSS, HTML, JS, webhook URLs) as an AES-encrypted blob in the source. The page is useless without the password, so the sensitive logic never reaches an unauthorised browser in readable form.
+
+### How the encrypted tools work
+
+- Blob format: base64 of `salt(16) || iv(12) || AES-GCM-256 ciphertext`.
+- Key derivation: PBKDF2-SHA-256, 200000 iterations.
+- On correct password, the gate decrypts the blob and injects it as a `<script>` tag, which mounts the real tool.
+- The blob lives in the `BO_ENCRYPTED_PAYLOAD` / `BUDDY_ENCRYPTED_PAYLOAD` constant at the top of the respective gate file.
+
+To set up or rotate a password: encrypt the tool's payload file with the standalone `encrypt-bo.html` generator (it is payload-agnostic and works for both tools), then paste the resulting base64 string as the constant value. Until the constant is filled in, the gate shows "payload not configured yet" and does nothing.
+
+The gate code itself (`buddy.js`, `battle-orders.js`) is plain and public. Only the payload is secret.
+
+## The Buddy Finder waiting list
+
+The waiting list is backed by a `waitlist.json` file in the [`to-ie/warera-tools-ireland`](https://github.com/to-ie/warera-tools-ireland) GitHub repo.
+
+- **Reads** hit the GitHub contents API with a cache-buster. This endpoint refreshes within seconds of a commit, unlike the raw or jsDelivr endpoints which cache for hours.
+- **Writes** POST to the Worker's `/waitlist-update` route, which fires a `repository_dispatch` with the PAT attached server-side. A GitHub Action then edits the file.
+
+That Action introduces roughly a one-minute lag between a submit and the name actually appearing. This is intentional and free; the UI warns users about it. Don't try to "fix" it by writing to GitHub directly from the client; that would leak the token.
+
+## Styling conventions
+
+`styles.css` defines the dark theme through CSS custom properties in `:root` (`--bg`, `--panel`, `--accent`, `--warn`, `--danger`, `--link`, `--muted`, `--text`, `--border`, and a few more). Use these variables. Don't hardcode colours. Add a new variable only when the existing palette genuinely can't express what you need (the one precedent is `--bf-orange` for the "mismatched" badge, where green, yellow, and red were already taken).
+
+Other rules:
+
+- **Scope every tool's classes with a prefix** (`clockin-`, `bf-`, and so on) so styles can't collide across tools sharing one stylesheet.
+- **Reuse shared components** where they exist: `.steps` for loading, `.status` for the status line, `details.howto` for the "how this works" disclosure, `.icon-box` for item icons.
+- **Mobile breakpoints** are at 720px, 640px, 600px, and 380px. Keep each tool's responsive overrides together so the file stays scannable.
+
+## Adding a new tool
+
+The process is build-standalone, then merge, and design must survive the merge.
+
+**1. Build it standalone.** Make a throwaway page with its own HTML, CSS, and JS and get the tool fully working in isolation. This keeps experiments out of the main site until they're ready.
+
+**2. Merge it in.** Five steps, in order:
+
+1. Add a `<section class="view" data-view="yourtool">` to `index.html`.
+2. Add a card for it on the home view so people can find it.
+3. Fold its CSS into `styles.css`, renaming classes to a unique prefix and swapping any hardcoded colours for the theme variables.
+4. Add `js/yourtool.js` following the IIFE-plus-`activate` pattern. Use `trpc`, `makeSteps`, `makeStatus`, `escapeHtml`, and `enforceIrishOnly` from `shared.js` rather than reinventing them.
+5. Register it in `router.js` (add the name to `VALID` and map it in `tools`), and add its `<script>` tag in `index.html` before `router.js`.
+
+**3. Preserve the look.** A merged tool should be indistinguishable in style from the existing ones. Same loading panel, same status line, same card and disclosure patterns, same spacing. If it looks like a different site, the merge isn't finished.
 
 ## Credit
-&bypass=1
+
 By toie. Live data via the [War Era Gateway](https://gateway.warerastats.io/). Industrialism data from [warerastats.io](https://warerastats.io/).

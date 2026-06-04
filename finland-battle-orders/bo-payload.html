@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>War Era · Finland · Battle Orders</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 11'%3E%3Crect width='18' height='11' fill='white'/%3E%3Crect x='5' width='3' height='11' fill='%23003580'/%3E%3Crect y='4' width='18' height='3' fill='%23003580'/%3E%3C/svg%3E" />
+<style>
+  :root {
+    --bg: #0b0d10;
+    --panel: #14181d;
+    --panel-2: #1a1f25;
+    --border: #262d36;
+    --text: #e6e9ee;
+    --muted: #8b94a3;
+    --accent: #4a9eff;        /* Finland accent blue */
+    --accent-dim: #1b3a5c;
+    --warn: #fbbf24;
+    --danger: #f87171;
+    --link: #60a5fa;
+    --atk: #f4a48f;
+    --def: #9bc1ee;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex; flex-direction: column; min-height: 100vh;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  header { border-bottom: 1px solid var(--border); }
+  .header-top {
+    padding: 18px 32px;
+    display: flex; flex-wrap: wrap; gap: 16px;
+    align-items: center; justify-content: space-between;
+  }
+  .brand { text-decoration: none; color: inherit; display: block; }
+  .brand:hover { text-decoration: none; }
+  .brand h1 {
+    margin: 0; font-size: 22px; font-weight: 700;
+    letter-spacing: -0.01em; transition: color 0.15s;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .brand:hover h1 { color: var(--accent); }
+  .brand .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+
+  button {
+    background: var(--bg); color: var(--text); border: 1px solid var(--border);
+    padding: 8px 14px; border-radius: 6px; font-size: 13px; cursor: pointer;
+    font-family: inherit;
+  }
+  button:hover:not(:disabled) { background: var(--panel-2); border-color: #3a4350; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary {
+    background: var(--accent-dim); border-color: var(--accent);
+    color: var(--accent); font-weight: 600;
+  }
+  .btn-primary:hover:not(:disabled) { background: rgba(74, 158, 255, 0.2); }
+
+  main { padding: 24px 32px; max-width: 1500px; margin: 0 auto; width: 100%; flex: 1; padding-bottom: 80px; }
+  footer {
+    padding: 20px 32px; border-top: 1px solid var(--border);
+    color: var(--muted); font-size: 13px; text-align: center;
+  }
+  footer .heart { color: var(--danger); }
+  footer .sep { margin: 0 6px; opacity: 0.5; }
+  footer a { color: var(--muted); }
+  footer a:hover { color: var(--text); }
+
+  .tool-header {
+    display: flex; flex-wrap: wrap; gap: 14px 24px;
+    align-items: flex-end; justify-content: space-between;
+    margin-bottom: 22px; padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .tool-header .title-block { flex: 1 1 280px; min-width: 0; }
+  .tool-header h2 { margin: 0; font-size: 20px; font-weight: 600; line-height: 1.2; }
+  .tool-header .title-block p {
+    margin: 6px 0 0; color: var(--muted); font-size: 13px;
+    line-height: 1.5; max-width: 65ch;
+  }
+  .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .bo-updated-label { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+  .status {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 16px; margin-bottom: 16px; color: var(--muted); font-size: 13px;
+  }
+  .status.error { color: var(--danger); border-color: #4a1d1d; }
+  .status.hidden { display: none; }
+
+  /* multi-step loading panel */
+  .steps {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 18px; margin-bottom: 16px;
+    display: flex; flex-direction: column; gap: 12px;
+    transition: opacity 0.4s ease;
+  }
+  .steps.hidden { display: none; }
+  .steps.fading { opacity: 0; pointer-events: none; }
+  .step { display: flex; align-items: flex-start; gap: 12px; font-size: 13px; line-height: 1.35; }
+  .step-icon {
+    width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px;
+    border-radius: 50%; position: relative;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .step[data-state="pending"] .step-icon { border: 1.5px solid var(--border); }
+  .step[data-state="active"]  .step-icon {
+    border: 1.5px solid rgba(96, 165, 250, 0.22);
+    border-top-color: var(--link);
+    animation: step-spin 0.7s linear infinite;
+  }
+  .step[data-state="done"]    .step-icon { background: var(--accent); }
+  .step[data-state="done"]    .step-icon::after {
+    content: ''; width: 4px; height: 8px;
+    border: solid #04203f; border-width: 0 2px 2px 0;
+    transform: rotate(45deg) translate(0, -1px);
+  }
+  .step[data-state="error"]   .step-icon { background: var(--danger); }
+  .step[data-state="error"]   .step-icon::before,
+  .step[data-state="error"]   .step-icon::after {
+    content: ''; position: absolute;
+    width: 9px; height: 1.8px; background: #2a0a0a; border-radius: 1px;
+  }
+  .step[data-state="error"]   .step-icon::before { transform: rotate(45deg); }
+  .step[data-state="error"]   .step-icon::after  { transform: rotate(-45deg); }
+  @keyframes step-spin { to { transform: rotate(360deg); } }
+  .step-body { flex: 1; min-width: 0; }
+  .step-title { color: var(--muted); font-weight: 500; transition: color 0.2s; }
+  .step[data-state="active"] .step-title { color: var(--text); }
+  .step-sub {
+    color: var(--muted); font-size: 12px; margin-top: 2px;
+    font-variant-numeric: tabular-nums; display: none;
+  }
+  .step[data-state="active"] .step-sub:not(:empty),
+  .step[data-state="error"]  .step-sub:not(:empty) { display: block; }
+  .step[data-state="error"]  .step-sub { color: var(--danger); }
+  .step-count {
+    color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums;
+    flex-shrink: 0; align-self: center;
+  }
+  .step[data-state="done"] .step-count { color: var(--accent); }
+
+  /* pickers */
+  .bo-pickers {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px 18px; margin-bottom: 20px;
+  }
+  .bo-picker-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 12px; flex-wrap: wrap; gap: 8px;
+  }
+  .bo-picker-head h3 { margin: 0; font-size: 14px; font-weight: 600; }
+  .bo-picker-hint { color: var(--muted); font-size: 12px; }
+
+  .country-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .country-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--bg); border: 1px solid var(--border);
+    padding: 6px 12px; border-radius: 999px;
+    font-size: 13px; cursor: pointer; user-select: none;
+    color: var(--text);
+    transition: background 0.1s, border-color 0.1s;
+  }
+  .country-pill:hover { background: var(--panel-2); border-color: #3a4350; }
+  .country-pill.selected {
+    background: var(--accent-dim); border-color: var(--accent);
+    color: var(--accent);
+  }
+  .country-pill.own { border-color: rgba(74, 158, 255, 0.55); }
+  .country-pill.own.selected {
+    background: rgba(74, 158, 255, 0.2);
+    border-color: var(--accent); color: var(--accent); font-weight: 600;
+  }
+  .country-pill.ally { border-color: rgba(74, 158, 255, 0.3); }
+  .country-pill.ally .ally-mark {
+    font-size: 11px; line-height: 1; color: var(--accent); opacity: 0.85; margin-left: 1px;
+  }
+  .country-pill.ally:hover .ally-mark,
+  .country-pill.ally.selected .ally-mark { opacity: 1; }
+  .country-pill .order-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent); box-shadow: 0 0 0 1.5px var(--bg);
+    display: inline-block; flex-shrink: 0; margin-left: 2px;
+  }
+  .country-pill.selected .order-dot { box-shadow: 0 0 0 1.5px var(--accent-dim); }
+  .country-pill .flag { font-size: 14px; line-height: 1; }
+  .country-pill .battles-count {
+    color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums;
+  }
+  .country-pill.selected .battles-count { color: inherit; opacity: 0.85; }
+
+  .bo-layout {
+    display: grid; grid-template-columns: minmax(0, 1fr) 380px;
+    gap: 20px; align-items: start;
+  }
+  @media (max-width: 1000px) { .bo-layout { grid-template-columns: 1fr; } }
+  .pane-title {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin: 0 0 12px; padding: 0 4px;
+  }
+  .pane-title h3 { margin: 0; font-size: 15px; font-weight: 600; }
+  .pane-title .meta { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+  .battle-list { display: flex; flex-direction: column; gap: 10px; }
+  .battle {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px;
+    display: flex; gap: 12px; align-items: flex-start;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  }
+  .battle:hover { border-color: #3a4350; }
+  .battle.sel { border-color: var(--accent); background: rgba(74, 158, 255, 0.05); }
+  .battle-check {
+    width: 18px; height: 18px; margin-top: 2px;
+    accent-color: var(--accent); cursor: pointer; flex-shrink: 0;
+  }
+  .battle-body { flex: 1; min-width: 0; }
+  .battle-head {
+    display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; margin-bottom: 6px;
+  }
+  .battle-head .battle-side {
+    display: inline-flex; align-items: center; gap: 4px; font-weight: 600;
+  }
+  .battle-head .battle-side.atk { color: var(--atk); }
+  .battle-head .battle-side.def { color: var(--def); }
+  .battle-head .battle-side.ours::after {
+    content: '★'; font-size: 10px; margin-left: 3px;
+    color: var(--accent); opacity: 0.9;
+  }
+  .battle-head .vs { color: var(--muted); font-size: 12px; margin: 0 2px; }
+  .battle-head .region { color: var(--muted); font-size: 12px; margin-left: 6px; }
+  .battle-head .game-link {
+    color: var(--muted); margin-left: auto; padding: 2px 4px;
+    display: inline-flex; align-items: center; line-height: 0;
+  }
+  .battle-head .game-link:hover { color: var(--link); }
+  .battle-head .game-link svg { width: 14px; height: 14px; }
+  .battle-stats {
+    display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted);
+  }
+  .battle-stats .stat-k {
+    color: #6b7280; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.04em; margin-right: 4px;
+  }
+  .battle-stats .score { font-variant-numeric: tabular-nums; font-weight: 500; color: var(--text); }
+  .battle-stats .score .a { color: var(--atk); }
+  .battle-stats .score .d { color: var(--def); }
+  .battle-stats .score .sep { color: var(--muted); margin: 0 2px; }
+
+  .country-order-row {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-top: 10px; padding: 6px 10px;
+    border-radius: 6px;
+    background: rgba(74, 158, 255, 0.08);
+    border: 1px solid rgba(74, 158, 255, 0.25);
+    color: var(--accent); font-size: 12px;
+  }
+  .country-order-row .label {
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9;
+  }
+  .country-order-row .flag-big { font-size: 14px; }
+  .country-order-row .side-tag {
+    display: inline-block; padding: 1px 5px;
+    background: rgba(74, 158, 255, 0.18); color: var(--accent);
+    font-size: 10px; font-weight: 600;
+    letter-spacing: 0.02em; border-radius: 3px;
+    text-transform: uppercase;
+  }
+
+  .mu-strip {
+    display: flex; gap: 4px; flex-wrap: wrap;
+    margin-top: 10px; padding-top: 10px;
+    border-top: 1px dashed var(--border);
+  }
+  .mu-strip-item {
+    position: relative;
+    width: 24px; height: 24px; border-radius: 50%; overflow: hidden;
+    display: inline-flex; flex-shrink: 0;
+    border: 1.5px solid var(--border); background: var(--panel-2);
+    transition: opacity 0.15s, filter 0.15s, border-color 0.15s, transform 0.1s;
+    cursor: help;
+  }
+  .mu-strip-item:hover { transform: scale(1.15); z-index: 1; }
+  .mu-strip-item .initial {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: var(--muted);
+  }
+  .mu-strip-item img {
+    position: relative; z-index: 1;
+    width: 100%; height: 100%; object-fit: cover;
+  }
+  .mu-strip-item.has {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px rgba(74, 158, 255, 0.25);
+    opacity: 1;
+  }
+  .mu-strip-item.has .initial { color: var(--accent); }
+  .mu-strip-item.none {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.2);
+    opacity: 0.35; filter: grayscale(100%);
+  }
+  .mu-strip-item.none:hover { opacity: 0.95; }
+  .mu-strip-item.none .initial { color: var(--danger); }
+
+  .bo-empty {
+    padding: 40px 16px; text-align: center; color: var(--muted);
+    background: var(--panel); border: 1px dashed var(--border); border-radius: 10px;
+  }
+
+  .compliance {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px;
+    position: sticky; top: 12px;
+    max-height: calc(100vh - 24px); overflow-y: auto;
+  }
+  @media (max-width: 1000px) { .compliance { position: static; max-height: none; } }
+  .compliance-summary {
+    font-size: 12px; color: var(--muted); margin-bottom: 10px;
+    padding-bottom: 10px; border-bottom: 1px solid var(--border); line-height: 1.5;
+  }
+  .compliance-summary strong { color: var(--text); }
+  .mu-row { padding: 8px 0; border-top: 1px solid var(--border); font-size: 13px; }
+  .mu-row:first-of-type { border-top: none; }
+  .mu-row.missing { background: rgba(248, 113, 113, 0.04); }
+  .mu-row-head { display: flex; align-items: center; gap: 6px; font-weight: 500; }
+  .mu-row .status-icon { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .mu-row.has .status-icon { background: var(--accent); }
+  .mu-row.missing .status-icon { background: var(--danger); }
+  .mu-row .mu-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mu-row .game-link { color: var(--muted); padding: 2px; display: inline-flex; align-items: center; line-height: 0; }
+  .mu-row .game-link:hover { color: var(--link); }
+  .mu-row .game-link svg { width: 12px; height: 12px; }
+  .mu-row .orders-list {
+    margin: 4px 0 0 14px; font-size: 12px; color: var(--muted);
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .mu-row .orders-list a { color: var(--muted); }
+  .mu-row .orders-list a:hover { color: var(--link); }
+  .mu-row .orders-list .side-tag {
+    display: inline-block; padding: 0 5px;
+    border-radius: 3px; font-size: 10px;
+    font-weight: 600; letter-spacing: 0.02em;
+    text-transform: uppercase; margin-right: 4px;
+  }
+  .mu-row .side-tag.atk { background: rgba(244, 164, 143, 0.15); color: var(--atk); }
+  .mu-row .side-tag.def { background: rgba(155, 193, 238, 0.15); color: var(--def); }
+  .mu-row .no-orders { color: var(--danger); font-style: italic; }
+
+  /* methodology */
+  details.howto {
+    margin-top: 24px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+  }
+  details.howto summary {
+    cursor: pointer; padding: 12px 18px;
+    color: var(--muted); font-size: 13px; user-select: none; list-style: none;
+  }
+  details.howto summary::-webkit-details-marker { display: none; }
+  details.howto summary::before {
+    content: '▸'; display: inline-block; margin-right: 8px;
+    transition: transform 0.15s;
+  }
+  details.howto[open] summary::before { transform: rotate(90deg); }
+  .howto-body { padding: 0 18px 16px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+  details.howto h4 { margin: 14px 0 6px; color: var(--text); font-size: 13px; font-weight: 600; }
+  details.howto h4:first-child { margin-top: 0; }
+  details.howto p { margin: 0 0 8px; }
+  details.howto ul { margin: 0 0 8px; padding-left: 22px; }
+  details.howto ol { margin: 0 0 8px; padding-left: 22px; }
+  details.howto li { margin-bottom: 4px; }
+  details.howto strong { color: var(--text); font-weight: 600; }
+  details.howto .marker-demo {
+    display: inline-block;
+    width: 10px; height: 10px; border-radius: 50%;
+    border: 1.5px solid; vertical-align: middle; margin-right: 3px;
+  }
+  details.howto .marker-demo.set   { border-color: var(--accent); background: rgba(74,158,255,0.15); }
+  details.howto .marker-demo.unset { border-color: var(--danger); background: rgba(248,113,113,0.15); }
+
+  textarea#bo-msg {
+    background: var(--bg); color: var(--text); border: 1px solid var(--border);
+    padding: 10px 12px; border-radius: 6px; font-size: 13px;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    width: 100%; resize: vertical; line-height: 1.5;
+    min-height: 280px;
+  }
+  textarea#bo-msg:focus { outline: none; border-color: #3a4350; }
+
+  .action-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--panel); border-top: 1px solid var(--border);
+    padding: 12px 32px; z-index: 5;
+  }
+  .action-bar-inner {
+    max-width: 1500px; margin: 0 auto;
+    display: flex; gap: 12px; align-items: center;
+  }
+  .action-bar .count { color: var(--muted); font-size: 13px; flex: 1; }
+  .action-bar .count strong { color: var(--text); }
+
+  .bo-modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+    display: none; align-items: center; justify-content: center;
+    padding: 16px; z-index: 20;
+  }
+  .bo-modal.show { display: flex; }
+  .bo-modal-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    max-width: 640px; width: 100%; max-height: 85vh; overflow-y: auto;
+    padding: 18px 20px;
+  }
+  .bo-modal-card h3 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
+  .bo-modal-card .desc { color: var(--muted); font-size: 13px; margin-bottom: 12px; line-height: 1.5; }
+  .bo-modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; flex-wrap: wrap; }
+
+  @media (max-width: 720px) {
+    .header-top { padding: 16px 20px; }
+    main { padding: 20px 20px 80px; }
+    .action-bar { padding: 10px 20px; }
+    .action-bar-inner { flex-wrap: wrap; }
+    .action-bar .count { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <a class="brand" href="https://app.warera.io/country/6813b6d446e731854c7ac80b" target="_blank" rel="noopener">
+      <h1><span>🇫🇮</span> War Era · Finland</h1>
+      <div class="sub">Battle Orders · Minister of Defense</div>
+    </a>
+    <div class="controls" id="bo-controls"></div>
+  </div>
+</header>
+
+<main>
+  <div class="tool-header">
+    <div class="title-block">
+      <h2>Battle Orders</h2>
+      <p>Live tracker for active War Era battles. Pick which countries' battles to view, see which Finnish MUs already have orders set, then ping the commanders who don't via Discord.</p>
+    </div>
+  </div>
+  <div id="bo-content"></div>
+</main>
+
+<footer>
+  Made with <span class="heart">♥️</span> by toie. <span class="sep">·</span>
+  Data via <a href="https://warerastats.io/" target="_blank" rel="noopener">War Era Gateway</a>.
+</footer>
+
+<script>
+/* ============================================================
+   CONFIG (edit me)
+   ------------------------------------------------------------
+   To retarget this tool to a different country, change the
+   COUNTRY_* fields and the favicon / brand text in the markup
+   above. Everything else is derived from these values.
+   ============================================================ */
+const CFG = {
+  // Proxy worker. Provides /trpc/* (auth'd War Era Gateway) and POST /notify-discord.
+  API_BASE:            'https://fi-warera-proxy.ancalego.workers.dev/trpc',
+  DISCORD_WORKER_URL:  'https://fi-warera-proxy.ancalego.workers.dev/notify-discord',
+
+  // Country identity.
+  COUNTRY_ID:          '6813b6d446e731854c7ac80b',  // Finland
+  COUNTRY_NAME:        'Finland',
+  COUNTRY_ADJECTIVE:   'Finnish',
+  COUNTRY_FLAG_EMOJI:  '🇫🇮',
+
+  // Treat these extra country IDs as "ours" on top of in-game allies.
+  EXTRA_ALLY_COUNTRY_IDS: [],
+
+  // MU country field may go by any of these names depending on the endpoint.
+  MU_COUNTRY_FIELDS:   ['countryId', 'country', 'nationalityId', 'nationality'],
+
+  // MU IDs to always exclude from the roster (rogue / mislabelled units).
+  EXCLUDED_MU_IDS:     [],
+
+  // Only count an MU as ours if its registered country is COUNTRY_ID (when present),
+  // and at least MIN_HOME_RATIO of its members are home citizens.
+  REQUIRE_HOME_COUNTRY: true,
+  MIN_HOME_RATIO:       0.5,
+};
+
+const GAME_BASE  = 'https://app.warera.io';
+const PAGE_LIMIT  = 100;
+
+/* ============================================================
+   SHARED UTILITIES
+   (inlined from the we-ie umbrella so this page stands alone)
+   ============================================================ */
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function flag(code) {
+  if (!code || code.length !== 2) return '🏳';
+  return code.toUpperCase().split('').map(c =>
+    String.fromCodePoint(c.charCodeAt(0) - 65 + 0x1F1E6)
+  ).join('');
+}
+function fmtTimeAgo(d) {
+  if (!d) return '';
+  const ms = Date.now() - d.getTime();
+  if (ms < 60000)    return 'just now';
+  if (ms < 3600000)  return `${Math.floor(ms/60000)}m ago`;
+  if (ms < 86400000) return `${Math.floor(ms/3600000)}h ago`;
+  return d.toLocaleDateString();
+}
+function isTransientError(err) {
+  if (err && err.status >= 500 && err.status < 600) return true;
+  const msg = String(err?.message || '').toLowerCase();
+  return /http 50[234]|no available server|timed? ?out|fetch failed|network ?error/.test(msg);
+}
+async function trpc(endpoint, input = {}, { retry = false, timeoutMs = null } = {}, attempt = 1) {
+  const MAX_ATTEMPTS = retry ? 3 : 1;
+  const url = `${CFG.API_BASE}/${endpoint}?input=${encodeURIComponent(JSON.stringify(input))}`;
+  const ctrl = timeoutMs ? new AbortController() : null;
+  const t = timeoutMs ? setTimeout(() => ctrl.abort(), timeoutMs) : null;
+  try {
+    const res = await fetch(url, ctrl ? { signal: ctrl.signal } : undefined);
+    if (!res.ok) {
+      const err = new Error(`${endpoint} → HTTP ${res.status}`);
+      err.status = res.status;
+      throw err;
+    }
+    const json = await res.json();
+    if (json && !Array.isArray(json) && json.error) {
+      const msg = json.error.message || json.error.data?.message || 'unknown error';
+      throw new Error(`${endpoint} → ${String(msg).slice(0, 120)}`);
+    }
+    const item = Array.isArray(json) ? json[0] : json;
+    return item?.result?.data ?? item;
+  } catch (e) {
+    if (e.name === 'AbortError') throw new Error(`${endpoint} → timed out`);
+    if (attempt < MAX_ATTEMPTS && isTransientError(e)) {
+      await new Promise(r => setTimeout(r, 400 * attempt));
+      return trpc(endpoint, input, { retry, timeoutMs }, attempt + 1);
+    }
+    throw e;
+  } finally {
+    if (t) clearTimeout(t);
+  }
+}
+function makeSteps(rootEl) {
+  function setStep(n, state, { sub, count } = {}) {
+    const el = rootEl.querySelector(`.step[data-step="${n}"]`);
+    if (!el) return;
+    el.dataset.state = state;
+    if (sub   !== undefined) el.querySelector('.step-sub').textContent   = sub   ?? '';
+    if (count !== undefined) el.querySelector('.step-count').textContent = count ?? '';
+  }
+  function reset() {
+    rootEl.classList.remove('hidden', 'fading');
+    for (const step of rootEl.querySelectorAll('.step')) {
+      step.dataset.state = 'pending';
+      step.querySelector('.step-sub').textContent = '';
+      step.querySelector('.step-count').textContent = '';
+    }
+  }
+  function fadeOut(delay = 1200) {
+    setTimeout(() => rootEl.classList.add('fading'), delay);
+    setTimeout(() => rootEl.classList.add('hidden'), delay + 500);
+  }
+  return { setStep, reset, fadeOut };
+}
+function makeStatus(el) {
+  return function setStatus(text, isError = false) {
+    if (!text) { el.classList.add('hidden'); return; }
+    el.textContent = text;
+    el.classList.toggle('error', isError);
+    el.classList.remove('hidden');
+  };
+}
+
+/* ============================================================
+   BATTLE ORDERS TOOL
+   ============================================================ */
+(function () {
+  'use strict';
+
+  const BO_EMBED_TITLE = `🪖 ${CFG.COUNTRY_FLAG_EMOJI} Battle orders requested`;
+  const BO_EMBED_COLOR = 0x4a9eff;  // Finland accent blue
+
+  /* ── Inject the tool UI into #bo-content ───────────────────── */
+  document.getElementById('bo-content').innerHTML = `
+    <div id="bo-steps" class="steps hidden">
+      <div class="step" data-state="pending" data-step="1">
+        <div class="step-icon"></div>
+        <div class="step-body">
+          <div class="step-title">Loading battles &amp; reference data</div>
+          <div class="step-sub"></div>
+        </div>
+        <div class="step-count"></div>
+      </div>
+      <div class="step" data-state="pending" data-step="2">
+        <div class="step-icon"></div>
+        <div class="step-body">
+          <div class="step-title">Finding ${CFG.COUNTRY_ADJECTIVE} citizens</div>
+          <div class="step-sub"></div>
+        </div>
+        <div class="step-count"></div>
+      </div>
+      <div class="step" data-state="pending" data-step="3">
+        <div class="step-icon"></div>
+        <div class="step-body">
+          <div class="step-title">Filtering ${CFG.COUNTRY_ADJECTIVE} MUs</div>
+          <div class="step-sub"></div>
+        </div>
+        <div class="step-count"></div>
+      </div>
+    </div>
+    <div id="bo-status" class="status hidden"></div>
+
+    <div id="bo-main-content" style="display:none">
+      <div class="bo-pickers" id="bo-picker-panel">
+        <div class="bo-picker-head">
+          <h3>Countries currently at war</h3>
+          <span class="bo-picker-hint">Click pills to choose which countries' battles to see</span>
+        </div>
+        <div id="bo-country-pills" class="country-pills"></div>
+      </div>
+
+      <div class="bo-layout">
+        <section>
+          <div class="pane-title">
+            <h3>Battles <span style="color:var(--muted);font-weight:400">(filtered)</span></h3>
+            <span class="meta" id="bo-battles-meta"></span>
+          </div>
+          <div id="bo-battle-list" class="battle-list"></div>
+        </section>
+        <aside class="compliance" id="bo-compliance">
+          <div class="pane-title">
+            <h3>Current ${CFG.COUNTRY_ADJECTIVE} MU battle orders</h3>
+            <span class="meta" id="bo-compliance-meta"></span>
+          </div>
+          <div class="compliance-summary" id="bo-compliance-summary"></div>
+          <div id="bo-compliance-list"></div>
+        </aside>
+      </div>
+
+      <details class="howto">
+        <summary>How this works · what the markers mean</summary>
+        <div class="howto-body">
+          <h4>What this tool is for</h4>
+          <p>A live tracker for active War Era battles, built for the ${CFG.COUNTRY_ADJECTIVE} Minister of Defense. Pick which countries' battles to view, scan who's already set orders, then ping the MU commanders who haven't via Discord.</p>
+
+          <h4>Country picker</h4>
+          <ul>
+            <li>Lists every country currently involved in an active battle. Click pills to toggle which countries' battles you want to see.</li>
+            <li><strong>${CFG.COUNTRY_FLAG_EMOJI} ${CFG.COUNTRY_NAME}</strong> appears with a blue-tinted pill.</li>
+            <li><strong>★ Allies</strong> are countries ${CFG.COUNTRY_NAME} has an active alliance with, pulled from the in-game data. They're marked with a star.</li>
+            <li>A small blue dot on a country pill means ${CFG.COUNTRY_NAME} has set a country-level order on a battle involving that country.</li>
+          </ul>
+
+          <h4>Battle cards</h4>
+          <ul>
+            <li><strong>Country order row:</strong> a blue-bordered row inside a card means ${CFG.COUNTRY_NAME}'s government has set a country-level battle order on this battle. The President has officially marked it as a national priority, and ${CFG.COUNTRY_ADJECTIVE} MUs should be there.</li>
+            <li><strong>Score</strong> is rounds won, best of N. <strong>Round</strong> is the current round number.</li>
+            <li><strong>${CFG.COUNTRY_ADJECTIVE} MU strip</strong> sits below the stats: every ${CFG.COUNTRY_ADJECTIVE} MU as a small circle, alphabetically ordered so the same MU sits in the same column across every card.
+              <ul>
+                <li><span class="marker-demo set"></span> <strong>Blue circle:</strong> this MU has orders on this battle.</li>
+                <li><span class="marker-demo unset"></span> <strong>Red circle:</strong> no orders on this battle.</li>
+                <li>Hover any circle for the MU name and status.</li>
+              </ul>
+            </li>
+          </ul>
+
+          <h4>Compliance panel (right side)</h4>
+          <p>Every ${CFG.COUNTRY_ADJECTIVE} MU listed with the battles they currently have orders on. MUs with no active orders anywhere are listed first and red-dotted: that's the "people to chase" list.</p>
+
+          <h4>Pushing orders to Discord</h4>
+          <ol>
+            <li>Pick countries from the picker above.</li>
+            <li>Tick the checkboxes on battles you want orders set on.</li>
+            <li>Click <strong>Compose orders request</strong> at the bottom of the page. A Discord message preview opens.</li>
+            <li><strong>Copy</strong> and paste into Discord, or click <strong>Send to Discord</strong> to post it directly.</li>
+          </ol>
+
+          <h4>Refresh</h4>
+          <p>Data doesn't auto-refresh. Hit <strong>↻ Refresh</strong> to re-pull battles, citizens, and the MU roster.</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="action-bar">
+      <div class="action-bar-inner">
+        <div class="count" id="bo-count"><strong>0</strong> battles selected</div>
+        <button id="bo-clear-btn">Clear</button>
+        <button id="bo-compose-btn" class="btn-primary" disabled>Compose orders request</button>
+      </div>
+    </div>
+
+    <div id="bo-modal" class="bo-modal">
+      <div class="bo-modal-card">
+        <h3>Battle orders request</h3>
+        <p class="desc">Preview the Discord message. Edit if needed, then copy or send.</p>
+        <textarea id="bo-msg" spellcheck="false"></textarea>
+        <div class="bo-modal-actions">
+          <button id="bo-cancel-btn">Cancel</button>
+          <button id="bo-copy-btn">Copy</button>
+          <button id="bo-send-btn" class="btn-primary" disabled title="Configure DISCORD_WORKER_URL">Send to Discord</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  /* ── Inject controls (refresh + updated label) into the header ── */
+  document.getElementById('bo-controls').innerHTML = `
+    <span class="bo-updated-label" id="bo-updated-label">Loading…</span>
+    <button id="bo-refresh-btn">↻ Refresh</button>
+  `;
+
+  /* ── Element refs ──────────────────────────────────────────── */
+  const $mainContent    = document.getElementById('bo-main-content');
+  const $pills          = document.getElementById('bo-country-pills');
+  const $list           = document.getElementById('bo-battle-list');
+  const $complianceList = document.getElementById('bo-compliance-list');
+  const $complianceMeta = document.getElementById('bo-compliance-meta');
+  const $complianceSum  = document.getElementById('bo-compliance-summary');
+  const $battlesMeta    = document.getElementById('bo-battles-meta');
+  const $count          = document.getElementById('bo-count');
+  const $composeBtn     = document.getElementById('bo-compose-btn');
+  const $clearBtn       = document.getElementById('bo-clear-btn');
+  const $refreshBtn     = document.getElementById('bo-refresh-btn');
+  const $updatedLabel   = document.getElementById('bo-updated-label');
+  const $modal          = document.getElementById('bo-modal');
+  const $msg            = document.getElementById('bo-msg');
+  const $cancelBtn      = document.getElementById('bo-cancel-btn');
+  const $copyBtn        = document.getElementById('bo-copy-btn');
+  const $sendBtn        = document.getElementById('bo-send-btn');
+  const steps     = makeSteps(document.getElementById('bo-steps'));
+  const setStatus = makeStatus(document.getElementById('bo-status'));
+
+  /* ── State ─────────────────────────────────────────────────── */
+  let battles = [];
+  let countriesById = {};
+  let regionsById = {};
+  let homeMUs = [];
+  let homeCitizens = new Set();
+  let officialAllies = new Set();
+  let lastUpdatedAt = null;
+  let selectedCountries = new Set();
+  let selectedBattles = new Set();
+  let refreshInFlight = false;
+
+  /* ── MU accessors ──────────────────────────────────────────── */
+  const muIdOf       = m => m?._id ?? null;
+  const muNameOf     = m => m?.name ?? '(no name)';
+  const muOwnerOf    = m => m?.user ?? null;
+  const muMembersOf  = m => Array.isArray(m?.members) ? m.members : null;
+  const muMemberIdOf = u => typeof u === 'string' ? u : (u?._id ?? null);
+  function muCountryOf(mu) {
+    for (const f of CFG.MU_COUNTRY_FIELDS) {
+      if (mu?.[f] != null) return mu[f];
+    }
+    return null;
+  }
+  function countHomeMembers(mu) {
+    const members = muMembersOf(mu) || [];
+    return members.filter(u => homeCitizens.has(muMemberIdOf(u))).length;
+  }
+
+  function ourCountryIds() {
+    const ids = new Set([CFG.COUNTRY_ID]);
+    for (const id of officialAllies) ids.add(id);
+    for (const id of CFG.EXTRA_ALLY_COUNTRY_IDS) ids.add(id);
+    return ids;
+  }
+  function ourSidesOf(b) {
+    const ours = ourCountryIds();
+    const sides = [];
+    if (ours.has(b.attacker?.country)) sides.push('attacker');
+    if (ours.has(b.defender?.country)) sides.push('defender');
+    return sides;
+  }
+  function countryOrderSides(b) {
+    const sides = [];
+    if ((b.attacker?.countryOrders || []).includes(CFG.COUNTRY_ID)) sides.push('attacker');
+    if ((b.defender?.countryOrders || []).includes(CFG.COUNTRY_ID)) sides.push('defender');
+    return sides;
+  }
+
+  /* ── Loaders ───────────────────────────────────────────────── */
+
+  // Paginates battle.getBattles until exhausted. A single call caps at 100
+  // and silently drops everything on page 2+ (including country-order battles).
+  async function loadAllActiveBattles(onProgress) {
+    const out = []; const seen = new Set();
+    let cursor; let safety = 0;
+    while (safety++ < 50) {  // 50 × 100 = 5000 active battles cap; plenty of headroom
+      const input = { isActive: true, limit: PAGE_LIMIT };
+      if (cursor) input.cursor = cursor;
+      const page = await trpc('battle.getBattles', input, { retry: true, timeoutMs: 20000 });
+      const items = page?.items ?? (Array.isArray(page) ? page : []);
+      let added = 0;
+      for (const b of items) {
+        const id = b?._id;
+        if (id && !seen.has(id)) { seen.add(id); out.push(b); added++; }
+      }
+      const next = page?.nextCursor ?? page?.cursor ?? null;
+      if (!next || items.length === 0 || added === 0) break;
+      cursor = next;
+      onProgress?.(out.length);
+    }
+    return out;
+  }
+
+  async function loadBattlesAndRefs(onProgress) {
+    const [battleList, countriesRes, regionsRes] = await Promise.all([
+      loadAllActiveBattles(onProgress),
+      trpc('country.getAllCountries', {}, { retry: true, timeoutMs: 20000 }),
+      trpc('region.getRegionsObject', {}, { retry: true, timeoutMs: 20000 }),
+    ]);
+    battles = battleList;
+    const countryArr = Array.isArray(countriesRes) ? countriesRes : (countriesRes?.items ?? []);
+    countriesById = {};
+    for (const c of countryArr) if (c?._id) countriesById[c._id] = c;
+    regionsById = (regionsRes && typeof regionsRes === 'object' && !Array.isArray(regionsRes))
+      ? regionsRes : {};
+    const home = countriesById[CFG.COUNTRY_ID];
+    officialAllies = new Set(Array.isArray(home?.allies) ? home.allies : []);
+    lastUpdatedAt = new Date();
+  }
+
+  async function loadAllMUs(onProgress) {
+    const out = []; const seen = new Set();
+    let cursor; let safety = 0;
+    while (safety++ < 200) {
+      const input = { limit: PAGE_LIMIT };
+      if (cursor) input.cursor = cursor;
+      const page = await trpc('mu.getManyPaginated', input, { retry: true, timeoutMs: 20000 });
+      const items = page?.items ?? page?.data ?? (Array.isArray(page) ? page : []);
+      let added = 0;
+      for (const item of items) {
+        const id = muIdOf(item);
+        if (id && !seen.has(id)) { seen.add(id); out.push(item); added++; }
+      }
+      const next = page?.nextCursor ?? page?.cursor ?? null;
+      if (!next || items.length === 0 || added === 0) break;
+      cursor = next;
+      onProgress?.(out.length);
+    }
+    return out;
+  }
+
+  async function loadHomeCitizens(onProgress) {
+    const ids = new Set();
+    let cursor; let safety = 0;
+    while (safety++ < 200) {
+      const input = { countryId: CFG.COUNTRY_ID, limit: PAGE_LIMIT };
+      if (cursor) input.cursor = cursor;
+      const page = await trpc('user.getUsersByCountry', input, { retry: true, timeoutMs: 20000 });
+      const items = page?.items ?? page?.data ?? (Array.isArray(page) ? page : []);
+      for (const u of items) if (u?._id) ids.add(u._id);
+      onProgress?.(ids.size);
+      const next = page?.nextCursor ?? page?.cursor ?? null;
+      if (!next || items.length === 0) break;
+      cursor = next;
+    }
+    return ids;
+  }
+
+  function computeHomeMUs(allMUs) {
+    let dropC = 0, dropM = 0, dropX = 0;
+    const ownerHome = allMUs.filter(mu => homeCitizens.has(muOwnerOf(mu)));
+    const kept = ownerHome.filter(mu => {
+      if (CFG.EXCLUDED_MU_IDS.includes(muIdOf(mu))) { dropX++; return false; }
+      if (CFG.REQUIRE_HOME_COUNTRY) {
+        const c = muCountryOf(mu);
+        if (c != null && c !== CFG.COUNTRY_ID) { dropC++; return false; }
+      }
+      const members = muMembersOf(mu) || [];
+      if (members.length > 0) {
+        const ratio = countHomeMembers(mu) / members.length;
+        if (ratio < CFG.MIN_HOME_RATIO) { dropM++; return false; }
+      }
+      return true;
+    });
+    console.log(`[bo-filter] ${allMUs.length} total, ${ownerHome.length} ${CFG.COUNTRY_ADJECTIVE}-owned, ${kept.length} kept (dropped ${dropC} foreign, ${dropM} non-${CFG.COUNTRY_ADJECTIVE} member majority, ${dropX} blacklisted)`);
+    return kept;
+  }
+
+  async function reloadRoster() {
+    const newCitizens = await loadHomeCitizens();
+    const allMUs = await loadAllMUs();
+    homeCitizens = newCitizens;
+    homeMUs = computeHomeMUs(allMUs);
+    homeMUs.sort((a, b) => muNameOf(a).localeCompare(muNameOf(b)));
+  }
+
+  function involvedCountryIdsWithCounts() {
+    const counts = new Map();
+    for (const b of battles) {
+      for (const id of [b.attacker?.country, b.defender?.country]) {
+        if (!id) continue;
+        counts.set(id, (counts.get(id) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }
+
+  function filteredBattles() {
+    if (selectedCountries.size === 0) return [];
+    return battles.filter(b =>
+      selectedCountries.has(b.attacker?.country) ||
+      selectedCountries.has(b.defender?.country)
+    );
+  }
+
+  function ordersByMU() {
+    const map = new Map();
+    for (const mu of homeMUs) {
+      const muId = muIdOf(mu);
+      const matches = [];
+      for (const b of battles) {
+        if (b.attacker?.muOrders?.includes(muId)) matches.push({ battle: b, side: 'attacker' });
+        if (b.defender?.muOrders?.includes(muId)) matches.push({ battle: b, side: 'defender' });
+      }
+      map.set(muId, matches);
+    }
+    return map;
+  }
+
+  /* ── Render helpers ────────────────────────────────────────── */
+  function countryName(id) {
+    if (!id) return '???';
+    const c = countriesById[id];
+    return c?.name ?? c?.code ?? id.slice(-6);
+  }
+  function countryCode(id) { return countriesById[id]?.code; }
+  function regionName(id) {
+    if (!id) return null;
+    return regionsById[id]?.name ?? null;
+  }
+
+  const EXT_LINK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>`;
+
+  function renderPills() {
+    const counts = involvedCountryIdsWithCounts();
+    const ids = [...counts.keys()];
+    const own = CFG.COUNTRY_ID;
+    const ours = ourCountryIds();
+    ids.sort((a, b) => {
+      if (a === own) return -1;
+      if (b === own) return 1;
+      const aA = ours.has(a), bA = ours.has(b);
+      if (aA && !bA) return -1;
+      if (!aA && bA) return 1;
+      return countryName(a).localeCompare(countryName(b));
+    });
+    if (!ids.length) {
+      $pills.innerHTML = '<span style="color:var(--muted);font-size:13px">No active battles right now.</span>';
+      return;
+    }
+    $pills.innerHTML = ids.map(id => {
+      const sel = selectedCountries.has(id);
+      const isOwn = id === own;
+      const isAlly = !isOwn && officialAllies.has(id);
+      // Dot only on the country whose side we are officially backing.
+      const hasHomeOrder = battles.some(b => {
+        const home = CFG.COUNTRY_ID;
+        return (b.attacker?.country === id && (b.attacker?.countryOrders || []).includes(home))
+            || (b.defender?.country === id && (b.defender?.countryOrders || []).includes(home));
+      });
+      return `<span class="country-pill ${sel ? 'selected' : ''} ${isOwn ? 'own' : ''} ${isAlly ? 'ally' : ''}" data-id="${id}">
+        <span class="flag">${flag(countryCode(id))}</span>
+        <span>${escapeHtml(countryName(id))}</span>
+        ${isAlly ? `<span class="ally-mark" title="Official ally of ${CFG.COUNTRY_NAME}. Click to include their battles.">★</span>` : ''}
+        <span class="battles-count">${counts.get(id)}</span>
+        ${hasHomeOrder ? `<span class="order-dot" title="${CFG.COUNTRY_NAME} has a country-level order on a battle here"></span>` : ''}
+      </span>`;
+    }).join('');
+    $pills.querySelectorAll('.country-pill').forEach(p => {
+      p.onclick = () => {
+        const id = p.dataset.id;
+        if (selectedCountries.has(id)) selectedCountries.delete(id);
+        else selectedCountries.add(id);
+        renderPills(); renderBattles();
+      };
+    });
+  }
+
+  function renderBattle(b) {
+    const id = b._id;
+    const a = b.attacker || {};
+    const d = b.defender || {};
+    const aName = countryName(a.country);
+    const dName = countryName(d.country);
+    const aCode = countryCode(a.country);
+    const dCode = countryCode(d.country);
+    const ours = ourSidesOf(b);
+    const aOurs = ours.includes('attacker') ? 'ours' : '';
+    const dOurs = ours.includes('defender') ? 'ours' : '';
+    const region = regionName(d.region);
+    const sel = selectedBattles.has(id);
+    const aScore = a.wonRoundsCount ?? 0;
+    const dScore = d.wonRoundsCount ?? 0;
+    const toWin = b.roundsToWin ?? '?';
+    const totalRoundsSoFar = Array.isArray(b.rounds) ? b.rounds.length : null;
+
+    const homeSides = countryOrderSides(b);
+    const hasCountryOrder = homeSides.length > 0;
+    const countryOrderRow = hasCountryOrder
+      ? `<div class="country-order-row" title="${CFG.COUNTRY_NAME}'s government has set a country-level order on this battle.">
+          <span class="flag-big">${CFG.COUNTRY_FLAG_EMOJI}</span>
+          <span class="label">Country order</span>
+          <span>${CFG.COUNTRY_NAME} is officially backing this battle</span>
+          ${homeSides.map(s => `<span class="side-tag">${s === 'attacker' ? 'attacker side' : 'defender side'}</span>`).join('')}
+        </div>`
+      : '';
+
+    return `<label class="battle ${sel ? 'sel' : ''}">
+      <input type="checkbox" class="battle-check" data-id="${id}" ${sel ? 'checked' : ''}>
+      <div class="battle-body">
+        <div class="battle-head">
+          <span class="battle-side atk ${aOurs}"><span class="flag">${flag(aCode)}</span>${escapeHtml(aName)}</span>
+          <span class="vs">vs</span>
+          <span class="battle-side def ${dOurs}"><span class="flag">${flag(dCode)}</span>${escapeHtml(dName)}</span>
+          ${region ? `<span class="region">${escapeHtml(region)}</span>` : ''}
+          <a class="game-link" href="${GAME_BASE}/battle/${id}" target="_blank" rel="noopener" title="Open in War Era" onclick="event.stopPropagation()">${EXT_LINK}</a>
+        </div>
+        <div class="battle-stats">
+          <span><span class="stat-k">Score</span><span class="score"><span class="a">${aScore}</span><span class="sep">·</span><span class="d">${dScore}</span></span> <span style="color:var(--muted);font-size:11px">(best of ${(toWin * 2) - 1})</span></span>
+          ${totalRoundsSoFar != null ? `<span><span class="stat-k">Round</span>${totalRoundsSoFar}</span>` : ''}
+          ${b.type ? `<span><span class="stat-k">Type</span>${escapeHtml(b.type)}</span>` : ''}
+        </div>
+        ${countryOrderRow}
+        ${renderMUStrip(b)}
+      </div>
+    </label>`;
+  }
+
+  function renderMUStrip(b) {
+    if (homeMUs.length === 0) return '';
+    const orderedIds = new Set([
+      ...(b.attacker?.muOrders || []),
+      ...(b.defender?.muOrders || []),
+    ]);
+    return `<div class="mu-strip">${homeMUs.map(mu => {
+      const muId = muIdOf(mu);
+      const muName = muNameOf(mu);
+      const has = orderedIds.has(muId);
+      const avatar = mu.avatarUrl;
+      const initial = escapeHtml((muName.slice(0,1) || '?').toUpperCase());
+      const tooltip = `${muName}: ${has ? '✓ orders set' : 'no orders'}`;
+      const img = avatar && /^https?:\/\//.test(avatar)
+        ? `<img src="${escapeHtml(avatar)}" alt="" loading="lazy" onerror="this.remove()">`
+        : '';
+      return `<span class="mu-strip-item ${has ? 'has' : 'none'}" title="${escapeHtml(tooltip)}"><span class="initial">${initial}</span>${img}</span>`;
+    }).join('')}</div>`;
+  }
+
+  function renderBattles() {
+    const list = filteredBattles();
+    if (selectedCountries.size === 0) {
+      $list.innerHTML = `<div class="bo-empty">Pick at least one country above to see battles.</div>`;
+      $battlesMeta.textContent = `${battles.length} active total`;
+      return;
+    }
+    if (list.length === 0) {
+      $list.innerHTML = `<div class="bo-empty">No active battles for the selected countries.</div>`;
+      $battlesMeta.textContent = `0 of ${battles.length}`;
+      return;
+    }
+    // Country-order battles first, then "ours" battles, then by MU order count.
+    list.sort((a, b) => {
+      const aCo = countryOrderSides(a).length > 0 ? 1 : 0;
+      const bCo = countryOrderSides(b).length > 0 ? 1 : 0;
+      if (aCo !== bCo) return bCo - aCo;
+      const aOurs = ourSidesOf(a).length > 0 ? 1 : 0;
+      const bOurs = ourSidesOf(b).length > 0 ? 1 : 0;
+      if (aOurs !== bOurs) return bOurs - aOurs;
+      const aMu = (a.attacker?.muOrders?.length || 0) + (a.defender?.muOrders?.length || 0);
+      const bMu = (b.attacker?.muOrders?.length || 0) + (b.defender?.muOrders?.length || 0);
+      return bMu - aMu;
+    });
+    $list.innerHTML = list.map(renderBattle).join('');
+    $battlesMeta.textContent = `${list.length} of ${battles.length}`;
+    $list.querySelectorAll('.battle-check').forEach(cb => {
+      cb.onchange = () => {
+        const id = cb.dataset.id;
+        if (cb.checked) selectedBattles.add(id); else selectedBattles.delete(id);
+        cb.closest('.battle').classList.toggle('sel', cb.checked);
+        renderBar();
+      };
+      cb.onclick = e => e.stopPropagation();
+    });
+  }
+
+  function renderCompliance() {
+    if (!homeMUs.length) {
+      $complianceMeta.textContent = '';
+      $complianceSum.innerHTML = '';
+      $complianceList.innerHTML = `<div class="bo-empty" style="padding:24px 12px;font-size:12px">No ${CFG.COUNTRY_ADJECTIVE} MUs found.</div>`;
+      return;
+    }
+    const orders = ordersByMU();
+    const withOrders = homeMUs.filter(m => (orders.get(muIdOf(m)) || []).length > 0);
+    const without    = homeMUs.filter(m => (orders.get(muIdOf(m)) || []).length === 0);
+    $complianceMeta.textContent = `${withOrders.length} / ${homeMUs.length}`;
+    $complianceSum.innerHTML = `<strong>${withOrders.length}</strong> of <strong>${homeMUs.length}</strong> ${CFG.COUNTRY_ADJECTIVE} MUs have orders set on at least one active battle.`;
+
+    const rows = [...without, ...withOrders];
+    $complianceList.innerHTML = rows.map(mu => {
+      const muId = muIdOf(mu);
+      const muName = muNameOf(mu);
+      const muUrl = `${GAME_BASE}/mu/${muId}`;
+      const matches = orders.get(muId) || [];
+      const hasOrders = matches.length > 0;
+      const bodyHtml = hasOrders
+        ? `<div class="orders-list">${matches.map(({ battle, side }) => {
+            const aN = countryName(battle.attacker?.country);
+            const dN = countryName(battle.defender?.country);
+            const reg = regionName(battle.defender?.region);
+            const title = `${aN} vs ${dN}${reg ? `, ${reg}` : ''}`;
+            return `<a href="${GAME_BASE}/battle/${battle._id}" target="_blank" rel="noopener" title="${escapeHtml(title)}">
+              <span class="side-tag ${side === 'attacker' ? 'atk' : 'def'}">${side === 'attacker' ? 'ATK' : 'DEF'}</span>
+              ${escapeHtml(side === 'attacker' ? dN : aN)}${reg ? ` <span style="opacity:0.7">· ${escapeHtml(reg)}</span>` : ''}
+            </a>`;
+          }).join('')}</div>`
+        : `<div class="orders-list"><span class="no-orders">No orders set on any active battle</span></div>`;
+      return `<div class="mu-row ${hasOrders ? 'has' : 'missing'}">
+        <div class="mu-row-head">
+          <span class="status-icon"></span>
+          <span class="mu-name">${escapeHtml(muName)}</span>
+          <a class="game-link" href="${muUrl}" target="_blank" rel="noopener" title="Open MU">${EXT_LINK}</a>
+        </div>
+        ${bodyHtml}
+      </div>`;
+    }).join('');
+  }
+
+  function renderBar() {
+    const n = selectedBattles.size;
+    $count.innerHTML = `<strong>${n}</strong> battle${n === 1 ? '' : 's'} selected`;
+    $composeBtn.disabled = n === 0;
+  }
+  function renderAll() {
+    renderPills(); renderBattles(); renderCompliance(); renderBar();
+    if (lastUpdatedAt) $updatedLabel.textContent = `Updated ${fmtTimeAgo(lastUpdatedAt)}`;
+  }
+
+  /* ── Discord message composition ───────────────────────────── */
+  function composeDescription() {
+    const lines = ['Commanders please post orders in-game:', ''];
+    for (const id of selectedBattles) {
+      const b = battles.find(x => x._id === id);
+      if (!b) continue;
+      const aN  = countryName(b.attacker?.country);
+      const dN  = countryName(b.defender?.country);
+      const reg = regionName(b.defender?.region);
+      const aS  = b.attacker?.wonRoundsCount ?? 0;
+      const dS  = b.defender?.wonRoundsCount ?? 0;
+      const round = Array.isArray(b.rounds) ? `R${b.rounds.length} ` : '';
+      const homeSides = countryOrderSides(b);
+      const tag = homeSides.length > 0 ? ` · ${CFG.COUNTRY_FLAG_EMOJI} country order` : '';
+      const url = `${GAME_BASE}/battle/${b._id}`;
+      const title = `${aN} vs ${dN}${reg ? ` · ${reg}` : ''}`;
+      lines.push(`⚔️ **[${title}](<${url}>)**`);
+      lines.push(`${round}${aS}-${dS}${tag}`);
+      lines.push('');  // blank line between battles
+    }
+    return lines.join('\n').trimEnd();
+  }
+
+  function buildPayload(description) {
+    return {
+      embeds: [{
+        title: BO_EMBED_TITLE,
+        description,
+        color: BO_EMBED_COLOR,
+        timestamp: new Date().toISOString(),
+      }],
+    };
+  }
+
+  /* ── Load orchestration ────────────────────────────────────── */
+  async function fullLoad() {
+    steps.reset();
+    setStatus('');
+    $refreshBtn.disabled = true;
+
+    try {
+      steps.setStep(1, 'active', { sub: 'Fetching active battles, countries, regions' });
+      await loadBattlesAndRefs(n =>
+        steps.setStep(1, 'active', { sub: `${n} battles so far…` })
+      );
+      steps.setStep(1, 'done', { count: `${battles.length} battles` });
+
+      steps.setStep(2, 'active', { sub: `Paginating ${CFG.COUNTRY_ADJECTIVE} citizens` });
+      homeCitizens = await loadHomeCitizens(n =>
+        steps.setStep(2, 'active', { sub: `${n} citizens so far…` })
+      );
+      steps.setStep(2, 'done', { count: `${homeCitizens.size} citizens` });
+
+      steps.setStep(3, 'active', { sub: 'Loading MU roster' });
+      const allMUs = await loadAllMUs(n =>
+        steps.setStep(3, 'active', { sub: `${n} MUs loaded…` })
+      );
+      homeMUs = computeHomeMUs(allMUs);
+      homeMUs.sort((a, b) => muNameOf(a).localeCompare(muNameOf(b)));
+      steps.setStep(3, 'done', { count: `${homeMUs.length} ${CFG.COUNTRY_ADJECTIVE} MUs` });
+
+      renderAll();
+      $mainContent.style.display = '';
+      steps.fadeOut();
+    } catch (e) {
+      console.error(e);
+      const friendly = isTransientError(e)
+        ? `Server hiccup (${e.message}). Hit refresh to try again.`
+        : `Error: ${e.message}`;
+      setStatus(friendly, true);
+    } finally {
+      $refreshBtn.disabled = false;
+    }
+  }
+
+  // Manual refresh: battles + roster. No auto-refresh.
+  async function manualRefresh() {
+    if (refreshInFlight) return;
+    refreshInFlight = true;
+    $refreshBtn.disabled = true;
+    try {
+      await loadBattlesAndRefs();
+      renderAll();
+      await reloadRoster();
+      renderAll();
+    } catch (e) {
+      console.warn('refresh failed:', e);
+    } finally {
+      refreshInFlight = false;
+      $refreshBtn.disabled = false;
+    }
+  }
+
+  /* ── Wiring ─────────────────────────────────────────────────── */
+  $refreshBtn.onclick = manualRefresh;
+  $clearBtn.onclick = () => {
+    selectedBattles = new Set();
+    $list.querySelectorAll('.battle-check').forEach(cb => {
+      cb.checked = false;
+      cb.closest('.battle').classList.remove('sel');
+    });
+    renderBar();
+  };
+  $composeBtn.onclick = () => {
+    $msg.value = composeDescription();
+    $modal.classList.add('show');
+    if (CFG.DISCORD_WORKER_URL) {
+      $sendBtn.disabled = false;
+      $sendBtn.removeAttribute('title');
+    } else {
+      $sendBtn.disabled = true;
+      $sendBtn.title = 'Configure DISCORD_WORKER_URL';
+    }
+  };
+  $cancelBtn.onclick = () => $modal.classList.remove('show');
+  $copyBtn.onclick = async () => {
+    try {
+      await navigator.clipboard.writeText($msg.value);
+      const old = $copyBtn.textContent;
+      $copyBtn.textContent = 'Copied ✓';
+      setTimeout(() => $copyBtn.textContent = old, 1500);
+    } catch {
+      $msg.select(); document.execCommand('copy');
+    }
+  };
+  $sendBtn.onclick = async () => {
+    if (!CFG.DISCORD_WORKER_URL) { alert('DISCORD_WORKER_URL not set in CFG.'); return; }
+    const description = $msg.value.trim();
+    if (!description) { alert('Message is empty.'); return; }
+
+    const old = $sendBtn.textContent;
+    $sendBtn.disabled = true; $sendBtn.textContent = 'Sending…';
+    try {
+      const r = await fetch(CFG.DISCORD_WORKER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildPayload(description)),
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      $sendBtn.textContent = 'Sent ✓';
+      setTimeout(() => { $modal.classList.remove('show'); $sendBtn.textContent = old; }, 800);
+    } catch (e) {
+      alert('Send failed: ' + e.message);
+      $sendBtn.textContent = old; $sendBtn.disabled = false;
+    }
+  };
+  $modal.addEventListener('click', e => {
+    if (e.target === $modal) $modal.classList.remove('show');
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') $modal.classList.remove('show');
+  });
+
+  // Tick the "Updated Xm ago" label every 30s.
+  setInterval(() => {
+    if (lastUpdatedAt) $updatedLabel.textContent = `Updated ${fmtTimeAgo(lastUpdatedAt)}`;
+  }, 30000);
+
+  /* ── Kick off ──────────────────────────────────────────────── */
+  fullLoad();
+})();
+</script>
+</body>
+</html>

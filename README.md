@@ -120,6 +120,60 @@ Several tools need to turn a typed username into a user ID. The game's `search.s
 
 If you write a tool that resolves usernames, copy this behaviour. Falling back to an unverified result causes "wrong user" bugs during API hiccups.
 
+## The tools
+
+Each tool is described below: what it does, the selection or computation rules that matter, and the gotchas worth knowing before you touch it. The two encrypted tools are covered under Access control above.
+
+### Irish Military Units (`mu.js`)
+
+Lists every MU owned by an Irish citizen, located in Ireland, with a majority-Irish roster.
+
+Three checks decide whether an MU appears: the owner is currently an Irish citizen (founders who migrated away are dropped); the MU's own country, if it exposes one, is Ireland (MUs with no country field skip this check rather than being dropped, so missing data doesn't wipe the list); and at least half the members are Irish. There's also a hardcoded `EXCLUDED_MU_IDS` blacklist for manual removals.
+
+Each member gets an eco / war / mixed tag based on how they've spent skill points. The classifier reads each skill's `level` (points spent), not `value` (the derived stat), because allocation is what reveals playstyle. `ECO_SKILLS` and `WAR_SKILLS` are the buckets; `PURITY_THRESHOLD` (0.6) sets how skewed an allocation must be to count as pure, and `MIN_POINTS_TO_CLASSIFY` (5) suppresses tags for players who've barely started.
+
+Capacity is `dormitories * 5`. MUs with no dormitory data have unknown capacity and show only under the "All" filter, never "Has slots" or "Full".
+
+### Company Migration Advisor (`advisor.js`)
+
+For each of a user's companies, works out whether a different country or region would produce more, and by how much.
+
+This is the most intricate tool in the project. The production bonus is computed locally from four components: strategic resources, a +30% industrialism bonus on the specialised item, a regional deposit bonus, and a +30% industrialism bonus on deposits. Which ones fire depends on the country's industrialism lean (a signed integer from warerastats, where only the sign matters) and on the item category. The gating is asymmetric and stacks in some combinations but not others.
+
+The whole model was reverse-engineered and verified against in-game tooltips. The file header lists the verified cases and an explicit "bugs to NOT repeat" list. Do not change the bonus logic without re-verifying against live tooltips. In particular, `AGRARIAN_ITEMS` is misnamed: it's the set of items the industrialism bonus does NOT cover (food, plants, pills), not just agrarian goods.
+
+Income tax only affects the ranking on companies the user actually works in. If they just own it, raw output is ranked instead. If warerastats is unreachable, industrialism defaults to 0 and the +30% bonuses simply don't fire, which under-counts rather than mis-counts.
+
+### Employee Clock-In Monitor (`clockin.js`)
+
+Shows when each of an employer's workers last clocked in, on a 48-hour timeline, plus a payroll projection.
+
+Wage transactions are the source of truth. A clock-in is inferred from a wage payment, because every work cycle pays a timestamped wage. Wages are modelled as trades: `sellerId` is the worker (sold their labour), `buyerId` is the employer (bought it). Two filters are applied to each transaction and both matter: the worker must be the seller (drops their own outgoing payroll if they also employ people), and the employer must be the buyer (drops wages from other employers, since a worker can now hold multiple contracts).
+
+Cycles within 4 minutes of each other are grouped into one "episode" to keep the timeline readable. Status is Active (clocked in within 24h), Slowing (24 to 48h), or Idle (none in 48h).
+
+The payroll projection shows three figures. Next 3h and Next 6h are pace-based: last 24h of wages divided by 24, times the window. Next 10h "if maxed" is the worst case where every worker's energy bar is full and gets drained completely. Ten hours is used because energy regenerates at 10% per hour, so that's exactly one full refill from empty.
+
+### Buddy Finder (`buddy-finder.js`)
+
+A self-service tool for Irish citizens to find a buddy-system partner, or join a waiting list. Distinct from the MoE-only Buddy System Monitor, which is an admin oversight dashboard.
+
+Matching pipeline: resolve the user, pull all Irish citizens and their skill profiles, pull worker rosters to detect who already employs whom, classify each mutual pair as balanced or imbalanced, then rank candidates in three tiers (waitlist members first, then members of imbalanced pairs, then everyone unpaired), sorted by skill closeness within each tier. People in balanced pairs are skipped, since pairing them would break a working arrangement.
+
+A player's max daily output is estimated as `production * energy * 0.343`, where 0.343 is an empirical constant (roughly 10% energy regen per hour times about 7 energy per work action). Two players are a "close match" if their daily outputs are within 15% of each other.
+
+#### The waiting list
+
+The waiting list is backed by a `waitlist.json` file in the [`to-ie/warera-tools-ireland`](https://github.com/to-ie/warera-tools-ireland) GitHub repo.
+
+Reads hit the GitHub contents API with a cache-buster. This endpoint refreshes within seconds of a commit, unlike the raw or jsDelivr endpoints which cache for hours. Writes POST to the Worker's `/waitlist-update` route, which fires a `repository_dispatch` with the PAT attached server-side, and a GitHub Action then edits the file.
+
+That Action introduces roughly a one-minute lag between a submit and the name appearing. This is intentional and free; the UI warns users about it. Don't write to GitHub directly from the client; that would leak the token.
+
+### Buddy System Monitor (`buddy.js`) and Battle Orders (`battle-orders.js`)
+
+Both are password-encrypted (see Access control). Buddy System Monitor is the MoE-facing oversight version of Buddy Finder: it tracks every reciprocal employment pair across the Irish economy and flags strays and mismatches. Battle Orders is an MoD-facing live battle tracker with MU order compliance and a Discord push for commanders. Their gate code is public; the tool logic and any webhook URLs live inside the encrypted payload.
+
 ## Data layer
 
 All game data comes through one Cloudflare Worker at `warera-proxy.toie.workers.dev`. It exposes three routes:
@@ -163,15 +217,6 @@ There are two separate mechanisms. Don't confuse them.
 To set up or rotate a password: encrypt the tool's payload file with the standalone `encrypt-bo.html` generator (it is payload-agnostic and works for both tools), then paste the resulting base64 string as the constant value. Until the constant is filled in, the gate shows "payload not configured yet" and does nothing.
 
 The gate code itself (`buddy.js`, `battle-orders.js`) is plain and public. Only the payload is secret.
-
-## The Buddy Finder waiting list
-
-The waiting list is backed by a `waitlist.json` file in the [`to-ie/warera-tools-ireland`](https://github.com/to-ie/warera-tools-ireland) GitHub repo.
-
-- **Reads** hit the GitHub contents API with a cache-buster. This endpoint refreshes within seconds of a commit, unlike the raw or jsDelivr endpoints which cache for hours.
-- **Writes** POST to the Worker's `/waitlist-update` route, which fires a `repository_dispatch` with the PAT attached server-side. A GitHub Action then edits the file.
-
-That Action introduces roughly a one-minute lag between a submit and the name actually appearing. This is intentional and free; the UI warns users about it. Don't try to "fix" it by writing to GitHub directly from the client; that would leak the token.
 
 ## Styling conventions
 

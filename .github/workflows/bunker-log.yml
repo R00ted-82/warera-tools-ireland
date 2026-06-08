@@ -22,6 +22,16 @@ jobs:
           python-version: "3.12"
       - name: Run logger
         run: python bunker_log.py
+      - name: List output
+        run: |
+          echo "--- repo root ---"
+          ls -la
+          echo "--- data dir ---"
+          ls -la data/ || echo "NO data/ DIR AT REPO ROOT"
+          echo "--- find state.json anywhere ---"
+          find . -name state.json
+          echo "--- is data/ gitignored? ---"
+          git check-ignore data/state.json && echo "IGNORED" || echo "not ignored"
       - name: Commit data
         run: |
           git config user.name "bunker-log-bot"

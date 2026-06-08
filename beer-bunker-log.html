@@ -430,9 +430,9 @@
     q = q.toLowerCase();
     var f;
     if(matchMode === "owner"){
-      f = [r.code, r.initial_country_code, cname(r.initial_country_code)];
+      f = [r.initial_country_code, cname(r.initial_country_code)];
     } else if(matchMode === "holder"){
-      f = [r.code, r.country_code, cname(r.country_code)];
+      f = [r.country_code, cname(r.country_code)];
     } else {
       f = [r.name, r.code, r.country_code, cname(r.country_code),
            r.initial_country_code, cname(r.initial_country_code)];

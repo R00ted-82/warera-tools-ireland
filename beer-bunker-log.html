@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Bunker Monitor · War Era tools</title>
+<title>Bunker Monitor &middot; War Era tools</title>
 <style>
   :root{
     --bg:#0e1116; --bg2:#151a21; --card:#1a212b; --card2:#212a36;
@@ -27,13 +27,12 @@
   }
   h1{margin:0;font-size:20px;letter-spacing:.2px}
   h1 .ie{
-    display:inline-block;width:24px;height:16px;border-radius:2px;vertical-align:-2px;margin-right:8px;
+    display:inline-block;width:24px;height:16px;border-radius:2px;
+    vertical-align:-2px;margin-right:8px;
     background:linear-gradient(90deg,var(--green) 33%,#fff 33% 66%,var(--orange) 66%);
   }
   .sub{color:var(--muted);font-size:13px;margin-top:3px}
-
   .wrap{max-width:1080px;margin:0 auto;padding:0 16px 60px}
-
   .controls{
     position:sticky;top:0;z-index:20;background:var(--bg);
     padding:14px 0 12px;border-bottom:1px solid var(--line);margin-bottom:16px;
@@ -51,9 +50,6 @@
     background:var(--card);border:1px solid var(--line2);color:var(--txt);
     border-radius:10px;padding:10px 12px;font-size:14px;cursor:pointer;
   }
-  select{appearance:none;padding-right:30px;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239aa7b4'/%3E%3C/svg%3E");
-    background-repeat:no-repeat;background-position:right 11px center;}
   .toggles{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
   .chip{display:inline-flex;align-items:center;gap:7px;user-select:none;font-size:13px}
   .chip input{accent-color:var(--green2);width:15px;height:15px;margin:0}
@@ -62,15 +58,12 @@
     background:none;border:0;color:var(--muted);padding:8px 12px;cursor:pointer;font-size:13px;
   }
   .chip.seg button.on{background:var(--green);color:#fff}
-
   .panel-title{
     display:flex;align-items:center;gap:8px;margin:22px 0 10px;font-size:13px;
     text-transform:uppercase;letter-spacing:.6px;color:var(--faint);font-weight:600;
   }
   .panel-title .count{color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0}
-
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
-
   .rcard{
     background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
     padding:14px;cursor:pointer;transition:border-color .12s,transform .12s;
@@ -81,28 +74,31 @@
   .rcode{color:var(--faint);font-size:12px;margin-top:1px;font-family:ui-monospace,monospace}
   .ctry{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:8px;font-size:13px;color:var(--muted)}
   .ctry .arrow{color:var(--faint)}
-  .occ-pill{font-size:11px;color:var(--orange2);border:1px solid var(--orange);border-radius:6px;padding:1px 6px;margin-left:2px}
-
+  .occ-pill{
+    font-size:11px;color:var(--orange2);border:1px solid var(--orange);
+    border-radius:6px;padding:1px 6px;margin-left:2px;
+  }
   .status-line{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
-  .pill{font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--line2);color:var(--muted);white-space:nowrap}
+  .pill{
+    font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--line2);
+    color:var(--muted);white-space:nowrap;
+  }
   .pill.on{color:var(--green2);border-color:#1f5132;background:#0f2419}
   .pill.off{color:var(--gray);border-color:#3a3f47}
   .pill.dis{color:var(--warn);border-color:#5a4a14;background:#241f0c}
   .pill.pend{color:var(--indigo);border-color:#3a3f6b;background:#161a2e}
   .pill.none{color:var(--faint)}
-  .pill.act{color:var(--indigo);border-color:#3a3f6b;background:#161a2e}
-
   .res{margin-top:11px}
   .res-bar{height:6px;border-radius:4px;background:var(--line);overflow:hidden}
   .res-bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--orange),var(--crimson))}
   .res-bar.owned > i{background:linear-gradient(90deg,#2f6b46,var(--green2))}
   .res-meta{display:flex;justify-content:space-between;color:var(--faint);font-size:11px;margin-top:4px}
-
   .evcount{color:var(--faint);font-size:12px;margin-top:10px}
-
-  .empty{color:var(--muted);text-align:center;padding:40px 16px;border:1px dashed var(--line2);border-radius:var(--radius)}
+  .empty{
+    color:var(--muted);text-align:center;padding:40px 16px;
+    border:1px dashed var(--line2);border-radius:var(--radius);
+  }
   .empty .big{font-size:30px;margin-bottom:8px}
-
   .upcoming .ucard{
     background:var(--card2);border:1px solid var(--line2);border-radius:10px;
     padding:11px 13px;display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;
@@ -111,31 +107,30 @@
   .ucard .when{text-align:right;white-space:nowrap}
   .ucard .when .abs{font-size:12px;color:var(--muted)}
   .ucard .when .rel{font-size:13px;color:var(--indigo);font-weight:600}
-
-  /* detail */
-  .ov{position:fixed;inset:0;background:rgba(4,7,11,.72);z-index:50;display:none;
-      align-items:flex-start;justify-content:center;padding:24px 14px;overflow:auto}
+  .ov{
+    position:fixed;inset:0;background:rgba(4,7,11,.72);z-index:50;display:none;
+    align-items:flex-start;justify-content:center;padding:24px 14px;overflow:auto;
+  }
   .ov.show{display:flex}
-  .modal{background:var(--bg2);border:1px solid var(--line2);border-radius:16px;
-    width:100%;max-width:760px;padding:0;overflow:hidden}
+  .modal{
+    background:var(--bg2);border:1px solid var(--line2);border-radius:16px;
+    width:100%;max-width:760px;padding:0;overflow:hidden;
+  }
   .modal .mhead{padding:18px 20px;border-bottom:1px solid var(--line);position:relative}
-  .modal .mhead .close{position:absolute;top:14px;right:14px;background:var(--card);border:1px solid var(--line2);
-    color:var(--muted);border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:16px;line-height:1}
+  .modal .mhead .close{
+    position:absolute;top:14px;right:14px;background:var(--card);border:1px solid var(--line2);
+    color:var(--muted);border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:16px;line-height:1;
+  }
   .modal h2{margin:0;font-size:19px}
   .mbody{padding:18px 20px}
   .mc-code{color:var(--faint);font-family:ui-monospace,monospace;font-size:12px;margin-top:2px}
   .mc-ctry{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;color:var(--muted);font-size:14px}
-  .kv{display:flex;flex-wrap:wrap;gap:18px;margin:16px 0 6px}
-  .kv .k{color:var(--faint);font-size:12px;text-transform:uppercase;letter-spacing:.5px}
-  .kv .v{font-size:15px;margin-top:2px}
   .next-act{margin-top:14px;background:#13182b;border:1px solid #2c335c;border-radius:10px;padding:12px 14px}
   .next-act .lbl{color:var(--indigo);font-size:12px;text-transform:uppercase;letter-spacing:.5px}
   .next-act .v{font-size:16px;margin-top:3px}
   .next-act .rel{color:var(--muted);font-size:13px;margin-top:2px}
-
   .sec{margin-top:22px}
   .sec h3{font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--faint);margin:0 0 10px}
-
   .hist{display:flex;align-items:flex-end;gap:2px;height:84px;padding-top:6px}
   .hist .b{flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:1px;min-width:0}
   .hist .b .seg{width:100%;border-radius:1px}
@@ -146,7 +141,6 @@
   .hist-ax span{flex:1;text-align:center;color:var(--faint);font-size:9px;min-width:0}
   .hist-leg{display:flex;gap:14px;margin-top:10px;font-size:12px;color:var(--muted)}
   .hist-leg i{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:-1px;margin-right:5px}
-
   .tl{display:flex;flex-direction:column}
   .tl .ev{display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
   .tl .ev:first-child{border-top:0}
@@ -157,7 +151,6 @@
   .tl .etime{color:var(--faint);font-size:12px;white-space:nowrap}
   .tl .edesc{color:var(--muted);font-size:13px;margin-top:2px}
   .tl .ectry{color:var(--faint);font-size:12px;margin-top:3px}
-
   .loading{text-align:center;color:var(--muted);padding:50px}
   footer{color:var(--faint);font-size:12px;text-align:center;padding:24px}
   .hidden{display:none!important}
@@ -196,13 +189,10 @@
   <div id="loading" class="loading">Loading region data...</div>
 
   <div id="content" class="hidden">
-    <!-- Upcoming activations -->
     <div id="upcoming-wrap">
       <div class="panel-title">&#9203; Upcoming activations <span class="count" id="upcoming-count"></span></div>
       <div class="grid upcoming" id="upcoming"></div>
     </div>
-
-    <!-- Results -->
     <div class="panel-title">&#128205; Regions <span class="count" id="results-count"></span></div>
     <div class="grid" id="results"></div>
     <div id="results-empty" class="empty hidden">
@@ -212,10 +202,7 @@
   </div>
 </div>
 
-<!-- Detail overlay -->
-<div class="ov" id="ov">
-  <div class="modal" id="modal"></div>
-</div>
+<div class="ov" id="ov"><div class="modal" id="modal"></div></div>
 
 <footer>
   Made with <span style="color:var(--orange2)">&#9829;</span> by toie &middot; Bunker event log via the War Era Gateway.
@@ -225,11 +212,9 @@
 (function(){
   "use strict";
 
-  // Where the committed data lives. Relative works on GitHub Pages in this repo.
-  // For local testing point these at the raw GitHub URLs.
+  // Where the committed data lives. Relative path works on GitHub Pages here.
   var DATA_BASE = "data/";
 
-  // ---- country names + flags -------------------------------------------------
   var FLAG_ALIAS = { uk:"gb" };
   var COUNTRY = {
     de:"Germany", no:"Norway", se:"Sweden", fi:"Finland", ie:"Ireland",
@@ -248,7 +233,7 @@
     cm:"Cameroon", ga:"Gabon", gq:"Eq. Guinea", td:"Chad", ne:"Niger",
     ng:"Nigeria", ml:"Mali", mr:"Mauritania", sn:"Senegal", gm:"Gambia",
     gw:"Guinea-Bissau", gn:"Guinea", sl:"Sierra Leone", lr:"Liberia",
-    ci:"Cote d'Ivoire", gh:"Ghana", tg:"Togo", bj:"Benin", bf:"Burkina Faso",
+    ci:"Cote d Ivoire", gh:"Ghana", tg:"Togo", bj:"Benin", bf:"Burkina Faso",
     cv:"Cape Verde", st:"Sao Tome", za:"South Africa", na:"Namibia", bw:"Botswana",
     zw:"Zimbabwe", zm:"Zambia", mw:"Malawi", mz:"Mozambique", mg:"Madagascar",
     km:"Comoros", mu:"Mauritius", sz:"Eswatini", ls:"Lesotho", ao:"Angola",
@@ -261,7 +246,7 @@
     la:"Laos", my:"Malaysia", sg:"Singapore", id:"Indonesia", ph:"Philippines",
     bn:"Brunei", tl:"Timor-Leste", kp:"North Korea", kr:"South Korea", jp:"Japan",
     cn:"China", tw:"Taiwan", mn:"Mongolia", au:"Australia", nz:"New Zealand",
-    pg:"Papua New Guinea", sb:"Solomon Is.", vu:"Vanuatu", fj:"Fiji", fr_nc:"New Caledonia",
+    pg:"Papua New Guinea", sb:"Solomon Is.", vu:"Vanuatu", fj:"Fiji",
     us:"USA", ca:"Canada", mx:"Mexico", gl:"Greenland", cu:"Cuba", bs:"Bahamas",
     do:"Dominican Rep.", ht:"Haiti", jm:"Jamaica", pr:"Puerto Rico", tt:"Trinidad",
     br:"Brazil", ar:"Argentina", cl:"Chile", pe:"Peru", co:"Colombia",
@@ -285,13 +270,11 @@
   }
   function clabel(cc){ return flag(cc) + " " + cname(cc); }
 
-  // ---- time helpers ----------------------------------------------------------
   function parseT(s){ if(!s) return null; var d = new Date(s); return isNaN(d) ? null : d; }
   function fmtLocal(s){
     var d = parseT(s); if(!d) return "";
     return d.toLocaleString(undefined,{
-      weekday:"short", day:"numeric", month:"short",
-      hour:"2-digit", minute:"2-digit"
+      weekday:"short", day:"numeric", month:"short", hour:"2-digit", minute:"2-digit"
     });
   }
   function relTime(s){
@@ -300,21 +283,21 @@
     var future = diff >= 0;
     var m = Math.abs(diff)/60000;
     var out;
-    if(m < 1) out = "just now";
-    else if(m < 60) out = Math.round(m) + "m";
+    if(m < 1) return "just now";
+    if(m < 60) out = Math.round(m) + "m";
     else if(m < 1440) out = Math.floor(m/60) + "h " + Math.round(m%60) + "m";
     else out = Math.floor(m/1440) + "d " + Math.floor((m%1440)/60) + "h";
-    if(out === "just now") return out;
     return future ? "in " + out : out + " ago";
   }
   function tzName(){
     try{
-      return new Intl.DateTimeFormat(undefined,{timeZoneName:"short"})
-        .formatToParts(new Date()).find(function(p){return p.type==="timeZoneName";}).value;
+      var parts = new Intl.DateTimeFormat(undefined,{timeZoneName:"short"})
+        .formatToParts(new Date());
+      var p = parts.find(function(x){ return x.type === "timeZoneName"; });
+      return p ? p.value : "";
     }catch(e){ return ""; }
   }
 
-  // ---- event metadata --------------------------------------------------------
   var EV = {
     came_online:       {c:"var(--green2)", t:"Came online"},
     went_offline:      {c:"var(--danger)", t:"Went offline"},
@@ -330,30 +313,36 @@
   };
   function evDesc(e){
     switch(e.type){
-      case "came_online":   return "Bunker now running at L" + (e.to);
-      case "went_offline":  return "Stopped running (was L" + (e["from"]) + ")";
+      case "came_online":   return "Bunker now running at L" + e.to;
+      case "went_offline":  return "Stopped running (was L" + e["from"] + ")";
       case "level_changed": return "Running level L" + e["from"] + " to L" + e.to;
       case "built":         return "New bunker at L" + (e.level || "?");
       case "destroyed":     return "Bunker removed (was L" + (e.level || "?") + ")";
       case "status_changed":return "Status " + e["from"] + " to " + e.to;
       case "bunker_activating":
-        return "Scheduled to activate " + fmtLocal(e.active_at) + " (" + relTime(e.active_at) + ")"
-             + (e.level ? ", L" + e.level : "");
-      case "ownership_changed": return "From " + clabel(e["from"]) + " to " + clabel(e.to);
+        return "Scheduled to activate " + fmtLocal(e.active_at) +
+               " (" + relTime(e.active_at) + ")" + (e.level ? ", L" + e.level : "");
+      case "ownership_changed":
+        return "From " + clabel(e["from"]) + " to " + clabel(e.to);
       case "battle_started": return "A battle began here";
       case "battle_ended":   return "The active battle ended";
-      case "resistance_full":return "Resistance " + e.val + "/" + e.max + ", liberation battle available";
+      case "resistance_full":
+        return "Resistance " + e.val + "/" + e.max + ", liberation battle available";
       default: return "Region state changed";
     }
   }
 
-  // ---- state -----------------------------------------------------------------
-  var STATE = {};       // rid -> region snapshot
-  var EVENTS = [];      // all events
-  var BY_RID = {};      // rid -> [events]
-  var REGION_LIST = []; // array of {rid, ...region}
+  var STATE = {};
+  var EVENTS = [];
+  var BY_RID = {};
+  var REGION_LIST = [];
   var matchMode = "either";
 
+  function esc(s){
+    return String(s).replace(/[&<>"]/g, function(c){
+      return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c];
+    });
+  }
   function occupied(r){
     var o = r.initial_country_code, c = r.country_code;
     return !!(o && c && o !== c);
@@ -361,17 +350,21 @@
   function bunkerPills(r){
     var b = r.bunker || {};
     var out = [];
-    var run = b.running_level;
-    var st = b.built_status;
-    if(st == null){
+    if(b.built_status == null){
       out.push('<span class="pill none">No bunker</span>');
     } else {
-      if(typeof run === "number") out.push('<span class="pill on">Online L' + run + "</span>");
-      else out.push('<span class="pill off">Offline</span>');
-      if(st === "active") out.push('<span class="pill on">active</span>');
-      else if(st === "disabled") out.push('<span class="pill dis">disabled</span>');
-      else if(st === "pending") out.push('<span class="pill pend">pending</span>');
-      if(typeof b.built_level === "number") out.push('<span class="pill">built L' + b.built_level + "</span>");
+      if(typeof b.running_level === "number")
+        out.push('<span class="pill on">Online L' + b.running_level + '</span>');
+      else
+        out.push('<span class="pill off">Offline</span>');
+      if(b.built_status === "active")
+        out.push('<span class="pill on">active</span>');
+      else if(b.built_status === "disabled")
+        out.push('<span class="pill dis">disabled</span>');
+      else if(b.built_status === "pending")
+        out.push('<span class="pill pend">pending</span>');
+      if(typeof b.built_level === "number")
+        out.push('<span class="pill">built L' + b.built_level + '</span>');
     }
     return out.join("");
   }
@@ -382,40 +375,48 @@
     if(!d || d.getTime() <= Date.now()) return null;
     return up;
   }
-
-  // ---- rendering: cards ------------------------------------------------------
   function ctryHtml(r){
     var o = r.initial_country_code, c = r.country_code;
     if(occupied(r)){
-      return clabel(o) + ' <span class="arrow">&rarr;</span> ' + clabel(c)
-           + '<span class="occ-pill">occupied</span>';
+      return clabel(o) + ' <span class="arrow">&rarr;</span> ' + clabel(c) +
+             '<span class="occ-pill">occupied</span>';
     }
     return clabel(c || o);
   }
   function resHtml(r){
-    var rs = r.resistance || {}; var v = rs.value, m = rs.max;
+    var rs = r.resistance || {};
+    var v = rs.value, m = rs.max;
     if(typeof v !== "number" || typeof m !== "number" || m <= 0) return "";
-    var pct = Math.min(100, Math.round(v/m*100));
+    var pct = Math.min(100, Math.round(v / m * 100));
     var owned = !occupied(r);
-    return '<div class="res"><div class="res-bar' + (owned?" owned":"") + '"><i style="width:' + pct + '%"></i></div>'
-         + '<div class="res-meta"><span>resistance</span><span>' + Math.round(v) + " / " + m + " (" + pct + "%)</span></div></div>';
+    return [
+      '<div class="res">',
+        '<div class="res-bar', (owned ? " owned" : ""), '">',
+          '<i style="width:', pct, '%"></i>',
+        '</div>',
+        '<div class="res-meta"><span>resistance</span>',
+        '<span>', Math.round(v), ' / ', m, ' (', pct, '%)</span></div>',
+      '</div>'
+    ].join("");
   }
   function regionCard(r){
     var n = (BY_RID[r.rid] || []).length;
-    return '<div class="rcard" data-rid="' + r.rid + '">'
-      + '<div class="top"><div><div class="rname">' + esc(r.name || r.code || r.rid) + '</div>'
-      + '<div class="rcode">' + esc(r.code || "") + '</div></div></div>'
-      + '<div class="ctry">' + ctryHtml(r) + '</div>'
-      + '<div class="status-line">' + bunkerPills(r) + '</div>'
-      + resHtml(r)
-      + '<div class="evcount">' + (n ? (n + " event" + (n===1?"":"s") + " in 30 days") : "No events logged yet") + '</div>'
-      + '</div>';
+    var evtxt = n ? (n + " event" + (n === 1 ? "" : "s") + " in 30 days")
+                  : "No events logged yet";
+    return [
+      '<div class="rcard" data-rid="', r.rid, '">',
+        '<div class="top"><div>',
+          '<div class="rname">', esc(r.name || r.code || r.rid), '</div>',
+          '<div class="rcode">', esc(r.code || ""), '</div>',
+        '</div></div>',
+        '<div class="ctry">', ctryHtml(r), '</div>',
+        '<div class="status-line">', bunkerPills(r), '</div>',
+        resHtml(r),
+        '<div class="evcount">', evtxt, '</div>',
+      '</div>'
+    ].join("");
   }
 
-  function esc(s){ return String(s).replace(/[&<>"]/g,function(c){
-    return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
-
-  // ---- filtering -------------------------------------------------------------
   function matchesCountry(r, cc){
     if(!cc) return true;
     var o = r.initial_country_code, c = r.country_code;
@@ -452,29 +453,28 @@
     });
 
     var filtered = q || cc || fB || fO || fOcc || fU;
-    list.sort(function(a,b){
-      var ea = (BY_RID[a.rid]||[]).length, eb = (BY_RID[b.rid]||[]).length;
+    list.sort(function(a, b){
+      var ea = (BY_RID[a.rid] || []).length, eb = (BY_RID[b.rid] || []).length;
       if(eb !== ea) return eb - ea;
-      return (a.name||"").localeCompare(b.name||"");
+      return (a.name || "").localeCompare(b.name || "");
     });
 
     var capped = filtered ? list : list.slice(0, 60);
-    var grid = document.getElementById("results");
-    var empty = document.getElementById("results-empty");
-    grid.innerHTML = capped.map(regionCard).join("");
-    empty.classList.toggle("hidden", capped.length > 0);
+    document.getElementById("results").innerHTML = capped.map(regionCard).join("");
+    document.getElementById("results-empty").classList.toggle("hidden", capped.length > 0);
 
     var cnt = document.getElementById("results-count");
     if(!filtered) cnt.textContent = "showing 60 of " + list.length + ", search or filter to narrow";
-    else cnt.textContent = list.length + " match" + (list.length===1?"":"es");
+    else cnt.textContent = list.length + " match" + (list.length === 1 ? "" : "es");
   }
 
-  // ---- upcoming activations --------------------------------------------------
   function renderUpcoming(){
     var ups = REGION_LIST
       .map(function(r){ var up = futureActivation(r); return up ? {r:r, up:up} : null; })
       .filter(Boolean)
-      .sort(function(a,b){ return parseT(a.up.will_be_active_at) - parseT(b.up.will_be_active_at); });
+      .sort(function(a, b){
+        return parseT(a.up.will_be_active_at) - parseT(b.up.will_be_active_at);
+      });
 
     var wrap = document.getElementById("upcoming-wrap");
     if(!ups.length){ wrap.classList.add("hidden"); return; }
@@ -482,111 +482,147 @@
     document.getElementById("upcoming-count").textContent = ups.length + " scheduled";
     document.getElementById("upcoming").innerHTML = ups.slice(0, 12).map(function(x){
       var r = x.r, t = x.up.will_be_active_at;
-      return '<div class="ucard" data-rid="' + r.rid + '">'
-        + '<div><div class="rname">' + esc(r.name) + '</div>'
-        + '<div class="ctry" style="margin-top:5px">' + ctryHtml(r) + '</div></div>'
-        + '<div class="when"><div class="rel">' + relTime(t) + '</div>'
-        + '<div class="abs">' + fmtLocal(t) + (x.up.level ? " &middot; L" + x.up.level : "") + '</div></div>'
-        + '</div>';
+      var lvl = x.up.level ? " &middot; L" + x.up.level : "";
+      return [
+        '<div class="ucard" data-rid="', r.rid, '">',
+          '<div>',
+            '<div class="rname">', esc(r.name), '</div>',
+            '<div class="ctry" style="margin-top:5px">', ctryHtml(r), '</div>',
+          '</div>',
+          '<div class="when">',
+            '<div class="rel">', relTime(t), '</div>',
+            '<div class="abs">', fmtLocal(t), lvl, '</div>',
+          '</div>',
+        '</div>'
+      ].join("");
     }).join("");
   }
 
-  // ---- detail ----------------------------------------------------------------
   function habitHtml(evs){
     var rel = evs.filter(function(e){
-      return e.type==="came_online"||e.type==="went_offline"||
-             e.type==="level_changed"||e.type==="status_changed"||e.type==="bunker_activating";
+      return e.type === "came_online" || e.type === "went_offline" ||
+             e.type === "level_changed" || e.type === "status_changed" ||
+             e.type === "bunker_activating";
     });
     if(!rel.length) return "";
     var on = new Array(24).fill(0), off = new Array(24).fill(0), oth = new Array(24).fill(0);
     rel.forEach(function(e){
       var d = parseT(e.at); if(!d) return;
-      var h = d.getHours(); // local hour
-      if(e.type==="came_online") on[h]++;
-      else if(e.type==="went_offline") off[h]++;
+      var h = d.getHours();
+      if(e.type === "came_online") on[h]++;
+      else if(e.type === "went_offline") off[h]++;
       else oth[h]++;
     });
     var max = 1;
-    for(var i=0;i<24;i++) max = Math.max(max, on[i]+off[i]+oth[i]);
-    var bars = "";
-    for(var h=0;h<24;h++){
+    for(var i = 0; i < 24; i++) max = Math.max(max, on[i] + off[i] + oth[i]);
+    var bars = [];
+    for(var h = 0; h < 24; h++){
       var H = 78;
-      var so = Math.round(on[h]/max*H), sf = Math.round(off[h]/max*H), sx = Math.round(oth[h]/max*H);
-      bars += '<div class="b" title="' + h + ':00  online ' + on[h] + ', offline ' + off[h] + ', other ' + oth[h] + '">'
-        + (sx?'<div class="seg other" style="height:' + sx + 'px"></div>':'')
-        + (sf?'<div class="seg off" style="height:' + sf + 'px"></div>':'')
-        + (so?'<div class="seg on" style="height:' + so + 'px"></div>':'')
-        + '</div>';
+      var so = Math.round(on[h] / max * H);
+      var sf = Math.round(off[h] / max * H);
+      var sx = Math.round(oth[h] / max * H);
+      var title = h + ":00  online " + on[h] + ", offline " + off[h] + ", other " + oth[h];
+      bars.push('<div class="b" title="' + title + '">' +
+        (sx ? '<div class="seg other" style="height:' + sx + 'px"></div>' : "") +
+        (sf ? '<div class="seg off" style="height:' + sf + 'px"></div>' : "") +
+        (so ? '<div class="seg on" style="height:' + so + 'px"></div>' : "") +
+        '</div>');
     }
-    var ax = "";
-    for(var a=0;a<24;a+=3) ax += '<span>' + a + '</span>';
-    return '<div class="sec"><h3>Activity by hour of day (' + tzName() + ')</h3>'
-      + '<div class="hist">' + bars + '</div>'
-      + '<div class="hist-ax">' + ax.replace(/<\/span>/g,'</span>') + '</div>'
-      + '<div class="hist-leg"><span><i style="background:var(--green2)"></i>came online</span>'
-      + '<span><i style="background:var(--danger)"></i>went offline</span>'
-      + '<span><i style="background:var(--blue)"></i>level / status</span></div></div>';
+    var ax = [];
+    for(var a = 0; a < 24; a += 3) ax.push('<span>' + a + '</span>');
+    return [
+      '<div class="sec"><h3>Activity by hour of day (', tzName(), ')</h3>',
+      '<div class="hist">', bars.join(""), '</div>',
+      '<div class="hist-ax">', ax.join(""), '</div>',
+      '<div class="hist-leg">',
+        '<span><i style="background:var(--green2)"></i>came online</span>',
+        '<span><i style="background:var(--danger)"></i>went offline</span>',
+        '<span><i style="background:var(--blue)"></i>level / status</span>',
+      '</div></div>'
+    ].join("");
   }
   function timelineHtml(evs){
     if(!evs.length){
-      return '<div class="sec"><h3>Timeline</h3><div class="empty" style="padding:26px">'
-        + 'No events logged for this region in the last 30 days.</div></div>';
+      return '<div class="sec"><h3>Timeline</h3><div class="empty" style="padding:26px">' +
+             'No events logged for this region in the last 30 days.</div></div>';
     }
-    var rows = evs.slice().sort(function(a,b){ return parseT(b.at) - parseT(a.at); }).map(function(e){
+    var sorted = evs.slice().sort(function(a, b){ return parseT(b.at) - parseT(a.at); });
+    var rows = sorted.map(function(e){
       var meta = EV[e.type] || {c:"var(--gray)", t:e.type};
-      return '<div class="ev"><span class="dot" style="background:' + meta.c + '"></span>'
-        + '<div class="ebody"><div class="etop"><span class="etype">' + meta.t + '</span>'
-        + '<span class="etime" title="' + esc(e.at) + '">' + fmtLocal(e.at) + ' (' + relTime(e.at) + ')</span></div>'
-        + '<div class="edesc">' + esc(evDesc(e)) + '</div>'
-        + '<div class="ectry">' + clabel(e.occ) + (e.cc && e.cc!==e.occ ? ' &middot; held by ' + clabel(e.cc) : "") + '</div>'
-        + '</div></div>';
+      var held = (e.cc && e.cc !== e.occ) ? " &middot; held by " + clabel(e.cc) : "";
+      return [
+        '<div class="ev"><span class="dot" style="background:', meta.c, '"></span>',
+          '<div class="ebody"><div class="etop">',
+            '<span class="etype">', meta.t, '</span>',
+            '<span class="etime" title="', esc(e.at), '">',
+              fmtLocal(e.at), ' (', relTime(e.at), ')</span>',
+          '</div>',
+          '<div class="edesc">', esc(evDesc(e)), '</div>',
+          '<div class="ectry">', clabel(e.occ), held, '</div>',
+        '</div></div>'
+      ].join("");
     }).join("");
-    return '<div class="sec"><h3>Timeline &middot; ' + evs.length + ' event' + (evs.length===1?"":"s") + '</h3>'
-      + '<div class="tl">' + rows + '</div></div>';
+    return [
+      '<div class="sec"><h3>Timeline &middot; ', evs.length,
+      ' event', (evs.length === 1 ? "" : "s"), '</h3>',
+      '<div class="tl">', rows, '</div></div>'
+    ].join("");
   }
   function openDetail(rid){
     var r = STATE[rid]; if(!r) return;
     r.rid = rid;
     var evs = BY_RID[rid] || [];
     var up = futureActivation(r);
-    var b = r.bunker || {};
 
-    var nextAct = up ? '<div class="next-act"><div class="lbl">&#9203; Next scheduled activation</div>'
-      + '<div class="v">' + fmtLocal(up.will_be_active_at) + (up.level ? '  &middot;  L' + up.level : "") + '</div>'
-      + '<div class="rel">' + relTime(up.will_be_active_at) + '  &middot;  shown in your local time (' + tzName() + ')</div></div>' : "";
+    var nextAct = "";
+    if(up){
+      var lvl = up.level ? "  &middot;  L" + up.level : "";
+      nextAct = [
+        '<div class="next-act"><div class="lbl">&#9203; Next scheduled activation</div>',
+        '<div class="v">', fmtLocal(up.will_be_active_at), lvl, '</div>',
+        '<div class="rel">', relTime(up.will_be_active_at),
+        '  &middot;  shown in your local time (', tzName(), ')</div></div>'
+      ].join("");
+    }
 
-    var html = '<div class="mhead"><button class="close" id="mclose">&times;</button>'
-      + '<h2>' + esc(r.name || r.code) + '</h2>'
-      + '<div class="mc-code">' + esc(r.code || "") + '</div>'
-      + '<div class="mc-ctry"><span>Owner: ' + clabel(r.initial_country_code) + '</span>'
-      + '<span>Holder: ' + clabel(r.country_code) + (occupied(r) ? ' <span class="occ-pill">occupied</span>' : "") + '</span></div>'
-      + '</div><div class="mbody">'
-      + '<div class="status-line">' + bunkerPills(r) + '</div>'
-      + nextAct
-      + resHtml(r)
-      + habitHtml(evs)
-      + timelineHtml(evs)
-      + '</div>';
+    var occTag = occupied(r) ? ' <span class="occ-pill">occupied</span>' : "";
+    var html = [
+      '<div class="mhead"><button class="close" id="mclose">&times;</button>',
+        '<h2>', esc(r.name || r.code), '</h2>',
+        '<div class="mc-code">', esc(r.code || ""), '</div>',
+        '<div class="mc-ctry">',
+          '<span>Owner: ', clabel(r.initial_country_code), '</span>',
+          '<span>Holder: ', clabel(r.country_code), occTag, '</span>',
+        '</div>',
+      '</div><div class="mbody">',
+        '<div class="status-line">', bunkerPills(r), '</div>',
+        nextAct,
+        resHtml(r),
+        habitHtml(evs),
+        timelineHtml(evs),
+      '</div>'
+    ].join("");
 
-    var modal = document.getElementById("modal");
-    modal.innerHTML = html;
+    document.getElementById("modal").innerHTML = html;
     document.getElementById("ov").classList.add("show");
     document.getElementById("mclose").onclick = closeDetail;
   }
   function closeDetail(){ document.getElementById("ov").classList.remove("show"); }
 
-  // ---- wiring ----------------------------------------------------------------
   function buildCountryDropdown(){
     var set = {};
     REGION_LIST.forEach(function(r){
       if(r.country_code) set[r.country_code] = true;
       if(r.initial_country_code) set[r.initial_country_code] = true;
     });
-    var codes = Object.keys(set).sort(function(a,b){ return cname(a).localeCompare(cname(b)); });
+    var codes = Object.keys(set).sort(function(a, b){
+      return cname(a).localeCompare(cname(b));
+    });
     var sel = document.getElementById("country");
     codes.forEach(function(cc){
       var o = document.createElement("option");
-      o.value = cc; o.textContent = cname(cc) + " (" + cc.toUpperCase() + ")";
+      o.value = cc;
+      o.textContent = cname(cc) + " (" + cc.toUpperCase() + ")";
       sel.appendChild(o);
     });
   }
@@ -599,7 +635,9 @@
     document.getElementById("match-seg").addEventListener("click", function(e){
       var btn = e.target.closest("button[data-match]"); if(!btn) return;
       matchMode = btn.getAttribute("data-match");
-      this.querySelectorAll("button").forEach(function(b){ b.classList.toggle("on", b===btn); });
+      this.querySelectorAll("button").forEach(function(b){
+        b.classList.toggle("on", b === btn);
+      });
       applyFilters();
     });
     document.addEventListener("click", function(e){
@@ -607,14 +645,16 @@
       if(card){ openDetail(card.getAttribute("data-rid")); return; }
       if(e.target.id === "ov") closeDetail();
     });
-    document.addEventListener("keydown", function(e){ if(e.key==="Escape") closeDetail(); });
+    document.addEventListener("keydown", function(e){
+      if(e.key === "Escape") closeDetail();
+    });
   }
-
   function indexEvents(){
     BY_RID = {};
-    EVENTS.forEach(function(e){ (BY_RID[e.rid] = BY_RID[e.rid] || []).push(e); });
+    EVENTS.forEach(function(e){
+      (BY_RID[e.rid] = BY_RID[e.rid] || []).push(e);
+    });
   }
-
   function start(){
     REGION_LIST = Object.keys(STATE).map(function(rid){
       var r = STATE[rid]; r.rid = rid; return r;
@@ -627,7 +667,6 @@
     renderUpcoming();
     applyFilters();
   }
-
   function loadJSON(url){
     return fetch(url, {cache:"no-store"}).then(function(res){
       if(!res.ok) throw new Error(url + " " + res.status);
@@ -637,14 +676,14 @@
 
   loadJSON(DATA_BASE + "state.json").then(function(state){
     STATE = state || {};
-    // events.json may be empty or missing on early runs; tolerate it.
     return loadJSON(DATA_BASE + "events.json").catch(function(){ return []; });
   }).then(function(events){
     EVENTS = Array.isArray(events) ? events : [];
     start();
   }).catch(function(err){
     document.getElementById("loading").innerHTML =
-      "Could not load region data.<br><span style='color:var(--faint);font-size:13px'>" + esc(String(err)) + "</span>";
+      "Could not load region data.<br><span style='color:var(--faint);font-size:13px'>" +
+      esc(String(err)) + "</span>";
   });
 
 })();

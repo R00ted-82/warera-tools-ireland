@@ -2,7 +2,8 @@ name: Bunker event logger
 
 on:
   schedule:
-    - cron: "17 */2 * * *"   # every 2h, offset off the hour
+    # - cron: "17 */2 * * *"   # every 2h, offset off the hour
+    - cron: "17 */4 * * *"   # every 4h, offset off the hour
   workflow_dispatch:
 
 permissions:

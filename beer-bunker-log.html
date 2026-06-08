@@ -428,51 +428,58 @@
   function matchesText(r, q){
     if(!q) return true;
     q = q.toLowerCase();
-    var hay = [
-      r.name, r.code, r.country_code, r.initial_country_code,
-      cname(r.country_code), cname(r.initial_country_code)
-    ].join(" ").toLowerCase();
-    return hay.indexOf(q) !== -1;
+    var f = [r.name, r.code];
+    if(matchMode === "owner"){
+      f.push(r.initial_country_code, cname(r.initial_country_code));
+    } else if(matchMode === "holder"){
+      f.push(r.country_code, cname(r.country_code));
+    } else {
+      f.push(r.country_code, cname(r.country_code),
+             r.initial_country_code, cname(r.initial_country_code));
+    }
+    return f.join(" ").toLowerCase().indexOf(q) !== -1;
   }
-  function applyFilters(){
+  function anyFilterActive(){
+    return !!(document.getElementById("q").value.trim() ||
+              document.getElementById("country").value ||
+              document.getElementById("f-bunker").checked ||
+              document.getElementById("f-online").checked ||
+              document.getElementById("f-occupied").checked ||
+              document.getElementById("f-upcoming").checked);
+  }
+  function passesFilters(r){
     var q = document.getElementById("q").value.trim();
     var cc = document.getElementById("country").value;
-    var fB = document.getElementById("f-bunker").checked;
-    var fO = document.getElementById("f-online").checked;
-    var fOcc = document.getElementById("f-occupied").checked;
-    var fU = document.getElementById("f-upcoming").checked;
-
-    var list = REGION_LIST.filter(function(r){
-      if(!matchesText(r, q)) return false;
-      if(!matchesCountry(r, cc)) return false;
-      var b = r.bunker || {};
-      if(fB && b.built_status == null) return false;
-      if(fO && typeof b.running_level !== "number") return false;
-      if(fOcc && !occupied(r)) return false;
-      if(fU && !futureActivation(r)) return false;
-      return true;
-    });
-
-    var filtered = q || cc || fB || fO || fOcc || fU;
+    if(!matchesText(r, q)) return false;
+    if(!matchesCountry(r, cc)) return false;
+    var b = r.bunker || {};
+    if(document.getElementById("f-bunker").checked && b.built_status == null) return false;
+    if(document.getElementById("f-online").checked && typeof b.running_level !== "number") return false;
+    if(document.getElementById("f-occupied").checked && !occupied(r)) return false;
+    if(document.getElementById("f-upcoming").checked && !futureActivation(r)) return false;
+    return true;
+  }
+  function applyFilters(){
+    var list = REGION_LIST.filter(passesFilters);
+    var filtered = anyFilterActive();
     list.sort(function(a, b){
       var ea = (BY_RID[a.rid] || []).length, eb = (BY_RID[b.rid] || []).length;
       if(eb !== ea) return eb - ea;
       return (a.name || "").localeCompare(b.name || "");
     });
-
     var capped = filtered ? list : list.slice(0, 60);
     document.getElementById("results").innerHTML = capped.map(regionCard).join("");
     document.getElementById("results-empty").classList.toggle("hidden", capped.length > 0);
-
     var cnt = document.getElementById("results-count");
     if(!filtered) cnt.textContent = "showing 60 of " + list.length + ", search or filter to narrow";
     else cnt.textContent = list.length + " match" + (list.length === 1 ? "" : "es");
+    renderUpcoming();
   }
 
   function renderUpcoming(){
     var ups = REGION_LIST
       .map(function(r){ var up = futureActivation(r); return up ? {r:r, up:up} : null; })
-      .filter(Boolean)
+      .filter(function(x){ return x && passesFilters(x.r); })
       .sort(function(a, b){
         return parseT(a.up.will_be_active_at) - parseT(b.up.will_be_active_at);
       });
@@ -673,7 +680,6 @@
     showLastUpdated();
     document.getElementById("loading").classList.add("hidden");
     document.getElementById("content").classList.remove("hidden");
-    renderUpcoming();
     applyFilters();
   }
   function loadJSON(url){

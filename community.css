@@ -57,6 +57,16 @@
 .tool-card.external:hover .ext-icon { color: var(--link); }
 
 @media (max-width: 720px) {
-  .tabs { padding: 0 12px; }
-  .tab { padding: 10px 14px 12px; font-size: 13px; }
+  .tabs {
+    padding: 0 12px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    padding: 10px 14px 12px;
+    font-size: 13px;
+    flex: 0 0 auto;
+  }
 }

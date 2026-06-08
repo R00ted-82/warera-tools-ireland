@@ -160,7 +160,8 @@
 <header>
   <div class="wrap" style="padding-bottom:0">
     <h1><span class="ie"></span>Bunker Monitor</h1>
-    <div class="sub">Search any region for its bunker history, owner, controller, and scheduled activations. Logged twice daily, kept 30 days.</div>
+    <div class="sub">Search any region for its bunker history, owner, controller, and scheduled activations. Logged every 4 hours, kept 30 days.</div>
+    <div class="sub" id="last-updated"></div>
   </div>
 </header>
 
@@ -655,6 +656,13 @@
       (BY_RID[e.rid] = BY_RID[e.rid] || []).push(e);
     });
   }
+  function showLastUpdated(){
+    var el = document.getElementById("last-updated");
+    var when = REGION_LIST.length ? REGION_LIST[0].observed_at : null;
+    if(!when){ el.textContent = ""; return; }
+    el.innerHTML = "Data last updated " + fmtLocal(when) +
+      " (" + relTime(when) + ", " + tzName() + ")";
+  }
   function start(){
     REGION_LIST = Object.keys(STATE).map(function(rid){
       var r = STATE[rid]; r.rid = rid; return r;
@@ -662,6 +670,7 @@
     indexEvents();
     buildCountryDropdown();
     wire();
+    showLastUpdated();
     document.getElementById("loading").classList.add("hidden");
     document.getElementById("content").classList.remove("hidden");
     renderUpcoming();

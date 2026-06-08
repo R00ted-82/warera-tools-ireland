@@ -1749,3 +1749,15 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
 /* Push the BEER tab to the far right of the nav. */
 #tabs { display: flex; }
 #tabs .tab[data-tab="beer"] { margin-left: auto; }
+/* Push the BEER tab right, but only where there's room for one row. */
+@media (max-width: 720px) {
+  #tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  #tabs::-webkit-scrollbar { display: none; }
+  #tabs .tab { flex: 0 0 auto; white-space: nowrap; }
+}

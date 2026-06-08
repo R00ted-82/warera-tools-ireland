@@ -428,14 +428,14 @@
   function matchesText(r, q){
     if(!q) return true;
     q = q.toLowerCase();
-    var f = [r.name, r.code];
+    var f;
     if(matchMode === "owner"){
-      f.push(r.initial_country_code, cname(r.initial_country_code));
+      f = [r.code, r.initial_country_code, cname(r.initial_country_code)];
     } else if(matchMode === "holder"){
-      f.push(r.country_code, cname(r.country_code));
+      f = [r.code, r.country_code, cname(r.country_code)];
     } else {
-      f.push(r.country_code, cname(r.country_code),
-             r.initial_country_code, cname(r.initial_country_code));
+      f = [r.name, r.code, r.country_code, cname(r.country_code),
+           r.initial_country_code, cname(r.initial_country_code)];
     }
     return f.join(" ").toLowerCase().indexOf(q) !== -1;
   }

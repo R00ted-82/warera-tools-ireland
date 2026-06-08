@@ -12,7 +12,7 @@
  *  mu/buddy-finder/advisor/clockin.js changes; borrowed views are handed
  *  back the moment the user leaves staging.
  *
- *  This iteration adds three things:
+ *  This iteration adds:
  *    1. Background prefetch. On entry we warm every username-independent
  *       bulk endpoint into the shared trpc cache, so by the time a name
  *       is typed the heavy data is already loaded.
@@ -20,12 +20,14 @@
  *    3. Recent usernames. Last 3 are kept in localStorage as quick-pick
  *       chips, handy for long names. Saved only on SUCCESSFUL resolution
  *       (see the hash guard), so failed searches never pollute the list.
+ *    4. URL sync. The address bar tracks the loaded user + active tool as
+ *       #staging?u=<name>&tool=<tool>, so the view is deep-linkable and
+ *       shareable, and switching users updates it.
  * ═══════════════════════════════════════════════════════════════════ */
 const StagingTool = (() => {
-  const DEFAULT_TOOL       = 'advisor';
+  const DEFAULT_TOOL       = 'advisor';   // first tab; used when no name yet
   const DEFAULT_AFTER_LOAD = 'advisor';   // user typed a name, show their data
   const TOOLS              = ['advisor', 'clockin', 'buddy-finder', 'mu'];
-  // const TOOLS              = ['mu', 'buddy-finder', 'advisor', 'clockin'];
   const USERNAME_DRIVEN    = new Set(['buddy-finder', 'advisor', 'clockin']);
 
   const MODULES = {
@@ -91,26 +93,66 @@ const StagingTool = (() => {
   }
   function restoreAll() { TOOLS.forEach(restore); }
 
+  /* ── Secondary input sync ───────────────────────────────
+   *  The tools drive their run decision off their PRIMARY input and update
+   *  it themselves on activate(), so the shell must NOT pre-set those (the
+   *  tool would see no change and skip loading). But buddy-finder's
+   *  waitlist input is a separate field it only fills when empty, so it
+   *  keeps a stale name when the shell switches users. That field is safe
+   *  to write directly (it isn't used for any run decision), so push the
+   *  current name into it here. */
+  function syncSecondaryInputs(name) {
+    const wl = document.getElementById('bf-waitlist-username');
+    if (wl) wl.value = name || '';
+  }
+
+  /* ── URL sync ───────────────────────────────────────────
+   *  Author the address bar so the view is shareable/deep-linkable as
+   *  #staging?u=<name>&tool=<active>. Uses the native replaceState (set up
+   *  by installHashGuard) so it bypasses the guard's tool-hash transform.
+   *  replaceState doesn't fire hashchange, so no re-activation loop. */
+  function writeStagingHash() {
+    const params = new URLSearchParams();
+    if (state.username) params.set('u', state.username);
+    if (state.active)   params.set('tool', state.active);
+    const qs  = params.toString();
+    const url = qs ? `#staging?${qs}` : '#staging';
+    if (location.hash !== url) {
+      (nativeReplace || history.replaceState).call(history, null, '', url + location.search);
+    }
+  }
+
   /* ── Hash guard ─────────────────────────────────────────
-   *  Hosted tools rewrite the address bar when they run. While the shell
-   *  is showing we pin the URL to #staging. Reversible: the native
-   *  replaceState is restored on leave.
+   *  Hosted tools rewrite the address bar when they run (e.g. advisor →
+   *  #advisor?u=…). We intercept those and fold them back into a single
+   *  #staging?u=…&tool=… URL, so the shell owns the address bar.
    *
-   *  The rewrite is also our success signal for the recent list. A tool
-   *  only rewrites to #<tool>?u=<name> AFTER it has resolved the username,
-   *  and the name it writes is the canonical (correct-case) one. So this
-   *  is the right and only reliable place to commit a name to the recent
-   *  list: failed searches never reach a rewrite, so they never get saved. */
+   *  The rewrite is also our success signal for the recent list: a tool
+   *  only rewrites AFTER resolving the username, and the name it writes is
+   *  the canonical (correct-case) one. So this is the right and only
+   *  reliable place to commit a name to the recent list and to sync the
+   *  canonical name into the secondary inputs. Failed searches never reach
+   *  a rewrite, so they never get saved. */
   let nativeReplace = null;
   function installHashGuard() {
     if (nativeReplace) return;
     nativeReplace = history.replaceState.bind(history);
     history.replaceState = function (s, t, url) {
-      if (typeof url === 'string' && /^#(mu|buddy-finder|advisor|clockin)\b/.test(url)) {
-        const q = url.split('?')[1] || '';
-        const u = new URLSearchParams(q).get('u');
-        if (u) rememberUsername(u);
-        url = '#staging';
+      if (typeof url === 'string') {
+        const m = url.match(/^#(mu|buddy-finder|advisor|clockin)\b/);
+        if (m) {
+          const q = url.split('?')[1] || '';
+          const u = new URLSearchParams(q).get('u');
+          if (u) {
+            state.username = u;            // adopt the canonical casing
+            rememberUsername(u);
+            syncSecondaryInputs(u);
+          }
+          const params = new URLSearchParams();
+          if (u) params.set('u', u);
+          params.set('tool', m[1]);
+          url = `#staging?${params.toString()}`;
+        }
       }
       return nativeReplace(s, t, url);
     };
@@ -256,7 +298,7 @@ const StagingTool = (() => {
 
   function selectTool(tool, { run = true } = {}) {
     if (!TOOLS.includes(tool)) tool = DEFAULT_TOOL;
-    if (state.active === tool) { if (run) driveActive(); return; }
+    if (state.active === tool) { if (run) driveActive(); writeStagingHash(); return; }
     if (state.active) restore(state.active);
     state.active = tool;
     host(tool);
@@ -265,20 +307,22 @@ const StagingTool = (() => {
     $mount.dataset.active = tool;
     updateHint();
     if (run) driveActive();
+    writeStagingHash();
   }
 
   function loadUsername() {
     const u = $username.value.trim();
     if (!u) { $username.focus(); return; }
     state.username = u;
-    // Note: we deliberately DON'T save to the recent list here. The name
-    // isn't verified yet — saving on Load is what let typos like
-    // "sssssssss" land in the list. The recent list is committed only
-    // when a tool successfully resolves the name (see the hash guard).
+    // Not saved to the recent list here — the name isn't verified yet.
+    // Saving on Load is what let typos land in the list. The recent list
+    // is committed only when a tool successfully resolves (hash guard).
+    syncSecondaryInputs(u);          // immediate; canonical overwrites later
     revealTools();
     if (!state.active) selectTool(state.pendingTool || DEFAULT_AFTER_LOAD);
     else driveActive();              // re-run current tool with the new name
     state.pendingTool = null;
+    writeStagingHash();
   }
 
   /* ── Wire-up ────────────────────────────────────────────── */
@@ -325,11 +369,11 @@ const StagingTool = (() => {
       const u = (params && params.get('u')) || state.username || '';
 
       if (u) {
-        // Deep-link / returning name: don't pre-save it either. If it
-        // resolves, the tool's hash rewrite commits it; if not, it stays
-        // out of the recent list.
+        // Deep-link / returning name: don't pre-save it. If it resolves,
+        // the tool's hash rewrite commits it; if not, it stays out.
         $username.value = u;
         state.username = u;
+        syncSecondaryInputs(u);
         revealTools();
         selectTool(tool || state.active || DEFAULT_AFTER_LOAD);
       } else {

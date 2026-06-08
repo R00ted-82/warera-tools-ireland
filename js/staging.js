@@ -18,12 +18,14 @@
  *       is typed the heavy data is already loaded.
  *    2. Gated display. Nothing is shown until a username is entered.
  *    3. Recent usernames. Last 3 are kept in localStorage as quick-pick
- *       chips, handy for long names.
+ *       chips, handy for long names. Saved only on SUCCESSFUL resolution
+ *       (see the hash guard), so failed searches never pollute the list.
  * ═══════════════════════════════════════════════════════════════════ */
 const StagingTool = (() => {
-  const DEFAULT_TOOL       = 'mu';
+  const DEFAULT_TOOL       = 'advisor';
   const DEFAULT_AFTER_LOAD = 'advisor';   // user typed a name, show their data
-  const TOOLS              = ['mu', 'buddy-finder', 'advisor', 'clockin'];
+  const TOOLS              = ['advisor', 'clockin', 'buddy-finder', 'mu'];
+  // const TOOLS              = ['mu', 'buddy-finder', 'advisor', 'clockin'];
   const USERNAME_DRIVEN    = new Set(['buddy-finder', 'advisor', 'clockin']);
 
   const MODULES = {
@@ -92,13 +94,24 @@ const StagingTool = (() => {
   /* ── Hash guard ─────────────────────────────────────────
    *  Hosted tools rewrite the address bar when they run. While the shell
    *  is showing we pin the URL to #staging. Reversible: the native
-   *  replaceState is restored on leave. */
+   *  replaceState is restored on leave.
+   *
+   *  The rewrite is also our success signal for the recent list. A tool
+   *  only rewrites to #<tool>?u=<name> AFTER it has resolved the username,
+   *  and the name it writes is the canonical (correct-case) one. So this
+   *  is the right and only reliable place to commit a name to the recent
+   *  list: failed searches never reach a rewrite, so they never get saved. */
   let nativeReplace = null;
   function installHashGuard() {
     if (nativeReplace) return;
     nativeReplace = history.replaceState.bind(history);
     history.replaceState = function (s, t, url) {
-      if (typeof url === 'string' && /^#(mu|buddy-finder|advisor|clockin)\b/.test(url)) url = '#staging';
+      if (typeof url === 'string' && /^#(mu|buddy-finder|advisor|clockin)\b/.test(url)) {
+        const q = url.split('?')[1] || '';
+        const u = new URLSearchParams(q).get('u');
+        if (u) rememberUsername(u);
+        url = '#staging';
+      }
       return nativeReplace(s, t, url);
     };
   }
@@ -167,10 +180,10 @@ const StagingTool = (() => {
   }
 
   /* ── Recent usernames (localStorage, last 3) ─────────────
-   *  Stored most-recent-first, deduped case-insensitively. Saved on Load
-   *  (not on verified resolution), so a typo can land here, cheap to drop
-   *  via the x and not worth hooking the tools' resolvers. Best-effort:
-   *  a disabled/full localStorage degrades to "no chips". */
+   *  Stored most-recent-first, deduped case-insensitively. Committed only
+   *  on a tool's successful resolution (via the hash guard), so failed
+   *  searches never land here. Best-effort: a disabled/full localStorage
+   *  degrades to "no chips". */
   const RECENT_KEY = 'stg:recent-usernames';
   const RECENT_MAX = 3;
 
@@ -258,7 +271,10 @@ const StagingTool = (() => {
     const u = $username.value.trim();
     if (!u) { $username.focus(); return; }
     state.username = u;
-    rememberUsername(u);
+    // Note: we deliberately DON'T save to the recent list here. The name
+    // isn't verified yet — saving on Load is what let typos like
+    // "sssssssss" land in the list. The recent list is committed only
+    // when a tool successfully resolves the name (see the hash guard).
     revealTools();
     if (!state.active) selectTool(state.pendingTool || DEFAULT_AFTER_LOAD);
     else driveActive();              // re-run current tool with the new name
@@ -309,9 +325,11 @@ const StagingTool = (() => {
       const u = (params && params.get('u')) || state.username || '';
 
       if (u) {
+        // Deep-link / returning name: don't pre-save it either. If it
+        // resolves, the tool's hash rewrite commits it; if not, it stays
+        // out of the recent list.
         $username.value = u;
         state.username = u;
-        rememberUsername(u);
         revealTools();
         selectTool(tool || state.active || DEFAULT_AFTER_LOAD);
       } else {

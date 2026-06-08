@@ -1520,3 +1520,24 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
   padding: 4px 9px 4px 5px; cursor: pointer;
 }
 .stg-recent-del:hover { color: var(--danger); background: var(--panel-2); }
+
+/* Wrapper lets us paint an edge fade over the scrolling pills. */
+.stg-nav-wrap { position: relative; }
+.stg-nav-wrap::after {
+  content: '';
+  position: absolute; top: 0; right: 0; bottom: 12px;
+  width: 36px; pointer-events: none;
+  background: linear-gradient(to right, transparent, var(--bg));
+  opacity: 1; transition: opacity 0.2s;
+}
+.stg-nav-wrap.at-end::after { opacity: 0; }
+
+.stg-nav {
+  display: flex; gap: 6px; overflow-x: auto;
+  padding: 4px 0 12px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+}
+.stg-nav::-webkit-scrollbar { display: none; }
+.stg-tab { scroll-snap-align: start; }

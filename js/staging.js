@@ -23,6 +23,9 @@
  *    4. URL sync. The address bar tracks the loaded user + active tool as
  *       #staging?u=<name>&tool=<tool>, so the view is deep-linkable and
  *       shareable, and switching users updates it.
+ *    5. Nav overflow fade. On mobile the tool pills scroll horizontally;
+ *       a right-edge fade signals there are more off-screen, and clears
+ *       once scrolled to the end.
  * ═══════════════════════════════════════════════════════════════════ */
 const StagingTool = (() => {
   const DEFAULT_TOOL       = 'advisor';   // first tab; used when no name yet
@@ -39,6 +42,7 @@ const StagingTool = (() => {
 
   const $mount    = document.getElementById('stg-mount');
   const $nav      = document.getElementById('stg-nav');
+  const $navWrap  = document.getElementById('stg-nav-wrap');
   const $username = document.getElementById('stg-username');
   const $load     = document.getElementById('stg-load');
   const $hint     = document.getElementById('stg-idbar-hint');
@@ -104,6 +108,15 @@ const StagingTool = (() => {
   function syncSecondaryInputs(name) {
     const wl = document.getElementById('bf-waitlist-username');
     if (wl) wl.value = name || '';
+  }
+
+  /* ── Nav overflow fade ──────────────────────────────────
+   *  Show a right-edge fade while there are pills off-screen, hide it once
+   *  scrolled to the end (or when nothing overflows). Pure affordance. */
+  function updateNavFade() {
+    if (!$navWrap) return;
+    const atEnd = $nav.scrollLeft + $nav.clientWidth >= $nav.scrollWidth - 2;
+    $navWrap.classList.toggle('at-end', atEnd);
   }
 
   /* ── URL sync ───────────────────────────────────────────
@@ -271,6 +284,7 @@ const StagingTool = (() => {
     $nav.classList.remove('hidden');
     $mount.classList.remove('hidden');
     $empty.classList.add('hidden');
+    updateNavFade();
   }
   function gateTools() {
     $nav.classList.add('hidden');
@@ -330,6 +344,8 @@ const StagingTool = (() => {
     const btn = e.target.closest('.stg-tab');
     if (btn) selectTool(btn.dataset.stgTab);
   });
+  $nav.addEventListener('scroll', updateNavFade, { passive: true });
+  window.addEventListener('resize', updateNavFade);
   $load.addEventListener('click', loadUsername);
   $username.addEventListener('keydown', e => { if (e.key === 'Enter') loadUsername(); });
   $recent.addEventListener('click', e => {

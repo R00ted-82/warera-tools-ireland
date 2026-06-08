@@ -1541,3 +1541,15 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
 }
 .stg-nav::-webkit-scrollbar { display: none; }
 .stg-tab { scroll-snap-align: start; }
+
+/* Community tab category headings */
+.community-cat {
+  margin: 28px 0 12px;
+  font-size: 13px; font-weight: 600;
+  color: var(--text);
+  text-transform: uppercase; letter-spacing: 0.04em;
+  display: flex; align-items: center; gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.community-cat:first-of-type { margin-top: 20px; }

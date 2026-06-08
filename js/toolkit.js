@@ -1,18 +1,20 @@
 /* ═══════════════════════════════════════════════════════════════════
- *  UNIFIED IRISH TOOLKIT (prototype, staging)
+ *  UNIFIED IRISH TOOLKIT  (powers the #home view)
  *
  *  A single-page shell over the four username/data tools. The user loads
  *  their name once; switching sub-tabs runs each tool for that name with
- *  no bouncing back to the home screen.
+ *  no bouncing back to a landing screen. This is now the default Irish
+ *  tools view (#home); it began life as the "staging" prototype, hence
+ *  the StagingTool name kept here to avoid churn.
  *
  *  Reuse without rewrite: each tool is a self-contained IIFE whose DOM
  *  refs are captured once. They stay valid when the nodes are reparented,
  *  so this shell MOVES each tool's <section class="view"> into its mount
  *  and drives it through the tool's existing activate({u}). Nothing in
  *  mu/buddy-finder/advisor/clockin.js changes; borrowed views are handed
- *  back the moment the user leaves staging.
+ *  back the moment the user leaves home.
  *
- *  This iteration adds:
+ *  Features:
  *    1. Background prefetch. On entry we warm every username-independent
  *       bulk endpoint into the shared trpc cache, so by the time a name
  *       is typed the heavy data is already loaded.
@@ -21,13 +23,13 @@
  *       chips, handy for long names. Saved only on SUCCESSFUL resolution
  *       (see the hash guard), so failed searches never pollute the list.
  *    4. URL sync. The address bar tracks the loaded user + active tool as
- *       #staging?u=<name>&tool=<tool>, so the view is deep-linkable and
+ *       #home?u=<name>&tool=<tool>, so the view is deep-linkable and
  *       shareable, and switching users updates it.
  *    5. Nav overflow fade. On mobile the tool pills scroll horizontally;
  *       a right-edge fade signals there are more off-screen, and clears
  *       once scrolled to the end.
  * ═══════════════════════════════════════════════════════════════════ */
-const StagingTool = (() => {
+const ToolkitShell = (() => {
   const DEFAULT_TOOL       = 'advisor';   // first tab; used when no name yet
   const DEFAULT_AFTER_LOAD = 'advisor';   // user typed a name, show their data
   const TOOLS              = ['advisor', 'clockin', 'buddy-finder', 'mu'];
@@ -121,7 +123,7 @@ const StagingTool = (() => {
 
   /* ── URL sync ───────────────────────────────────────────
    *  Author the address bar so the view is shareable/deep-linkable as
-   *  #staging?u=<name>&tool=<active>. Uses the native replaceState (set up
+   *  #home?u=<name>&tool=<active>. Uses the native replaceState (set up
    *  by installHashGuard) so it bypasses the guard's tool-hash transform.
    *  replaceState doesn't fire hashchange, so no re-activation loop. */
   function writeStagingHash() {
@@ -129,7 +131,7 @@ const StagingTool = (() => {
     if (state.username) params.set('u', state.username);
     if (state.active)   params.set('tool', state.active);
     const qs  = params.toString();
-    const url = qs ? `#staging?${qs}` : '#staging';
+    const url = qs ? `#home?${qs}` : '#home';
     if (location.hash !== url) {
       (nativeReplace || history.replaceState).call(history, null, '', url + location.search);
     }
@@ -138,7 +140,7 @@ const StagingTool = (() => {
   /* ── Hash guard ─────────────────────────────────────────
    *  Hosted tools rewrite the address bar when they run (e.g. advisor →
    *  #advisor?u=…). We intercept those and fold them back into a single
-   *  #staging?u=…&tool=… URL, so the shell owns the address bar.
+   *  #home?u=…&tool=… URL, so the shell owns the address bar.
    *
    *  The rewrite is also our success signal for the recent list: a tool
    *  only rewrites AFTER resolving the username, and the name it writes is
@@ -164,7 +166,7 @@ const StagingTool = (() => {
           const params = new URLSearchParams();
           if (u) params.set('u', u);
           params.set('tool', m[1]);
-          url = `#staging?${params.toString()}`;
+          url = `#home?${params.toString()}`;
         }
       }
       return nativeReplace(s, t, url);
@@ -301,7 +303,7 @@ const StagingTool = (() => {
     const params = new URLSearchParams();
     if (USERNAME_DRIVEN.has(state.active) && state.username) params.set('u', state.username);
     try { mod.activate(params); }
-    catch (e) { console.error(`[staging] activate ${state.active} failed`, e); }
+    catch (e) { console.error(`[home] activate ${state.active} failed`, e); }
   }
 
   function updateHint() {
@@ -355,11 +357,11 @@ const StagingTool = (() => {
     if (pick) { $username.value = pick.dataset.stgRecent; loadUsername(); }
   });
 
-  // Leaving staging: turn off the shared cache (clears it), hand the
-  // borrowed views back, and reset so the next entry re-warms cleanly.
+  // Leaving home: turn off the shared cache (clears it), hand the borrowed
+  // views back, and reset so the next entry re-warms cleanly.
   window.addEventListener('hashchange', () => {
     const view = location.hash.replace(/^#/, '').split('?')[0] || 'home';
-    if (view !== 'staging' && state.mounted) {
+    if (view !== 'home' && state.mounted) {
       removeHashGuard();
       setTrpcCache(false);
       restoreAll();
@@ -371,7 +373,7 @@ const StagingTool = (() => {
 
   return {
     /**
-     * Router entry. Supports #staging?tool=advisor&u=toie for deep links.
+     * Router entry. Supports #home?tool=advisor&u=toie for deep links.
      * @param {URLSearchParams} [params]
      */
     activate(params) {

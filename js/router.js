@@ -32,10 +32,10 @@
  * ═══════════════════════════════════════════════════════════════════ */
 (() => {
   const VALID = new Set([
-    'home', 'community', 'staging', 'mu', 'buddy-finder',
+    'home', 'community', 'gov', 'mu', 'buddy-finder',
     'advisor', 'clockin', 'buddy', 'battle-orders',
   ]);
-  const LANDING = new Set(['home', 'community', 'staging']);
+  const LANDING = new Set(['home', 'community', 'gov']);
   const DEFAULT_VIEW = 'home';
   const views = document.querySelectorAll('.view');
   const $backLink = document.querySelector('.back-link');
@@ -43,9 +43,9 @@
   
 
   const tools = {
-    home: null,
+    home: ToolkitShell,
     community: null,
-    staging: StagingTool,
+    gov: null,
     mu: MUTool,
     'buddy-finder': BuddyFinderTool,
     advisor: AdvisorTool,
@@ -77,6 +77,8 @@
     // Tab bar on the two landing pages, back-link inside tools.
     const isLanding = LANDING.has(name);
     $backLink.hidden = isLanding;
+    $backLink.setAttribute('href',
+      (name === 'buddy' || name === 'battle-orders') ? '#gov' : '#home');
     if ($tabs) {
       $tabs.hidden = !isLanding;
       $tabs.querySelectorAll('.tab').forEach(t =>

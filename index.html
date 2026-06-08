@@ -20,51 +20,57 @@
   </div>
   <nav class="tabs" id="tabs">
     <a class="tab" data-tab="home" href="#home">🇮🇪 Irish tools</a>
+    <a class="tab" data-tab="gov" href="#gov">🏛️ Irish Government</a>
     <a class="tab" data-tab="community" href="#community">🌍 Community tools</a>
-    <a class="tab" data-tab="staging" href="#staging">🧪 Staging</a>
   </nav>
 </header>
 
 <main>
-  <!-- ─── Home view (landing page) ──────────────────────────────── -->
+  <!-- ─── Home view: Unified Irish Toolkit ──────────────────────── -->
+  <!-- This is the former "staging" shell, now the default Irish-tools
+       landing. The title block is gone so it opens straight on the
+       username bar, like a home page. Powered by StagingTool. -->
   <section class="view" data-view="home">
+    <div class="stg">
+      <div class="stg-sticky">
+        <div class="stg-idbar">
+          <div class="stg-idbar-row">
+            <input id="stg-username" type="text" placeholder="Your War Era username" autocomplete="off" spellcheck="false" />
+            <button id="stg-load" class="btn-primary">Load</button>
+          </div>
+          <div class="stg-recent hidden" id="stg-recent"></div>
+          <div class="stg-idbar-hint" id="stg-idbar-hint"></div>
+        </div>
+        <div class="stg-nav-wrap" id="stg-nav-wrap">
+          <nav class="stg-nav hidden" id="stg-nav" role="tablist" aria-label="Tools">
+            <button class="stg-tab active" data-stg-tab="advisor" role="tab">🏭 <span>Migration</span></button>
+            <button class="stg-tab" data-stg-tab="clockin" role="tab">⏱ <span>Clock-In</span></button>
+            <button class="stg-tab" data-stg-tab="buddy-finder" role="tab">🤝 <span>Buddy Finder</span></button>
+            <button class="stg-tab" data-stg-tab="mu" role="tab">🔫 <span>Military Units</span></button>
+          </nav>
+        </div>
+      </div>
+
+      <div class="stg-empty" id="stg-empty">
+        <div class="stg-empty-icon">🇮🇪</div>
+        <p class="stg-empty-title">Enter your username above to load your tools.</p>
+        <p class="stg-empty-sub" id="stg-empty-sub">Warming up data in the background...</p>
+      </div>
+
+      <div class="stg-mount hidden" id="stg-mount"></div>
+    </div>
+  </section>
+
+  <!-- ─── Irish Government view (gated tools landing) ───────────── -->
+  <section class="view" data-view="gov">
     <div class="home">
       <p class="lede">
-        <em>Fáilte</em> A small collection of tools for Irish players of <a href="https://app.warera.io/" target="_blank" rel="noopener">War Era</a>.
+        🏛️ Restricted tools for Irish government ministers.
       </p>
+      <div class="community-note">
+        These tools are encrypted and require a minister password to open. If you're not a current minister, you won't be able to load them.
+      </div>
       <div class="tool-cards">
-        <a class="tool-card" href="#mu">
-          <div class="tool-card-icon">🔫</div>
-          <div class="tool-card-body">
-            <h3>Irish Military Units</h3>
-            <p>Every MU owned by an Irish citizen, in Ireland, with a majority of Irish citizens. Filter by whether they have open slots, and see who's already inside.</p>
-            <span class="tool-link">Open Irish MUs →</span>
-          </div>
-        </a>
-        <a class="tool-card" href="#buddy-finder">
-          <div class="tool-card-icon">🤝</div>
-          <div class="tool-card-body">
-            <h3>Buddy Finder</h3>
-            <p>Find a buddy for the Irish buddy system, or join the waiting list. Two citizens hire each other at minimum wage so both companies gain a worker without a real wage bill. Stonks!</p>
-            <span class="tool-link">Open Buddy Finder →</span>
-          </div>
-        </a>
-        <a class="tool-card" href="#advisor">
-          <div class="tool-card-icon">🏭</div>
-          <div class="tool-card-body">
-            <h3>Company Migration Advisor</h3>
-            <p>Enter your username and see whether each of your companies is in its best country, and how much extra output or take-home a move would buy you.</p>
-            <span class="tool-link">Open Migration Advisor →</span>
-          </div>
-        </a>
-        <a class="tool-card" href="#clockin">
-          <div class="tool-card-icon">⏱</div>
-          <div class="tool-card-body">
-            <h3>Employee Clock-In Monitor</h3>
-            <p>Enter your username to see when each of your workers last clocked in. 48h timeline with episode breakdowns of production points and ₿ paid.</p>
-            <span class="tool-link">Open Clock-In Monitor →</span>
-          </div>
-        </a>
         <a class="tool-card" href="#buddy">
           <div class="tool-card-icon">👀</div>
           <div class="tool-card-body">
@@ -94,71 +100,113 @@
       <div class="community-note">
         Heads up: these are third-party tools made by other players. They open in a new tab and aren't built or maintained here. Brilliant work by their authors all the same.
       </div>
-      <div class="tool-cards">
 
-        <a class="tool-card external" href="https://warerastats.io/tools" target="_blank" rel="noopener">
+      <h3 class="community-cat">⚙️ Economy</h3>
+      <div class="tool-cards">
+        <a class="tool-card external" href="https://economic-build-warera.netlify.app/" target="_blank" rel="noopener">
+          <div class="tool-card-icon">⚙️</div>
+          <div class="tool-card-body">
+            <h3>Economic Build Planner <span class="ext-icon">↗</span></h3>
+            <p>A simple but powerful planning tool for players who want to optimise their economy.</p>
+            <span class="tool-link">economic-build-warera.netlify.app →</span>
+          </div>
+        </a>
+        <a class="tool-card external" href="https://warerastats.io/" target="_blank" rel="noopener">
           <div class="tool-card-icon">📊</div>
           <div class="tool-card-body">
             <h3>WarEra Stats <span class="ext-icon">↗</span></h3>
-            <p>Factory upgrade calculator, production calculator, production profitability, and a stack of other number-crunchers.</p>
-            <span class="tool-link">warerastats.io/tools →</span>
+            <p>One of the most complete analytics platforms for War Era: economy optimisation, production tracking, combat planning, and country/level stats.</p>
+            <span class="tool-link">warerastats.io →</span>
           </div>
         </a>
-
-        <a class="tool-card external" href="https://arcana.warera.wiki/" target="_blank" rel="noopener">
-          <div class="tool-card-icon">🔮</div>
+        <a class="tool-card external" href="https://weed.wolverine.in.ua/dashboard/" target="_blank" rel="noopener">
+          <div class="tool-card-icon">🌿</div>
           <div class="tool-card-body">
-            <h3>Arcana <span class="ext-icon">↗</span></h3>
-            <p>Company analysis, country info, and many other utilities.</p>
-            <span class="tool-link">arcana.warera.wiki →</span>
+            <h3>Community Dashboard <span class="ext-icon">↗</span></h3>
+            <p>A community-built dashboard offering additional market tracking.</p>
+            <span class="tool-link">weed.wolverine.in.ua →</span>
           </div>
         </a>
+      </div>
 
-        <a class="tool-card external" href="https://intel.warera.wiki/" target="_blank" rel="noopener">
-          <div class="tool-card-icon">🛰️</div>
-          <div class="tool-card-body">
-            <h3>WarEra Intel <span class="ext-icon">↗</span></h3>
-            <p>Build planner plus economy and military intel dashboards.</p>
-            <span class="tool-link">intel.warera.wiki →</span>
-          </div>
-        </a>
-
-        <a class="tool-card external" href="https://war-era.vercel.app/" target="_blank" rel="noopener">
+      <h3 class="community-cat">⚔️ Combat</h3>
+      <div class="tool-cards">
+        <a class="tool-card external" href="https://battle-sim.warera.wiki/" target="_blank" rel="noopener">
           <div class="tool-card-icon">⚔️</div>
+          <div class="tool-card-body">
+            <h3>Battle Simulator <span class="ext-icon">↗</span></h3>
+            <p>A detailed combat simulator that lets you test different skill builds, gear setups, and buffs before entering fights.</p>
+            <span class="tool-link">battle-sim.warera.wiki →</span>
+          </div>
+        </a>
+        <a class="tool-card external" href="https://war-era.vercel.app/" target="_blank" rel="noopener">
+          <div class="tool-card-icon">🗡️</div>
           <div class="tool-card-body">
             <h3>War-Era <span class="ext-icon">↗</span></h3>
             <p>Combat simulator, economy info, and many other utilities.</p>
             <span class="tool-link">war-era.vercel.app →</span>
           </div>
         </a>
+      </div>
 
-        <a class="tool-card external" href="https://toolbox.warera.wiki/" target="_blank" rel="noopener">
-          <div class="tool-card-icon">🧰</div>
+      <h3 class="community-cat">🛰️ Intel &amp; Analytics</h3>
+      <div class="tool-cards">
+        <a class="tool-card external" href="https://intel.warera.wiki/" target="_blank" rel="noopener">
+          <div class="tool-card-icon">🛰️</div>
           <div class="tool-card-body">
-            <h3>WarEra Toolbox <span class="ext-icon">↗</span></h3>
-            <p>A grab-bag of tools, including a damage tracker showing which countries are attacking us.</p>
-            <span class="tool-link">toolbox.warera.wiki →</span>
+            <h3>War Era Intel Dashboard <span class="ext-icon">↗</span></h3>
+            <p>A strategic intelligence platform with live data on countries, units, and battles. Analyse military strength, track conflicts, and make informed wartime decisions.</p>
+            <span class="tool-link">intel.warera.wiki →</span>
           </div>
         </a>
-
-        <a class="tool-card external" href="https://spywarera.koyeb.app/" target="_blank" rel="noopener">
+        <a class="tool-card external" href="https://arcana.warera.wiki/" target="_blank" rel="noopener">
+          <div class="tool-card-icon">🧠</div>
+          <div class="tool-card-body">
+            <h3>Arcana Era <span class="ext-icon">↗</span></h3>
+            <p>An all-in-one intelligence and analytics hub: wage and economy calculators, damage simulations, battle tracking, and global country intelligence.</p>
+            <span class="tool-link">arcana.warera.wiki →</span>
+          </div>
+        </a>
+        <a class="tool-card external" href="https://spywarera.koyeb.app/hall-of-fame" target="_blank" rel="noopener">
           <div class="tool-card-icon">🕵️</div>
           <div class="tool-card-body">
-            <h3>SpyWarEra <span class="ext-icon">↗</span></h3>
-            <p>Country and MU insights, plus a level estimator that predicts when you'll hit your next skill levels.</p>
+            <h3>Spywarera <span class="ext-icon">↗</span></h3>
+            <p>Manage intelligence and strategy more effectively, with country and MU insights, a level estimator, and Hall of Fame records.</p>
             <span class="tool-link">spywarera.koyeb.app →</span>
           </div>
         </a>
+      </div>
 
+      <h3 class="community-cat">🤝 Diplomacy &amp; Politics</h3>
+      <div class="tool-cards">
         <a class="tool-card external" href="https://francescoparadiso.github.io/warera-tactical-diplomacy-os/" target="_blank" rel="noopener">
-          <div class="tool-card-icon">🗺️</div>
+          <div class="tool-card-icon">🤝</div>
           <div class="tool-card-body">
             <h3>Tactical Diplomacy OS <span class="ext-icon">↗</span></h3>
-            <p>Interactive diplomacy map. Click a country to highlight its allies and enemies.</p>
+            <p>A companion for diplomatic gameplay: organise negotiations, alliances, and strategy. Includes an interactive map to highlight a country's allies and enemies.</p>
             <span class="tool-link">francescoparadiso.github.io →</span>
           </div>
         </a>
+        <a class="tool-card external" href="https://francescoparadiso.github.io/PoliticalView/" target="_blank" rel="noopener">
+          <div class="tool-card-icon">🗳️</div>
+          <div class="tool-card-body">
+            <h3>PoliticalView <span class="ext-icon">↗</span></h3>
+            <p>A clean, practical tool for understanding political dynamics, elections, and party influence.</p>
+            <span class="tool-link">francescoparadiso.github.io →</span>
+          </div>
+        </a>
+      </div>
 
+      <h3 class="community-cat">🧰 Utility &amp; Learning</h3>
+      <div class="tool-cards">
+        <a class="tool-card external" href="https://toolbox.warera.wiki/" target="_blank" rel="noopener">
+          <div class="tool-card-icon">🧰</div>
+          <div class="tool-card-body">
+            <h3>War Era Toolbox <span class="ext-icon">↗</span></h3>
+            <p>A general-purpose utility hub bringing together helpful everyday features, including a damage tracker showing which countries are attacking us.</p>
+            <span class="tool-link">toolbox.warera.wiki →</span>
+          </div>
+        </a>
         <a class="tool-card external" href="https://lundgrenwarera.github.io/warera-writer/" target="_blank" rel="noopener">
           <div class="tool-card-icon">✍️</div>
           <div class="tool-card-body">
@@ -167,7 +215,6 @@
             <span class="tool-link">lundgrenwarera.github.io →</span>
           </div>
         </a>
-
         <a class="tool-card external" href="https://lundgrenwarera.github.io/warera-coach/" target="_blank" rel="noopener">
           <div class="tool-card-icon">🎓</div>
           <div class="tool-card-body">
@@ -176,45 +223,8 @@
             <span class="tool-link">lundgrenwarera.github.io →</span>
           </div>
         </a>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- ─── Staging view: Unified Irish Toolkit (prototype) ───────── -->
-  <section class="view" data-view="staging">
-    <div class="stg">
-      <div class="stg-head">
-        <h2><span>🧪</span> Unified Irish Toolkit <span class="lock-pill" title="In development">prototype</span></h2>
-        <p>Load your username once, then move between tools without going back to the home screen.</p>
       </div>
 
-      <div class="stg-sticky">
-        <div class="stg-idbar">
-          <div class="stg-idbar-row">
-            <input id="stg-username" type="text" placeholder="Your War Era username" autocomplete="off" spellcheck="false" />
-            <button id="stg-load" class="btn-primary">Load</button>
-          </div>
-          <div class="stg-recent hidden" id="stg-recent"></div>
-          <div class="stg-idbar-hint" id="stg-idbar-hint"></div>
-        </div>
-        <div class="stg-nav-wrap" id="stg-nav-wrap">
-          <nav class="stg-nav hidden" id="stg-nav" role="tablist" aria-label="Tools">
-            <button class="stg-tab active" data-stg-tab="advisor" role="tab">🏭 <span>Migration</span></button>
-            <button class="stg-tab" data-stg-tab="clockin" role="tab">⏱ <span>Clock-In</span></button>
-            <button class="stg-tab" data-stg-tab="buddy-finder" role="tab">🤝 <span>Buddy Finder</span></button>
-            <button class="stg-tab" data-stg-tab="mu" role="tab">🔫 <span>Military Units</span></button>
-          </nav>
-        </div>
-      </div>
-
-      <div class="stg-empty" id="stg-empty">
-        <div class="stg-empty-icon">🇮🇪</div>
-        <p class="stg-empty-title">Enter your username above to load your tools.</p>
-        <p class="stg-empty-sub" id="stg-empty-sub">Warming up data in the background...</p>
-      </div>
-
-      <div class="stg-mount hidden" id="stg-mount"></div>
     </div>
   </section>
 
@@ -676,7 +686,7 @@
 <script src="js/clockin.js"></script>
 <script src="js/buddy.js"></script>
 <script src="js/battle-orders.js"></script>
-<script src="js/staging.js"></script>
+<script src="js/toolkit.js"></script>
 <script src="js/router.js"></script>
 </body>
 </html>

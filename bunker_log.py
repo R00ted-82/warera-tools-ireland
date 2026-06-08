@@ -229,16 +229,16 @@ def build_current_state(regions, id_to_code):
         out[rid] = {
             "name":                 region.get("name"),
             "code":                 region.get("code"),
-            "country_code":         controller,           # who controls it NOW
+            "is_capital":           bool(region.get("isCapital")),
+            "main_city":            region.get("mainCity"),
+            "country_code":         controller,
             "country_id":           country_id,
             "initial_country_id":   region.get("initialCountry"),
-            "initial_country_code": core_code,            # who it belongs to
+            "initial_country_code": core_code,
             "active_battle_id":     extract_active_battle_id(region),
             "bunker":               extract_bunker_state(region),
             "resistance":           extract_resistance_state(region),
             "observed_at":          now,
-            # "bunker_upgrade" is added by enrich_with_upgrades() for
-            # pending/disabled bunkers. Absent otherwise.
         }
     return out
 

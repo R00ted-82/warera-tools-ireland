@@ -286,6 +286,9 @@
   }
   function clabel(cc){ return flag(cc) + " " + cname(cc); }
   function gameUrl(rid){ return GAME_BASE + "/region/" + rid; }
+  function capStar(r){
+    return r.is_capital ? ' <span title="Capital">&#11088;</span>' : "";
+  }
 
   function parseT(s){ if(!s) return null; var d = new Date(s); return isNaN(d) ? null : d; }
   function fmtLocal(s){
@@ -424,7 +427,7 @@
     return [
       '<div class="rcard" data-rid="', r.rid, '">',
         '<div class="top"><div>',
-          '<div class="rname">', esc(r.name || r.code || r.rid), '</div>',
+          '<div class="rname">', esc(r.name || r.code || r.rid), capStar(r), '</div>',
           '<div class="rcode">', esc(r.code || ""), '</div>',
         '</div>',
         '<a class="rgame" href="', gameUrl(r.rid), '" target="_blank" rel="noopener" title="Open in War Era">&#8599;</a>',
@@ -616,8 +619,9 @@
     var occTag = occupied(r) ? ' <span class="occ-pill">occupied</span>' : "";
     var html = [
       '<div class="mhead"><button class="close" id="mclose">&times;</button>',
-        '<h2>', esc(r.name || r.code), '</h2>',
-        '<div class="mc-code">', esc(r.code || ""), '</div>',
+        '<h2>', esc(r.name || r.code), capStar(r), '</h2>',
+        '<div class="mc-code">', esc(r.code || ""),
+          (r.main_city ? " &middot; " + esc(r.main_city) : ""), '</div>',
         '<div class="mc-ctry">',
           '<span>Owner: ', clabel(r.initial_country_code), '</span>',
           '<span>Holder: ', clabel(r.country_code), occTag, '</span>',

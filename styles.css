@@ -1424,3 +1424,68 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
   border-top: 1px solid var(--border);
   font-size: 12px; color: var(--muted); line-height: 1.5;
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+ *  STAGING: Unified Irish Toolkit (prototype)
+ *  Reuses existing vars + the .lock-pill / .btn-primary patterns.
+ * ═══════════════════════════════════════════════════════════════════ */
+.stg { max-width: 1400px; margin: 0 auto; }
+.stg-head { margin-bottom: 12px; }
+.stg-head h2 {
+  margin: 0; font-size: 20px; font-weight: 600;
+  display: flex; align-items: center; gap: 10px;
+}
+.stg-head p { margin: 6px 0 0; color: var(--muted); font-size: 13px; max-width: 60ch; }
+.stg-head .lock-pill {
+  background: rgba(251, 191, 36, 0.12); color: var(--warn);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  padding: 1px 8px; border-radius: 999px;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+}
+
+/* idbar + nav stick together at the top of the scroll region */
+.stg-sticky {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--bg);
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+.stg-idbar { padding: 10px 0 12px; }
+.stg-idbar-row { display: flex; gap: 8px; }
+.stg-idbar-row input { flex: 1; min-width: 0; padding: 9px 12px; font-size: 14px; }
+.stg-idbar-row button { padding: 9px 18px; font-size: 13px; white-space: nowrap; }
+.stg-idbar-hint { color: var(--muted); font-size: 12px; margin-top: 8px; line-height: 1.5; }
+.stg-idbar-hint strong { color: var(--text); }
+
+.stg-nav {
+  display: flex; gap: 6px; overflow-x: auto;
+  padding: 4px 0 12px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.stg-nav::-webkit-scrollbar { display: none; }
+.stg-tab {
+  flex: 0 0 auto;
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 14px; border-radius: 999px;
+  background: var(--panel); border: 1px solid var(--border);
+  color: var(--muted); font-size: 13px; font-weight: 500;
+  cursor: pointer; white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.stg-tab:hover { background: var(--panel-2); color: var(--text); }
+.stg-tab.active {
+  background: var(--accent-dim); border-color: var(--accent); color: var(--accent);
+  font-weight: 600;
+}
+
+/* Hosted tool views render inside the mount (override .view{display:none}). */
+.stg-mount > .view { display: block; }
+/* Tool chrome the shell hides; staging.js toggles this. */
+.stg-hide { display: none !important; }
+
+@media (max-width: 720px) {
+  .stg-head h2 { font-size: 18px; }
+  .stg-tab span { font-size: 12.5px; }
+}

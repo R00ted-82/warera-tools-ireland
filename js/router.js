@@ -35,15 +35,17 @@
     'home', 'community', 'mu', 'buddy-finder',
     'advisor', 'clockin', 'buddy', 'battle-orders',
   ]);
-  const LANDING = new Set(['home', 'community']);
+  const LANDING = new Set(['home', 'community', 'staging']);
   const DEFAULT_VIEW = 'home';
   const views = document.querySelectorAll('.view');
   const $backLink = document.querySelector('.back-link');
   const $tabs = document.getElementById('tabs');
+  
 
   const tools = {
     home: null,
     community: null,
+    staging: StagingTool,
     mu: MUTool,
     'buddy-finder': BuddyFinderTool,
     advisor: AdvisorTool,

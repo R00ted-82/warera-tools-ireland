@@ -21,6 +21,7 @@
   <nav class="tabs" id="tabs">
     <a class="tab" data-tab="home" href="#home">🇮🇪 Irish tools</a>
     <a class="tab" data-tab="community" href="#community">🌍 Community tools</a>
+    <a class="tab" data-tab="staging" href="#staging">🧪 Staging</a>
   </nav>
 </header>
 
@@ -179,6 +180,36 @@
       </div>
     </div>
   </section>
+
+  <!-- ─── Staging view: Unified Irish Toolkit (prototype) ───────── -->
+  <section class="view" data-view="staging">
+    <div class="stg">
+      <div class="stg-head">
+        <h2><span>🧪</span> Unified Irish Toolkit <span class="lock-pill" title="In development">prototype</span></h2>
+        <p>Load your username once, then move between tools without going back to the home screen.</p>
+      </div>
+
+      <div class="stg-sticky">
+        <div class="stg-idbar">
+          <div class="stg-idbar-row">
+            <input id="stg-username" type="text" placeholder="Your War Era username" autocomplete="off" spellcheck="false" />
+            <button id="stg-load" class="btn-primary">Load</button>
+          </div>
+          <div class="stg-idbar-hint" id="stg-idbar-hint"></div>
+        </div>
+        <nav class="stg-nav" id="stg-nav" role="tablist" aria-label="Tools">
+          <button class="stg-tab active" data-stg-tab="mu" role="tab">🔫 <span>Military Units</span></button>
+          <button class="stg-tab" data-stg-tab="buddy-finder" role="tab">🤝 <span>Buddy Finder</span></button>
+          <button class="stg-tab" data-stg-tab="advisor" role="tab">🏭 <span>Migration</span></button>
+          <button class="stg-tab" data-stg-tab="clockin" role="tab">⏱ <span>Clock-In</span></button>
+        </nav>
+      </div>
+
+      <div class="stg-mount" id="stg-mount"></div>
+    </div>
+  </section>
+
+  
 
   <!-- ─── Irish Military Units view ─────────────────────────────── -->
   <section class="view" data-view="mu">
@@ -636,6 +667,7 @@
 <script src="js/clockin.js"></script>
 <script src="js/buddy.js"></script>
 <script src="js/battle-orders.js"></script>
+<script src="js/staging.js"></script>
 <script src="js/router.js"></script>
 </body>
 </html>

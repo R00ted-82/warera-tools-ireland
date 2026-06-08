@@ -1553,3 +1553,195 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
   border-bottom: 1px solid var(--border);
 }
 .community-cat:first-of-type { margin-top: 20px; }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+ *  BEER — Bunker Monitor (encrypted tool)
+ *  Every selector scoped under #beer-content so the bunker's bespoke
+ *  classes (.rcard, .pill, .hist, .tl, …) never collide with the rest
+ *  of the portal. The bunker's own :root is dropped; its variable names
+ *  are remapped here onto the umbrella tokens (structural greys) while
+ *  keeping the Irish green/orange + the data-viz accents it relies on.
+ *  Page chrome from the standalone (header/footer/.wrap) is gone — the
+ *  umbrella .tool-header supplies the title, and the payload injects its
+ *  body straight into #beer-content.
+ * ═══════════════════════════════════════════════════════════════════ */
+#beer-content {
+  --bg: #0b0d10;
+  --bg2: #14181d;
+  --card: #14181d;
+  --card2: #1a1f25;
+  --line: #262d36;
+  --line2: #374253;
+  --txt: #e6e9ee;
+  --muted: #8b94a3;
+  --faint: #6b7785;
+  --green: #009A49;
+  --green2: #4ade80;
+  --orange: #FF7900;
+  --orange2: #fb923c;
+  --accent: #4ade80;
+  --warn: #fbbf24;
+  --danger: #f87171;
+  --blue: #60a5fa;
+  --teal: #2dd4bf;
+  --pink: #f472b6;
+  --purple: #a78bfa;
+  --indigo: #818cf8;
+  --crimson: #dc2626;
+  --gray: #9ca3af;
+  --radius: 12px;
+}
+
+#beer-content a { color: var(--green2); text-decoration: none; }
+
+/* Controls bar. The standalone pinned this sticky to the viewport top;
+ * inside the portal that would slide under the page header, so it's a
+ * plain block here. */
+#beer-content .controls {
+  background: var(--bg);
+  padding: 0 0 12px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 16px;
+}
+#beer-content .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+#beer-content .search {
+  flex: 1 1 260px; min-width: 220px; display: flex; align-items: center; gap: 8px;
+  background: var(--card); border: 1px solid var(--line2); border-radius: 10px; padding: 0 12px;
+}
+#beer-content .search input {
+  flex: 1; background: none; border: 0; color: var(--txt); font-size: 15px; padding: 11px 0; outline: none;
+  min-width: 0;
+}
+#beer-content .search .mag { color: var(--faint); }
+#beer-content select, #beer-content .chip {
+  background: var(--card); border: 1px solid var(--line2); color: var(--txt);
+  border-radius: 10px; padding: 10px 12px; font-size: 14px; cursor: pointer;
+}
+#beer-content .country-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+#beer-content .cc-chip {
+  display: inline-flex; align-items: center; gap: 6px; background: var(--card2);
+  border: 1px solid var(--line2); border-radius: 999px; padding: 4px 6px 4px 11px; font-size: 13px;
+}
+#beer-content .cc-chip button {
+  background: none; border: 0; color: var(--faint); cursor: pointer; font-size: 15px; line-height: 1; padding: 0 2px;
+}
+#beer-content .cc-chip button:hover { color: var(--danger); }
+#beer-content .toggles { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+#beer-content .chip { display: inline-flex; align-items: center; gap: 7px; user-select: none; font-size: 13px; }
+#beer-content .chip input { accent-color: var(--green2); width: 15px; height: 15px; margin: 0; }
+#beer-content .chip.seg { padding: 0; overflow: hidden; }
+#beer-content .chip.seg button {
+  background: none; border: 0; color: var(--muted); padding: 8px 12px; cursor: pointer; font-size: 13px;
+}
+#beer-content .chip.seg button.on { background: var(--green); color: #fff; }
+
+#beer-content .panel-title {
+  display: flex; align-items: center; gap: 8px; margin: 22px 0 10px; font-size: 13px;
+  text-transform: uppercase; letter-spacing: .6px; color: var(--faint); font-weight: 600;
+}
+#beer-content .panel-title .count { color: var(--muted); font-weight: 500; text-transform: none; letter-spacing: 0; }
+
+#beer-content .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+#beer-content .rcard {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 14px; cursor: pointer; transition: border-color .12s, transform .12s;
+}
+#beer-content .rcard:hover { border-color: var(--line2); transform: translateY(-1px); }
+#beer-content .rcard .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+#beer-content .rname { font-weight: 600; font-size: 15px; }
+#beer-content .rcode { color: var(--faint); font-size: 12px; margin-top: 1px; font-family: ui-monospace, monospace; }
+#beer-content .rgame { color: var(--faint); font-size: 16px; padding: 2px 4px; flex: 0 0 auto; line-height: 1; }
+#beer-content .rgame:hover { color: var(--green2); }
+#beer-content .ctry { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin-top: 8px; font-size: 13px; color: var(--muted); }
+#beer-content .ctry .arrow { color: var(--faint); }
+#beer-content .occ-pill {
+  font-size: 11px; color: var(--orange2); border: 1px solid var(--orange);
+  border-radius: 6px; padding: 1px 6px; margin-left: 2px;
+}
+#beer-content .status-line { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+#beer-content .pill {
+  font-size: 12px; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line2);
+  color: var(--muted); white-space: nowrap;
+}
+#beer-content .pill.on { color: var(--green2); border-color: #1f5132; background: #0f2419; }
+#beer-content .pill.off { color: var(--gray); border-color: #3a3f47; }
+#beer-content .pill.dis { color: var(--warn); border-color: #5a4a14; background: #241f0c; }
+#beer-content .pill.pend { color: var(--indigo); border-color: #3a3f6b; background: #161a2e; }
+#beer-content .pill.none { color: var(--faint); }
+
+#beer-content .res { margin-top: 11px; }
+#beer-content .res-bar { height: 6px; border-radius: 4px; background: var(--line); overflow: hidden; }
+#beer-content .res-bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--orange), var(--crimson)); }
+#beer-content .res-bar.owned > i { background: linear-gradient(90deg, #2f6b46, var(--green2)); }
+#beer-content .res-meta { display: flex; justify-content: space-between; color: var(--faint); font-size: 11px; margin-top: 4px; }
+#beer-content .evcount { color: var(--faint); font-size: 12px; margin-top: 10px; }
+
+#beer-content .empty {
+  color: var(--muted); text-align: center; padding: 40px 16px;
+  border: 1px dashed var(--line2); border-radius: var(--radius);
+}
+#beer-content .empty .big { font-size: 30px; margin-bottom: 8px; }
+
+#beer-content .upcoming .ucard {
+  background: var(--card2); border: 1px solid var(--line2); border-radius: 10px;
+  padding: 11px 13px; display: flex; justify-content: space-between; align-items: center; gap: 10px; cursor: pointer;
+}
+#beer-content .upcoming .ucard:hover { border-color: var(--indigo); }
+#beer-content .ucard .when { text-align: right; white-space: nowrap; }
+#beer-content .ucard .when .abs { font-size: 12px; color: var(--muted); }
+#beer-content .ucard .when .rel { font-size: 13px; color: var(--indigo); font-weight: 600; }
+
+#beer-content .ov {
+  position: fixed; inset: 0; background: rgba(4,7,11,.72); z-index: 50; display: none;
+  align-items: flex-start; justify-content: center; padding: 24px 14px; overflow: auto;
+}
+#beer-content .ov.show { display: flex; }
+#beer-content .modal {
+  background: var(--bg2); border: 1px solid var(--line2); border-radius: 16px;
+  width: 100%; max-width: 760px; padding: 0; overflow: hidden;
+}
+#beer-content .modal .mhead { padding: 18px 20px; border-bottom: 1px solid var(--line); position: relative; }
+#beer-content .modal .mhead .close {
+  position: absolute; top: 14px; right: 14px; background: var(--card); border: 1px solid var(--line2);
+  color: var(--muted); border-radius: 8px; width: 30px; height: 30px; cursor: pointer; font-size: 16px; line-height: 1;
+}
+#beer-content .modal h2 { margin: 0; font-size: 19px; }
+#beer-content .mbody { padding: 18px 20px; }
+#beer-content .mc-code { color: var(--faint); font-family: ui-monospace, monospace; font-size: 12px; margin-top: 2px; }
+#beer-content .mc-ctry { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: var(--muted); font-size: 14px; }
+#beer-content .mgame { display: inline-block; margin-top: 10px; font-size: 13px; }
+#beer-content .next-act { margin-top: 14px; background: #13182b; border: 1px solid #2c335c; border-radius: 10px; padding: 12px 14px; }
+#beer-content .next-act .lbl { color: var(--indigo); font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+#beer-content .next-act .v { font-size: 16px; margin-top: 3px; }
+#beer-content .next-act .rel { color: var(--muted); font-size: 13px; margin-top: 2px; }
+
+#beer-content .sec { margin-top: 22px; }
+#beer-content .sec h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .6px; color: var(--faint); margin: 0 0 10px; }
+#beer-content .hist { display: flex; align-items: flex-end; gap: 2px; height: 84px; padding-top: 6px; }
+#beer-content .hist .b { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; gap: 1px; min-width: 0; }
+#beer-content .hist .b .seg { width: 100%; border-radius: 1px; }
+#beer-content .hist .b .on { background: var(--green2); }
+#beer-content .hist .b .off { background: var(--danger); }
+#beer-content .hist .b .other { background: var(--blue); }
+#beer-content .hist-ax { display: flex; gap: 2px; margin-top: 4px; }
+#beer-content .hist-ax span { flex: 1; text-align: center; color: var(--faint); font-size: 9px; min-width: 0; }
+#beer-content .hist-leg { display: flex; gap: 14px; margin-top: 10px; font-size: 12px; color: var(--muted); }
+#beer-content .hist-leg i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-right: 5px; }
+
+#beer-content .tl { display: flex; flex-direction: column; }
+#beer-content .tl .ev { display: flex; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+#beer-content .tl .ev:first-child { border-top: 0; }
+#beer-content .tl .dot { width: 9px; height: 9px; border-radius: 50%; margin-top: 6px; flex: 0 0 auto; }
+#beer-content .tl .ebody { flex: 1; min-width: 0; }
+#beer-content .tl .etop { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+#beer-content .tl .etype { font-weight: 600; font-size: 14px; }
+#beer-content .tl .etime { color: var(--faint); font-size: 12px; white-space: nowrap; }
+#beer-content .tl .edesc { color: var(--muted); font-size: 13px; margin-top: 2px; }
+#beer-content .tl .ectry { color: var(--faint); font-size: 12px; margin-top: 3px; }
+
+#beer-content .loading { text-align: center; color: var(--muted); padding: 50px; }
+#beer-content .hidden { display: none !important; }
+
+/* Last-updated note rendered into the tool-header controls slot. */
+#beer-controls .beer-updated { color: var(--muted); font-size: 12px; }

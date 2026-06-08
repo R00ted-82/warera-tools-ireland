@@ -33,9 +33,9 @@
 (() => {
   const VALID = new Set([
     'home', 'community', 'gov', 'mu', 'buddy-finder',
-    'advisor', 'clockin', 'buddy', 'battle-orders',
+    'advisor', 'clockin', 'buddy', 'battle-orders',  'beer',
   ]);
-  const LANDING = new Set(['home', 'community', 'gov']);
+  const LANDING = new Set(['home', 'community', 'gov', 'beer']);
   const DEFAULT_VIEW = 'home';
   const views = document.querySelectorAll('.view');
   const $backLink = document.querySelector('.back-link');
@@ -52,6 +52,7 @@
     clockin: ClockInTool,
     buddy: BuddySystemGate,
     'battle-orders': BattleOrdersGate,
+    beer: BeerGate,
   };
 
   function parseRoute() {

@@ -22,6 +22,7 @@
     <a class="tab" data-tab="home" href="#home">🇮🇪 Irish tools</a>
     <a class="tab" data-tab="gov" href="#gov">🏛️ Irish Government</a>
     <a class="tab" data-tab="community" href="#community">🌍 Community tools</a>
+    <a class="tab" data-tab="beer" href="#beer">🍺 BEER</a>
   </nav>
 </header>
 
@@ -672,6 +673,33 @@
 
     <div id="bo-content"><!-- Decrypted BO HTML lands here. --></div>
   </section>
+
+  <!-- ─── BEER view (encrypted; password required) ──────────────── -->
+  <section class="view" data-view="beer">
+    <div class="tool-header">
+      <div class="title-block">
+        <h2><span>🍺</span> BEER</h2>
+        <p>Bunker Monitor. Search any region for its bunker history, owner, controller, and scheduled activations. Restricted access.</p>
+      </div>
+      <div class="controls" id="beer-controls">
+        <!-- Refresh / last-updated injected here after unlock. -->
+      </div>
+    </div>
+
+    <div id="beer-gate" class="bo-gate">
+      <div class="lock-icon">🔒</div>
+      <h3>Restricted access</h3>
+      <p>This tool is encrypted. Enter the password to decrypt and load it.</p>
+      <form id="beer-gate-form" class="bo-gate-form">
+        <input id="beer-gate-pw" type="password" placeholder="Password" autocomplete="current-password" />
+        <button id="beer-gate-submit" type="submit" class="btn-primary">Unlock</button>
+        <div id="beer-gate-error" class="bo-gate-error" aria-live="polite"></div>
+      </form>
+    </div>
+
+    <div id="beer-content"><!-- Decrypted Bunker Monitor lands here. --></div>
+  </section>
+
 </main>
 
 <footer>
@@ -686,6 +714,7 @@
 <script src="js/clockin.js"></script>
 <script src="js/buddy.js"></script>
 <script src="js/battle-orders.js"></script>
+<script src="js/beer.js"></script>
 <script src="js/toolkit.js"></script>
 <script src="js/router.js"></script>
 </body>

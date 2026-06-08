@@ -1745,3 +1745,7 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
 
 /* Last-updated note rendered into the tool-header controls slot. */
 #beer-controls .beer-updated { color: var(--muted); font-size: 12px; }
+
+/* Push the BEER tab to the far right of the nav. */
+#tabs { display: flex; }
+#tabs .tab[data-tab="beer"] { margin-left: auto; }

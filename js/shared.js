@@ -81,7 +81,86 @@ function isTransientError(err) {
   return /http 50[234]|no available server|timed? ?out|fetch failed|network ?error/.test(msg);
 }
 
-async function trpc(endpoint, input = {}, { retry = false, timeoutMs = null } = {}, attempt = 1) {
+// async function trpc(endpoint, input = {}, { retry = false, timeoutMs = null } = {}, attempt = 1) {
+//   const MAX_ATTEMPTS = retry ? 3 : 1;
+//   const url = `${API_BASE}/${endpoint}?input=${encodeURIComponent(JSON.stringify(input))}`;
+//   const ctrl = timeoutMs ? new AbortController() : null;
+//   const t = timeoutMs ? setTimeout(() => ctrl.abort(), timeoutMs) : null;
+//   try {
+//     const res = await fetch(url, ctrl ? { signal: ctrl.signal } : undefined);
+//     if (!res.ok) {
+//       const err = new Error(`${endpoint} → HTTP ${res.status}`);
+//       err.status = res.status;
+//       throw err;
+//     }
+//     const json = await res.json();
+//     if (json && !Array.isArray(json) && json.error) {
+//       const msg = json.error.message || json.error.data?.message || 'unknown error';
+//       throw new Error(`${endpoint} → ${String(msg).slice(0, 120)}`);
+//     }
+//     const item = Array.isArray(json) ? json[0] : json;
+//     return item?.result?.data ?? item;
+//   } catch (e) {
+//     if (e.name === 'AbortError') throw new Error(`${endpoint} → timed out`);
+//     if (attempt < MAX_ATTEMPTS && isTransientError(e)) {
+//       await new Promise(r => setTimeout(r, 400 * attempt));
+//       return trpc(endpoint, input, { retry, timeoutMs }, attempt + 1);
+//     }
+//     throw e;
+//   } finally {
+//     if (t) clearTimeout(t);
+//   }
+// }
+
+/* ── Session request cache ──────────────────────────────────────────
+ *  In-flight dedup is always on: concurrent identical requests share one
+ *  promise (pure win, no staleness). The resolved cache, serving a past
+ *  value for idempotent endpoints with a TTL, is OFF by default so the
+ *  live tools behave exactly as before (Refresh stays fresh). The staging
+ *  shell switches it on via setTrpcCache(true) to harmonise calls across
+ *  tools and let its background prefetch warm data before a username is
+ *  typed, then switches it off (clearing it) on leave. Volatile endpoints
+ *  are never resolved-cached.
+ */
+const TRPC_CACHE_TTL_MS = 90_000;
+const TRPC_VOLATILE = new Set([
+  'transaction.getPaginatedTransactions',
+  'worker.getWorkers',
+]);
+let _trpcCacheOn = false;
+const _trpcInflight = new Map();
+const _trpcResolved = new Map();
+
+function setTrpcCache(on) {
+  _trpcCacheOn = !!on;
+  if (!on) _trpcResolved.clear();
+}
+function _trpcResolvable(endpoint) {
+  return _trpcCacheOn && !TRPC_VOLATILE.has(endpoint);
+}
+
+function trpc(endpoint, input = {}, opts = {}) {
+  const key = `${endpoint}|${JSON.stringify(input ?? {})}`;
+
+  // Serve a fresh-enough resolved value when caching is on for this endpoint.
+  if (_trpcResolvable(endpoint) && !opts.fresh) {
+    const hit = _trpcResolved.get(key);
+    if (hit && Date.now() - hit.ts < TRPC_CACHE_TTL_MS) return Promise.resolve(hit.value);
+  }
+  // Share an identical request already in flight.
+  if (_trpcInflight.has(key)) return _trpcInflight.get(key);
+
+  const p = _trpcExec(endpoint, input, opts, 1)
+    .then(value => {
+      if (_trpcResolvable(endpoint)) _trpcResolved.set(key, { value, ts: Date.now() });
+      return value;
+    })
+    .finally(() => { _trpcInflight.delete(key); });
+  _trpcInflight.set(key, p);
+  return p;
+}
+
+async function _trpcExec(endpoint, input = {}, { retry = false, timeoutMs = null } = {}, attempt = 1) {
   const MAX_ATTEMPTS = retry ? 3 : 1;
   const url = `${API_BASE}/${endpoint}?input=${encodeURIComponent(JSON.stringify(input))}`;
   const ctrl = timeoutMs ? new AbortController() : null;
@@ -104,7 +183,7 @@ async function trpc(endpoint, input = {}, { retry = false, timeoutMs = null } = 
     if (e.name === 'AbortError') throw new Error(`${endpoint} → timed out`);
     if (attempt < MAX_ATTEMPTS && isTransientError(e)) {
       await new Promise(r => setTimeout(r, 400 * attempt));
-      return trpc(endpoint, input, { retry, timeoutMs }, attempt + 1);
+      return _trpcExec(endpoint, input, { retry, timeoutMs }, attempt + 1);
     }
     throw e;
   } finally {

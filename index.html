@@ -195,9 +195,10 @@
             <input id="stg-username" type="text" placeholder="Your War Era username" autocomplete="off" spellcheck="false" />
             <button id="stg-load" class="btn-primary">Load</button>
           </div>
+          <div class="stg-recent hidden" id="stg-recent"></div>
           <div class="stg-idbar-hint" id="stg-idbar-hint"></div>
         </div>
-        <nav class="stg-nav" id="stg-nav" role="tablist" aria-label="Tools">
+        <nav class="stg-nav hidden" id="stg-nav" role="tablist" aria-label="Tools">
           <button class="stg-tab active" data-stg-tab="mu" role="tab">🔫 <span>Military Units</span></button>
           <button class="stg-tab" data-stg-tab="buddy-finder" role="tab">🤝 <span>Buddy Finder</span></button>
           <button class="stg-tab" data-stg-tab="advisor" role="tab">🏭 <span>Migration</span></button>
@@ -205,11 +206,17 @@
         </nav>
       </div>
 
-      <div class="stg-mount" id="stg-mount"></div>
+      <div class="stg-empty" id="stg-empty">
+        <div class="stg-empty-icon">🇮🇪</div>
+        <p class="stg-empty-title">Enter your username above to load your tools.</p>
+        <p class="stg-empty-sub" id="stg-empty-sub">Warming up data in the background...</p>
+      </div>
+
+      <div class="stg-mount hidden" id="stg-mount"></div>
     </div>
   </section>
 
-  
+
 
   <!-- ─── Irish Military Units view ─────────────────────────────── -->
   <section class="view" data-view="mu">

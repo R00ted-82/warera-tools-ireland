@@ -1489,3 +1489,34 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
   .stg-head h2 { font-size: 18px; }
   .stg-tab span { font-size: 12.5px; }
 }
+
+/* Gated regions, hidden until a username is entered */
+.stg-nav.hidden, .stg-mount.hidden, .stg-empty.hidden, .stg-recent.hidden { display: none; }
+
+/* Empty / waiting state */
+.stg-empty { text-align: center; padding: 56px 20px; color: var(--muted); }
+.stg-empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.85; }
+.stg-empty-title { margin: 0 0 6px; font-size: 15px; color: var(--text); font-weight: 600; }
+.stg-empty-sub { margin: 0; font-size: 12.5px; }
+.stg-empty-sub.ready { color: var(--accent); }
+
+/* Recent-username quick-pick chips */
+.stg-recent { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.stg-recent-label { color: var(--muted); font-size: 12px; }
+.stg-recent-chip {
+  display: inline-flex; align-items: center;
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 999px; overflow: hidden;
+}
+.stg-recent-pick {
+  background: none; border: none; border-radius: 0;
+  color: var(--text); font-size: 12px; padding: 4px 4px 4px 11px; cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+.stg-recent-pick:hover { background: var(--panel-2); color: var(--accent); }
+.stg-recent-del {
+  background: none; border: none; border-radius: 0;
+  color: var(--muted); font-size: 14px; line-height: 1;
+  padding: 4px 9px 4px 5px; cursor: pointer;
+}
+.stg-recent-del:hover { color: var(--danger); background: var(--panel-2); }

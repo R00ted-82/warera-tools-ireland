@@ -32,7 +32,7 @@
  * ═══════════════════════════════════════════════════════════════════ */
 (() => {
   const VALID = new Set([
-    'home', 'community', 'mu', 'buddy-finder',
+    'home', 'community', 'staging', 'mu', 'buddy-finder',
     'advisor', 'clockin', 'buddy', 'battle-orders',
   ]);
   const LANDING = new Set(['home', 'community', 'staging']);

@@ -8,7 +8,7 @@ const MUTool = (() => {
   const REQUIRE_IRISH_COUNTRY = true;
   const MU_COUNTRY_FIELDS = ['countryId', 'country', 'nationalityId', 'nationality'];
   const EXCLUDED_MU_IDS = [
-    '6955c186b1fc6d0b7b00fadc',
+    '6955c186b1fc6d0b7b00fadc', '68a0d5a24994cb499659c1a6', '69ad97c8d957cd6e8a77b15d',
   ];
 
   const FILTER_STATES = ['all', 'open', 'full'];

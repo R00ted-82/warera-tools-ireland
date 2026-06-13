@@ -1761,3 +1761,85 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
   #tabs::-webkit-scrollbar { display: none; }
   #tabs .tab { flex: 0 0 auto; white-space: nowrap; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+ *  WEALTH MONITOR (#wealth) — see js/wealth.js
+ * ═══════════════════════════════════════════════════════════════════ */
+
+/* The result cards start hidden and are revealed on lookup. There is no
+   global .hidden utility (each component scopes its own), so scope one
+   here for the wealth-monitor cards. */
+#wm-stats-card.hidden, #wm-chart-card.hidden, #wm-monitor-card.hidden { display: none; }
+
+/* Resolved-player summary header (lives in its own stats box) */
+.wm-summary { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.wm-avatar {
+  width: 34px; height: 34px; border-radius: 50%; flex: none;
+  background: var(--bg); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 600; color: var(--muted); overflow: hidden;
+}
+.wm-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.wm-name { font-size: 16px; font-weight: 650; color: var(--text); }
+.wm-name a { color: inherit; text-decoration: none; }
+.wm-name a:hover { color: var(--link); }
+.wm-total { margin-left: auto; font-size: 18px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; text-align: right; }
+.wm-total small { display: block; font-size: 11px; font-weight: 500; color: var(--muted); }
+
+/* Compact, inline monitor toggle / CTA card at the bottom of the page */
+.wm-monitor-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.wm-monitor-text { flex: 1; min-width: 220px; font-size: 13px; color: var(--muted); line-height: 1.5; }
+.wm-monitor-text strong { color: var(--text); font-weight: 600; }
+.wm-mon-btn { white-space: nowrap; padding: 9px 18px; font-size: 13px; }
+.wm-stop-btn {
+  white-space: nowrap; padding: 9px 18px; font-size: 13px; cursor: pointer;
+  background: var(--bg); border: 1px solid var(--border); color: var(--muted);
+  border-radius: 6px; font-family: inherit;
+}
+.wm-stop-btn:hover:not(:disabled) { border-color: var(--danger); color: var(--danger); }
+.wm-mon-btn:disabled, .wm-stop-btn:disabled { opacity: .5; cursor: default; }
+.wm-mon-status { font-size: 12px; color: var(--muted); margin-top: 10px; }
+
+.wm-bd { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.wm-bd span b { color: var(--text); font-weight: 600; }
+.wm-bd .wm-dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
+
+/* Chart controls */
+.wm-controls { display: flex; flex-wrap: wrap; gap: 14px 20px; align-items: center; margin-bottom: 14px; }
+.wm-control { display: flex; align-items: center; gap: 8px; }
+.wm-control > label { font-size: 12px; color: var(--muted); }
+.wm-seg { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.wm-seg button {
+  border: none; border-radius: 0; padding: 6px 12px; font-size: 12.5px;
+  background: var(--bg); color: var(--muted); border-left: 1px solid var(--border);
+  font-family: inherit; cursor: pointer;
+}
+.wm-seg button:first-child { border-left: none; }
+.wm-seg button.active { background: var(--accent-dim); color: var(--text); }
+.wm-seg button:disabled { opacity: .4; cursor: default; }
+
+/* Chart */
+.wm-chart-box { position: relative; }
+.wm-chart { width: 100%; height: auto; display: block; user-select: none; touch-action: none; }
+.wm-grid-line { stroke: var(--border); stroke-width: 1; }
+.wm-axis-text { fill: var(--muted); font-size: 10px; font-family: inherit; }
+.wm-series-line { fill: none; stroke-width: 2; }
+.wm-series-dot { stroke: var(--panel); stroke-width: 1.5; }
+.wm-hover-line { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.wm-tooltip {
+  position: absolute; pointer-events: none; z-index: 5;
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: 6px;
+  padding: 8px 10px; font-size: 11.5px; color: var(--text);
+  box-shadow: 0 4px 16px rgba(0,0,0,.4); min-width: 130px; opacity: 0; transition: opacity .1s;
+}
+.wm-tooltip .wm-tt-date { color: var(--muted); margin-bottom: 5px; font-size: 11px; }
+.wm-tooltip .wm-tt-row { display: flex; align-items: center; gap: 6px; line-height: 1.7; white-space: nowrap; }
+.wm-tooltip .wm-tt-row .wm-dot { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+.wm-tooltip .wm-tt-row .wm-tt-val { margin-left: auto; font-weight: 600; padding-left: 10px; }
+
+.wm-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 12px; }
+.wm-legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.wm-legend-item .wm-dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+
+.wm-chart-box .wm-chart-empty { color: var(--muted); font-size: 13px; padding: 28px 4px; text-align: center; }
+#wm-chart-card h4 { margin: 0 0 14px; font-size: 13.5px; font-weight: 600; color: var(--text); }

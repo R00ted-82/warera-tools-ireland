@@ -1,231 +1,11 @@
-<!DOCTYPE html>
-<html lang="en-GB">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Wealth Monitor · War Era tools</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'%3E%3Crect width='1' height='2' fill='%23009A49'/%3E%3Crect x='1' width='1' height='2' fill='white'/%3E%3Crect x='2' width='1' height='2' fill='%23FF7900'/%3E%3C/svg%3E" />
-<link rel="stylesheet" href="styles.css" />
-<style>
 /* ═══════════════════════════════════════════════════════════════════
- *  WEALTH MONITOR — tool-specific styles. Everything here is prefixed
- *  wm- and is the ONLY block that needs to move into styles.css on
- *  merge; the rest of the page reuses shared components (.tool-header,
- *  .stg-idbar, .stg-recent, .bf-card, .steps, .bf-inline-status,
- *  .btn-primary, .howto). The markup below is a drop-in <section
- *  class="view" data-view="wealth"> for index.html.
- * ═══════════════════════════════════════════════════════════════════ */
-
-/* The result cards start hidden and are revealed on lookup. styles.css has
-   no global .hidden utility (each component scopes its own), so scope one
-   here for the wealth-monitor cards. */
-#wm-stats-card.hidden, #wm-chart-card.hidden, #wm-monitor-card.hidden { display: none; }
-
-/* Resolved-player summary header (lives in its own stats box) */
-.wm-summary { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
-.wm-avatar {
-  width: 34px; height: 34px; border-radius: 50%; flex: none;
-  background: var(--bg); border: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px; font-weight: 600; color: var(--muted); overflow: hidden;
-}
-.wm-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.wm-name { font-size: 16px; font-weight: 650; color: var(--text); }
-.wm-name a { color: inherit; text-decoration: none; }
-.wm-name a:hover { color: var(--link); }
-.wm-total { margin-left: auto; font-size: 18px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; text-align: right; }
-.wm-total small { display: block; font-size: 11px; font-weight: 500; color: var(--muted); }
-
-/* Monitor action — clear CTA card at the bottom of the page */
-.wm-monitor-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-.wm-monitor-text { flex: 1; min-width: 220px; font-size: 13px; color: var(--muted); line-height: 1.5; }
-.wm-monitor-text strong { color: var(--text); font-weight: 600; }
-.wm-mon-btn { white-space: nowrap; padding: 9px 18px; font-size: 13px; }
-.wm-stop-btn {
-  white-space: nowrap; padding: 9px 18px; font-size: 13px; cursor: pointer;
-  background: var(--bg); border: 1px solid var(--border); color: var(--muted);
-  border-radius: 6px; font-family: inherit;
-}
-.wm-stop-btn:hover:not(:disabled) { border-color: var(--danger); color: var(--danger); }
-.wm-mon-btn:disabled, .wm-stop-btn:disabled { opacity: .5; cursor: default; }
-.wm-mon-status { font-size: 12px; color: var(--muted); margin-top: 10px; }
-
-.wm-bd { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.wm-bd span b { color: var(--text); font-weight: 600; }
-.wm-bd .wm-dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
-
-/* Chart controls */
-.wm-controls { display: flex; flex-wrap: wrap; gap: 14px 20px; align-items: center; margin-bottom: 14px; }
-.wm-control { display: flex; align-items: center; gap: 8px; }
-.wm-control > label { font-size: 12px; color: var(--muted); }
-.wm-seg { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
-.wm-seg button {
-  border: none; border-radius: 0; padding: 6px 12px; font-size: 12.5px;
-  background: var(--bg); color: var(--muted); border-left: 1px solid var(--border);
-  font-family: inherit; cursor: pointer;
-}
-.wm-seg button:first-child { border-left: none; }
-.wm-seg button.active { background: var(--accent-dim); color: var(--text); }
-.wm-seg button:disabled { opacity: .4; cursor: default; }
-
-/* Chart */
-.wm-chart-box { position: relative; }
-.wm-chart { width: 100%; height: auto; display: block; user-select: none; touch-action: none; }
-.wm-grid-line { stroke: var(--border); stroke-width: 1; }
-.wm-axis-text { fill: var(--muted); font-size: 10px; font-family: inherit; }
-.wm-series-line { fill: none; stroke-width: 2; }
-.wm-series-dot { stroke: var(--panel); stroke-width: 1.5; }
-.wm-hover-line { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
-.wm-tooltip {
-  position: absolute; pointer-events: none; z-index: 5;
-  background: var(--panel-2); border: 1px solid var(--border); border-radius: 6px;
-  padding: 8px 10px; font-size: 11.5px; color: var(--text);
-  box-shadow: 0 4px 16px rgba(0,0,0,.4); min-width: 130px; opacity: 0; transition: opacity .1s;
-}
-.wm-tooltip .wm-tt-date { color: var(--muted); margin-bottom: 5px; font-size: 11px; }
-.wm-tooltip .wm-tt-row { display: flex; align-items: center; gap: 6px; line-height: 1.7; white-space: nowrap; }
-.wm-tooltip .wm-tt-row .wm-dot { width: 8px; height: 8px; border-radius: 2px; flex: none; }
-.wm-tooltip .wm-tt-row .wm-tt-val { margin-left: auto; font-weight: 600; padding-left: 10px; }
-
-.wm-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 12px; }
-.wm-legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
-.wm-legend-item .wm-dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
-
-.wm-chart-box .wm-chart-empty { color: var(--muted); font-size: 13px; padding: 28px 4px; text-align: center; }
-.wm-chart-card h4 { margin: 0 0 14px; font-size: 13.5px; font-weight: 600; color: var(--text); }
-</style>
-</head>
-<body>
-
-<header>
-  <div class="header-top">
-    <a class="brand" href="index.html">
-      <h1>🇮🇪 War Era tools</h1>
-      <div class="sub">An Irish player's toolkit</div>
-    </a>
-    <a class="back-link" href="index.html">← Back</a>
-  </div>
-</header>
-
-<main>
-  <!-- Drop-in view. On merge: paste this <section> into index.html,
-       register 'wealth' in router.js (VALID + tools map), and add a
-       home-page card. The JS below already follows the IIFE +
-       activate(params) pattern. -->
-  <section class="view active" data-view="wealth">
-    <div class="tool-header">
-      <div class="title-block">
-        <h2><span>💰</span> Wealth Monitor</h2>
-        <p>Track an Irish player's wealth over time — total, or broken down by source.</p>
-      </div>
-      <div class="bf-stats-line" id="wm-count">&nbsp;</div>
-    </div>
-
-    <!-- Look up a player — same input bar + recent chips as the rest of the tools -->
-    <div class="stg-idbar">
-      <div class="stg-idbar-row">
-        <input type="text" id="wm-username" placeholder="In-game username" autocomplete="off" spellcheck="false" />
-        <button id="wm-submit" class="btn-primary">Look up</button>
-      </div>
-      <div class="stg-recent hidden" id="wm-recent"></div>
-    </div>
-
-    <div id="wm-steps" class="steps hidden">
-      <div class="step" data-state="pending" data-step="1">
-        <div class="step-icon"></div>
-        <div class="step-body">
-          <div class="step-title">Find player</div>
-          <div class="step-sub"></div>
-        </div>
-        <div class="step-count"></div>
-      </div>
-      <div class="step" data-state="pending" data-step="2">
-        <div class="step-icon"></div>
-        <div class="step-body">
-          <div class="step-title">Load wealth &amp; history</div>
-          <div class="step-sub"></div>
-        </div>
-        <div class="step-count"></div>
-      </div>
-    </div>
-
-    <div id="wm-status" class="bf-inline-status hidden"></div>
-
-    <!-- Stats box — populated on lookup, hidden until then -->
-    <div class="bf-card hidden" id="wm-stats-card">
-      <div class="wm-summary" id="wm-summary"></div>
-      <div class="wm-bd" id="wm-breakdown"></div>
-    </div>
-
-    <!-- Chart box — populated on lookup, hidden until then -->
-    <div class="bf-card hidden" id="wm-chart-card">
-      <h4>Wealth over time</h4>
-      <div class="wm-controls">
-        <div class="wm-control">
-          <label>View</label>
-          <div class="wm-seg" id="wm-metric-seg">
-            <button data-metric="total" class="active">Total</button>
-            <button data-metric="breakdown">Breakdown</button>
-          </div>
-        </div>
-        <div class="wm-control">
-          <label>Bucket</label>
-          <div class="wm-seg" id="wm-bucket-seg">
-            <button data-bucket="day" class="active">Day</button>
-            <button data-bucket="week">Week</button>
-            <button data-bucket="month">Month</button>
-          </div>
-        </div>
-      </div>
-      <div class="wm-chart-box" id="wm-chart-box"></div>
-      <div class="wm-legend" id="wm-legend"></div>
-    </div>
-
-    <!-- Monitor action — clear CTA, hidden until a player is looked up -->
-    <div class="bf-card hidden" id="wm-monitor-card">
-      <div class="wm-monitor-row">
-        <div class="wm-monitor-text" id="wm-monitor-text"></div>
-        <button id="wm-mon"></button>
-      </div>
-      <div class="wm-mon-status" id="wm-mon-status"></div>
-    </div>
-
-    <details class="howto">
-      <summary>How this works</summary>
-      <div class="howto-body">
-        <ul>
-          <li>The wealth breakdown is public: <code>user.getUserById</code> returns
-              <code>stats.wealth = { companies, items, money, equipments, weapons, total }</code> —
-              the exact figures on the profile.</li>
-          <li>A GitHub Action snapshots every monitored player every 6 hours and appends to
-              <code>data/wealth-history.json</code>. The chart buckets those snapshots by day,
-              week or month in your browser. Periods with no snapshots (e.g. before a player was
-              added, or while they were removed) show as <strong>real gaps</strong> in the line.</li>
-          <li>Adding or removing a player posts to the <code>warera-proxy</code> Worker, which fires
-              a <code>repository_dispatch</code>; a second Action edits <code>monitored-users.json</code>.
-              That's the ~1 minute lag.</li>
-          <li>Only <strong>Irish citizens</strong> can be monitored (checked in the browser and again
-              server-side). Append <code>?bypass=1</code> to the URL to lift the browser-side gate
-              for admin or debugging.</li>
-        </ul>
-      </div>
-    </details>
-  </section>
-</main>
-
-<footer>
-  Made with <span class="heart">♥️</span> by toie. <span class="sep">·</span> Live data via <a href="https://gateway.warerastats.io/" target="_blank" rel="noopener">War Era Gateway</a>.
-</footer>
-
-<script src="js/shared.js"></script>
-<script>
-/* ═══════════════════════════════════════════════════════════════════
- *  WEALTH MONITOR
+ *  WEALTH MONITOR  (#wealth, and a tab in the #home shell)
  *
  *  Look up an Irish player → show their current wealth (its own box) and
  *  a wealth-over-time chart (total or 5-way breakdown), bucketed by
- *  day/week/month. Nothing renders until a username is entered. Recently
- *  looked-up names are kept as quick-pick chips (localStorage).
+ *  day/week/month. Inside the home shell it's driven by the shared
+ *  username field via activate({u}); standalone (#wealth) it uses its own
+ *  input. Nothing renders until a username is supplied.
  *
  *  Data:
  *    - Current wealth: user.getUserById → stats.wealth (live).
@@ -240,8 +20,6 @@
  *  honouring ?bypass=1.
  * ═══════════════════════════════════════════════════════════════════ */
 const WealthMonitorTool = (() => {
-  'use strict';
-
   const MONITORED_URL = 'monitored-users.json';
   const HISTORY_URL   = 'data/wealth-history.json';
   const MONITORED_UPDATE_URL = 'https://warera-proxy.toie.workers.dev/monitored-update';
@@ -280,6 +58,7 @@ const WealthMonitorTool = (() => {
   let monitored = [];                 // [{ userId, username }]
   let history   = { users: {} };      // wealth-history.json
   let current   = null;               // { user, wealth, avatarUrl } for the resolved player
+  let dataLoaded = false;             // monitored list + history fetched once
   const chart   = { user: null, metric: 'total', bucket: 'day' };
 
   // Helpers
@@ -425,11 +204,10 @@ const WealthMonitorTool = (() => {
       steps.setStep(1, 'done', { count: `→ ${user.username}` });
 
       // Shareable URL + remember the verified name as a quick-pick chip.
-      try {
-        const u = new URL(location.href);
-        u.searchParams.set('u', user.username);
-        window.history.replaceState(null, '', u);
-      } catch {}
+      // The hash rewrite (same shape as the other tools) is what the home
+      // shell's hash guard folds back into #home?u=…&tool=wealth. Use the
+      // real window.history — `history` is our local wealth-history state.
+      try { window.history.replaceState(null, '', `#wealth?u=${encodeURIComponent(user.username)}`); } catch {}
       rememberUsername(user.username);
 
       steps.setStep(2, 'active', { sub: 'Fetching current wealth' });
@@ -787,6 +565,16 @@ const WealthMonitorTool = (() => {
     renderChart();
   });
 
+  async function loadData() {
+    const [mon, hist] = await Promise.all([
+      fetchJson(MONITORED_URL).catch(() => null),
+      fetchJson(HISTORY_URL).catch(() => null),
+    ]);
+    monitored = (mon?.entries || []).filter(e => e && e.userId && e.username);
+    history = (hist && hist.users) ? hist : { users: {} };
+    setCount();
+  }
+
   async function refreshMonitored() {
     const data = await fetchJson(MONITORED_URL).catch(() => null);
     monitored = (data?.entries || []).filter(e => e && e.userId && e.username);
@@ -794,29 +582,21 @@ const WealthMonitorTool = (() => {
     if (current && !$monitorCard.classList.contains('hidden')) { renderMonitorCard(); updateChartVisibility(); }
   }
 
-  // ── Tool entry point (router calls this; standalone calls it below) ─
   return {
+    /**
+     * Router/shell entry. Driven by the shared username in the home shell
+     * (activate({u})); standalone (#wealth?u=…) it reads its own params.
+     * Idempotent: re-runs the lookup only when the username changes.
+     * @param {URLSearchParams} [params]
+     */
     async activate(params) {
       renderRecent();
-      const [mon, hist] = await Promise.all([
-        fetchJson(MONITORED_URL).catch(() => null),
-        fetchJson(HISTORY_URL).catch(() => null),
-      ]);
-      monitored = (mon?.entries || []).filter(e => e && e.userId && e.username);
-      history = (hist && hist.users) ? hist : { users: {} };
-      setCount();
+      if (!dataLoaded) { dataLoaded = true; await loadData(); }
 
       const u = (params && params.get && params.get('u'))
              || new URLSearchParams(location.search).get('u');
-      if (u && $username.value !== u) { $username.value = u; handleSubmit(); }
-      else if (!$username.value) $username.focus();
+      if (u && $username.value.toLowerCase() !== u.toLowerCase()) { $username.value = u; handleSubmit(); }
+      else if (!u && !$username.value) $username.focus();
     },
   };
 })();
-
-// Standalone bootstrap. On merge into index.html, DELETE this line —
-// router.js will call WealthMonitorTool.activate() instead.
-WealthMonitorTool.activate(new URLSearchParams(location.search));
-</script>
-</body>
-</html>

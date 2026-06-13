@@ -46,6 +46,7 @@
           <nav class="stg-nav hidden" id="stg-nav" role="tablist" aria-label="Tools">
             <button class="stg-tab active" data-stg-tab="advisor" role="tab">🏭 <span>Migration</span></button>
             <button class="stg-tab" data-stg-tab="clockin" role="tab">⏱ <span>Clock-In</span></button>
+            <button class="stg-tab" data-stg-tab="wealth" role="tab">💰 <span>Wealth</span></button>
             <button class="stg-tab" data-stg-tab="buddy-finder" role="tab">🤝 <span>Buddy Finder</span></button>
             <button class="stg-tab" data-stg-tab="mu" role="tab">🔫 <span>Military Units</span></button>
           </nav>
@@ -622,6 +623,107 @@
     </details>
   </section>
 
+  <!-- ─── Wealth Monitor view (powered by WealthMonitorTool) ────────── -->
+  <section class="view" data-view="wealth">
+    <div class="tool-header">
+      <div class="title-block">
+        <h2><span>💰</span> Wealth Monitor</h2>
+        <p>Track an Irish player's wealth over time — total, or broken down by source.</p>
+      </div>
+      <div class="bf-stats-line" id="wm-count">&nbsp;</div>
+    </div>
+
+    <!-- Look up a player — same input bar + recent chips as the rest of the tools -->
+    <div class="stg-idbar">
+      <div class="stg-idbar-row">
+        <input type="text" id="wm-username" placeholder="In-game username" autocomplete="off" spellcheck="false" />
+        <button id="wm-submit" class="btn-primary">Look up</button>
+      </div>
+      <div class="stg-recent hidden" id="wm-recent"></div>
+    </div>
+
+    <div id="wm-steps" class="steps hidden">
+      <div class="step" data-state="pending" data-step="1">
+        <div class="step-icon"></div>
+        <div class="step-body">
+          <div class="step-title">Find player</div>
+          <div class="step-sub"></div>
+        </div>
+        <div class="step-count"></div>
+      </div>
+      <div class="step" data-state="pending" data-step="2">
+        <div class="step-icon"></div>
+        <div class="step-body">
+          <div class="step-title">Load wealth &amp; history</div>
+          <div class="step-sub"></div>
+        </div>
+        <div class="step-count"></div>
+      </div>
+    </div>
+
+    <div id="wm-status" class="bf-inline-status hidden"></div>
+
+    <!-- Stats box — populated on lookup, hidden until then -->
+    <div class="bf-card hidden" id="wm-stats-card">
+      <div class="wm-summary" id="wm-summary"></div>
+      <div class="wm-bd" id="wm-breakdown"></div>
+    </div>
+
+    <!-- Chart box — shown only once the player is monitored -->
+    <div class="bf-card hidden" id="wm-chart-card">
+      <h4>Wealth over time</h4>
+      <div class="wm-controls">
+        <div class="wm-control">
+          <label>View</label>
+          <div class="wm-seg" id="wm-metric-seg">
+            <button data-metric="total" class="active">Total</button>
+            <button data-metric="breakdown">Breakdown</button>
+          </div>
+        </div>
+        <div class="wm-control">
+          <label>Bucket</label>
+          <div class="wm-seg" id="wm-bucket-seg">
+            <button data-bucket="day" class="active">Day</button>
+            <button data-bucket="week">Week</button>
+            <button data-bucket="month">Month</button>
+          </div>
+        </div>
+      </div>
+      <div class="wm-chart-box" id="wm-chart-box"></div>
+      <div class="wm-legend" id="wm-legend"></div>
+    </div>
+
+    <!-- Monitor action — clear CTA, hidden until a player is looked up -->
+    <div class="bf-card hidden" id="wm-monitor-card">
+      <div class="wm-monitor-row">
+        <div class="wm-monitor-text" id="wm-monitor-text"></div>
+        <button id="wm-mon"></button>
+      </div>
+      <div class="wm-mon-status" id="wm-mon-status"></div>
+    </div>
+
+    <details class="howto">
+      <summary>How this works</summary>
+      <div class="howto-body">
+        <ul>
+          <li>The wealth breakdown is public: <code>user.getUserById</code> returns
+              <code>stats.wealth = { companies, items, money, equipments, weapons, total }</code> —
+              the exact figures on the profile.</li>
+          <li>A GitHub Action snapshots every monitored player every 6 hours and appends to
+              <code>data/wealth-history.json</code>. The chart buckets those snapshots by day,
+              week or month in your browser. Periods with no snapshots (e.g. before a player was
+              added, or while they were removed) show as <strong>real gaps</strong> in the line.</li>
+          <li>Adding or removing a player posts to the <code>warera-proxy</code> Worker, which fires
+              a <code>repository_dispatch</code>; a second Action edits <code>monitored-users.json</code>.
+              That's the ~1 minute lag.</li>
+          <li>Only <strong>Irish citizens</strong> can be monitored (checked in the browser and again
+              server-side). Append <code>?bypass=1</code> to the URL to lift the browser-side gate
+              for admin or debugging.</li>
+        </ul>
+      </div>
+    </details>
+  </section>
+
   <!-- ─── Buddy System view (encrypted; MoECON password required) ───── -->
   <section class="view" data-view="buddy">
     <div class="tool-header">
@@ -712,6 +814,7 @@
 <script src="js/buddy-finder.js"></script>
 <script src="js/advisor.js"></script>
 <script src="js/clockin.js"></script>
+<script src="js/wealth.js"></script>
 <script src="js/buddy.js"></script>
 <script src="js/battle-orders.js"></script>
 <script src="js/beer.js"></script>

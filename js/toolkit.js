@@ -32,14 +32,15 @@
 const ToolkitShell = (() => {
   const DEFAULT_TOOL       = 'advisor';   // first tab; used when no name yet
   const DEFAULT_AFTER_LOAD = 'advisor';   // user typed a name, show their data
-  const TOOLS              = ['advisor', 'clockin', 'buddy-finder', 'mu'];
-  const USERNAME_DRIVEN    = new Set(['buddy-finder', 'advisor', 'clockin']);
+  const TOOLS              = ['advisor', 'clockin', 'wealth', 'buddy-finder', 'mu'];
+  const USERNAME_DRIVEN    = new Set(['buddy-finder', 'advisor', 'clockin', 'wealth']);
 
   const MODULES = {
     mu:             () => MUTool,
     'buddy-finder': () => BuddyFinderTool,
     advisor:        () => AdvisorTool,
     clockin:        () => ClockInTool,
+    wealth:         () => WealthMonitorTool,
   };
 
   const $mount    = document.getElementById('stg-mount');
@@ -68,6 +69,12 @@ const ToolkitShell = (() => {
     const t = [];
     if (tool === 'advisor' || tool === 'clockin') {
       t.push(v.el.querySelector('.tool-header'));
+    }
+    if (tool === 'wealth') {
+      // Shell provides the username field, so hide the tool's own header
+      // and its lookup bar (input + recent chips). The shared name drives it.
+      t.push(v.el.querySelector('.tool-header'));
+      t.push(v.el.querySelector('.stg-idbar'));
     }
     if (tool === 'buddy-finder') {
       const inp  = v.el.querySelector('#bf-match-username');
@@ -154,7 +161,7 @@ const ToolkitShell = (() => {
     nativeReplace = history.replaceState.bind(history);
     history.replaceState = function (s, t, url) {
       if (typeof url === 'string') {
-        const m = url.match(/^#(mu|buddy-finder|advisor|clockin)\b/);
+        const m = url.match(/^#(mu|buddy-finder|advisor|clockin|wealth)\b/);
         if (m) {
           const q = url.split('?')[1] || '';
           const u = new URLSearchParams(q).get('u');
@@ -308,7 +315,7 @@ const ToolkitShell = (() => {
 
   function updateHint() {
     $hint.innerHTML = USERNAME_DRIVEN.has(state.active)
-      ? `Your username is reused across Buddy Finder, Migration and Clock-In.`
+      ? `Your username is reused across Migration, Clock-In, Wealth and Buddy Finder.`
       : `Military Units don't need a username. Pick another tool to use yours.`;
   }
 

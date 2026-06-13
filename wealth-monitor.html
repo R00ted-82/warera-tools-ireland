@@ -31,17 +31,19 @@
 .wm-total { margin-left: auto; font-size: 18px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; text-align: right; }
 .wm-total small { display: block; font-size: 11px; font-weight: 500; color: var(--muted); }
 
-/* Compact, inline monitor toggle (sits next to the player's name) */
-.wm-mon-btn {
-  font-size: 11.5px; padding: 3px 11px; border-radius: 999px; cursor: pointer;
-  border: 1px solid var(--border); background: var(--bg); color: var(--muted);
-  font-family: inherit; white-space: nowrap;
+/* Monitor action — clear CTA card at the bottom of the page */
+.wm-monitor-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.wm-monitor-text { flex: 1; min-width: 220px; font-size: 13px; color: var(--muted); line-height: 1.5; }
+.wm-monitor-text strong { color: var(--text); font-weight: 600; }
+.wm-mon-btn { white-space: nowrap; padding: 9px 18px; font-size: 13px; }
+.wm-stop-btn {
+  white-space: nowrap; padding: 9px 18px; font-size: 13px; cursor: pointer;
+  background: var(--bg); border: 1px solid var(--border); color: var(--muted);
+  border-radius: 6px; font-family: inherit;
 }
-.wm-mon-btn.on  { border-color: rgba(74,222,128,.4); color: var(--accent); background: rgba(74,222,128,.08); }
-.wm-mon-btn.add { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
-.wm-mon-btn:hover:not(:disabled) { filter: brightness(1.15); }
-.wm-mon-btn:disabled { opacity: .5; cursor: default; }
-.wm-mon-status { font-size: 11px; color: var(--muted); }
+.wm-stop-btn:hover:not(:disabled) { border-color: var(--danger); color: var(--danger); }
+.wm-mon-btn:disabled, .wm-stop-btn:disabled { opacity: .5; cursor: default; }
+.wm-mon-status { font-size: 12px; color: var(--muted); margin-top: 10px; }
 
 .wm-bd { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .wm-bd span b { color: var(--text); font-weight: 600; }
@@ -174,6 +176,15 @@
       <div class="wm-legend" id="wm-legend"></div>
     </div>
 
+    <!-- Monitor action — clear CTA, hidden until a player is looked up -->
+    <div class="bf-card hidden" id="wm-monitor-card">
+      <div class="wm-monitor-row">
+        <div class="wm-monitor-text" id="wm-monitor-text"></div>
+        <button id="wm-mon"></button>
+      </div>
+      <div class="wm-mon-status" id="wm-mon-status"></div>
+    </div>
+
     <details class="howto">
       <summary>How this works</summary>
       <div class="howto-body">
@@ -250,6 +261,8 @@ const WealthMonitorTool = (() => {
   const $count     = document.getElementById('wm-count');
   const $statsCard = document.getElementById('wm-stats-card');
   const $chartCard = document.getElementById('wm-chart-card');
+  const $monitorCard = document.getElementById('wm-monitor-card');
+  const $monitorText = document.getElementById('wm-monitor-text');
   const $summary   = document.getElementById('wm-summary');
   const $breakdown = document.getElementById('wm-breakdown');
   const $metricSeg = document.getElementById('wm-metric-seg');
@@ -383,6 +396,7 @@ const WealthMonitorTool = (() => {
     $submit.disabled = true;
     $statsCard.classList.add('hidden');
     $chartCard.classList.add('hidden');
+    $monitorCard.classList.add('hidden');
     hideStatus();
     steps.reset();
 
@@ -441,21 +455,26 @@ const WealthMonitorTool = (() => {
     return `<div class="wm-avatar">${escapeHtml(initial)}</div>`;
   }
 
-  function monitorBtnHtml() {
-    const on = monitored.some(e => e.userId === current.user._id);
-    return on
-      ? `<button class="wm-mon-btn on" id="wm-mon" title="Click to stop monitoring">● Monitored</button>`
-      : `<button class="wm-mon-btn add" id="wm-mon" title="Start monitoring this player">+ Monitor</button>`;
-  }
-
   function renderSummary() {
     const { user, wealth, avatarUrl } = current;
     $summary.innerHTML =
       avatarHtml(user.username, avatarUrl) +
       `<span class="wm-name"><a href="${GAME_BASE}/user/${user._id}" target="_blank" rel="noopener">${escapeHtml(user.username)}</a></span>` +
-      monitorBtnHtml() +
-      `<span class="wm-mon-status" id="wm-mon-status"></span>` +
       `<span class="wm-total">${fmtK(wealth.total)}<small>total wealth</small></span>`;
+  }
+
+  // The clear monitor CTA at the bottom. Re-rendered whenever the
+  // monitored state flips so the label always matches reality.
+  function renderMonitorCard() {
+    const on = monitored.some(e => e.userId === current.user._id);
+    const name = escapeHtml(current.user.username);
+    if (on) {
+      $monitorText.innerHTML = `✅ <strong>${name}</strong> is being monitored — wealth is snapshotted every 6 hours. Stopping keeps the history already collected.`;
+      $monitorCard.querySelector('#wm-mon').outerHTML = `<button id="wm-mon" class="wm-stop-btn">Stop monitoring</button>`;
+    } else {
+      $monitorText.innerHTML = `<strong>${name}</strong> isn't monitored yet. Add them to the watch list and their wealth will be snapshotted every 6 hours, building history over time.`;
+      $monitorCard.querySelector('#wm-mon').outerHTML = `<button id="wm-mon" class="btn-primary wm-mon-btn">➕ Monitor ${name}</button>`;
+    }
     document.getElementById('wm-mon').addEventListener('click', onMonClick);
   }
 
@@ -466,6 +485,9 @@ const WealthMonitorTool = (() => {
     ).join('');
     $statsCard.classList.remove('hidden');
     $chartCard.classList.remove('hidden');
+    $monitorCard.classList.remove('hidden');
+    document.getElementById('wm-mon-status').textContent = '';
+    renderMonitorCard();
     renderChart();
   }
 
@@ -475,7 +497,7 @@ const WealthMonitorTool = (() => {
     const $btn = document.getElementById('wm-mon');
     const $st = document.getElementById('wm-mon-status');
     $btn.disabled = true;
-    $st.innerHTML = `<span class="bf-spinner"></span>`;
+    $st.innerHTML = `<span class="bf-spinner"></span>${add ? 'Adding' : 'Removing'}…`;
     try {
       await dispatchUpdate(add ? 'add' : 'remove', user._id, user.username);
     } catch (e) {
@@ -489,10 +511,10 @@ const WealthMonitorTool = (() => {
       monitored = monitored.filter(e => e.userId !== user._id);
     }
     setCount();
-    renderSummary();                       // re-renders the toggle in its new state
+    renderMonitorCard();                   // flips the button to its new state
     document.getElementById('wm-mon-status').textContent = add
-      ? 'added · ~1 min to land'
-      : 'removed · history kept';
+      ? 'Added · give it ~1 minute to land; history starts from the next snapshot.'
+      : 'Removed · existing history is kept; no new snapshots will be collected.';
     renderChart();
     setTimeout(refreshMonitored, 60000);
   }
@@ -757,7 +779,7 @@ const WealthMonitorTool = (() => {
     const data = await fetchJson(MONITORED_URL).catch(() => null);
     monitored = (data?.entries || []).filter(e => e && e.userId && e.username);
     setCount();
-    if (current) renderSummary();
+    if (current && !$monitorCard.classList.contains('hidden')) renderMonitorCard();
   }
 
   // ── Tool entry point (router calls this; standalone calls it below) ─

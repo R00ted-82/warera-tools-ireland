@@ -11,38 +11,41 @@
  *  WEALTH MONITOR — tool-specific styles. Everything here is prefixed
  *  wm- and is the ONLY block that needs to move into styles.css on
  *  merge; the rest of the page reuses shared components (.tool-header,
- *  .bf-intro, .bf-card, .bf-input-row, .steps, .bf-inline-status,
+ *  .stg-idbar, .stg-recent, .bf-card, .steps, .bf-inline-status,
  *  .btn-primary, .howto). The markup below is a drop-in <section
  *  class="view" data-view="wealth"> for index.html.
  * ═══════════════════════════════════════════════════════════════════ */
 
-/* Resolved-player summary header */
-.wm-summary { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
-.wm-summary .wm-avatar {
+/* Resolved-player summary header (lives in its own stats box) */
+.wm-summary { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.wm-avatar {
   width: 34px; height: 34px; border-radius: 50%; flex: none;
   background: var(--bg); border: 1px solid var(--border);
   display: flex; align-items: center; justify-content: center;
   font-size: 14px; font-weight: 600; color: var(--muted); overflow: hidden;
 }
-.wm-summary .wm-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.wm-summary .wm-name { font-size: 16px; font-weight: 650; color: var(--text); }
-.wm-summary .wm-name a { color: inherit; text-decoration: none; }
-.wm-summary .wm-name a:hover { color: var(--link); }
-.wm-summary .wm-total { margin-left: auto; font-size: 18px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
-.wm-summary .wm-total small { display: block; font-size: 11px; font-weight: 500; color: var(--muted); text-align: right; }
-.wm-bd { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); margin-bottom: 14px; font-variant-numeric: tabular-nums; }
+.wm-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.wm-name { font-size: 16px; font-weight: 650; color: var(--text); }
+.wm-name a { color: inherit; text-decoration: none; }
+.wm-name a:hover { color: var(--link); }
+.wm-total { margin-left: auto; font-size: 18px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; text-align: right; }
+.wm-total small { display: block; font-size: 11px; font-weight: 500; color: var(--muted); }
+
+/* Compact, inline monitor toggle (sits next to the player's name) */
+.wm-mon-btn {
+  font-size: 11.5px; padding: 3px 11px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--bg); color: var(--muted);
+  font-family: inherit; white-space: nowrap;
+}
+.wm-mon-btn.on  { border-color: rgba(74,222,128,.4); color: var(--accent); background: rgba(74,222,128,.08); }
+.wm-mon-btn.add { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+.wm-mon-btn:hover:not(:disabled) { filter: brightness(1.15); }
+.wm-mon-btn:disabled { opacity: .5; cursor: default; }
+.wm-mon-status { font-size: 11px; color: var(--muted); }
+
+.wm-bd { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .wm-bd span b { color: var(--text); font-weight: 600; }
 .wm-bd .wm-dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
-
-/* Monitoring toggle line */
-.wm-monitor { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  padding: 10px 12px; border-radius: 6px; font-size: 12.5px; margin-bottom: 16px;
-  background: var(--panel-2); border: 1px solid var(--border); }
-.wm-monitor.on  { border-color: rgba(74,222,128,.3); }
-.wm-monitor .wm-monitor-label { color: var(--muted); }
-.wm-monitor .wm-monitor-label strong { color: var(--text); }
-.wm-monitor button { margin-left: auto; }
-.wm-monitor .wm-toggle-status { flex-basis: 100%; color: var(--muted); }
 
 /* Chart controls */
 .wm-controls { display: flex; flex-wrap: wrap; gap: 14px 20px; align-items: center; margin-bottom: 14px; }
@@ -81,9 +84,8 @@
 .wm-legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
 .wm-legend-item .wm-dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
 
-.wm-chart-empty { color: var(--muted); font-size: 13px; padding: 28px 4px; text-align: center; }
-.wm-chart-card { margin-top: 16px; }
-.wm-chart-card h4 { margin: 0 0 12px; font-size: 13.5px; font-weight: 600; color: var(--text); }
+.wm-chart-box .wm-chart-empty { color: var(--muted); font-size: 13px; padding: 28px 4px; text-align: center; }
+.wm-chart-card h4 { margin: 0 0 14px; font-size: 13.5px; font-weight: 600; color: var(--text); }
 </style>
 </head>
 <body>
@@ -112,70 +114,64 @@
       <div class="bf-stats-line" id="wm-count">&nbsp;</div>
     </div>
 
-    <div class="bf-intro">
-      <h3>What this does</h3>
-      <p>Enter an <strong>Irish citizen's</strong> username to see how their <strong>wealth</strong> has moved over time — total, or split into <strong>companies, items, money, equipment and weapons</strong> (the exact figures from their in-game profile). Toggle the timeline by day, week or month.</p>
-      <p>Wealth is snapshotted every few hours, so history builds up from the moment a player is added. The game's API only exposes a player's <em>current</em> wealth — there's no way to backfill the past, so the chart starts the day they're added.</p>
-    </div>
-
-    <div class="bf-card">
-      <h3>🔍 Look up a player</h3>
-      <p class="bf-card-sub">Enter an in-game username. You'll see their current wealth and, if they're being monitored, their wealth-over-time chart.</p>
-
-      <div class="bf-input-row">
+    <!-- Look up a player — same input bar + recent chips as the rest of the tools -->
+    <div class="stg-idbar">
+      <div class="stg-idbar-row">
         <input type="text" id="wm-username" placeholder="In-game username" autocomplete="off" spellcheck="false" />
         <button id="wm-submit" class="btn-primary">Look up</button>
       </div>
+      <div class="stg-recent hidden" id="wm-recent"></div>
+    </div>
 
-      <div id="wm-steps" class="steps hidden">
-        <div class="step" data-state="pending" data-step="1">
-          <div class="step-icon"></div>
-          <div class="step-body">
-            <div class="step-title">Find player</div>
-            <div class="step-sub"></div>
-          </div>
-          <div class="step-count"></div>
+    <div id="wm-steps" class="steps hidden">
+      <div class="step" data-state="pending" data-step="1">
+        <div class="step-icon"></div>
+        <div class="step-body">
+          <div class="step-title">Find player</div>
+          <div class="step-sub"></div>
         </div>
-        <div class="step" data-state="pending" data-step="2">
-          <div class="step-icon"></div>
-          <div class="step-body">
-            <div class="step-title">Load wealth &amp; history</div>
-            <div class="step-sub"></div>
+        <div class="step-count"></div>
+      </div>
+      <div class="step" data-state="pending" data-step="2">
+        <div class="step-icon"></div>
+        <div class="step-body">
+          <div class="step-title">Load wealth &amp; history</div>
+          <div class="step-sub"></div>
+        </div>
+        <div class="step-count"></div>
+      </div>
+    </div>
+
+    <div id="wm-status" class="bf-inline-status hidden"></div>
+
+    <!-- Stats box — populated on lookup, hidden until then -->
+    <div class="bf-card hidden" id="wm-stats-card">
+      <div class="wm-summary" id="wm-summary"></div>
+      <div class="wm-bd" id="wm-breakdown"></div>
+    </div>
+
+    <!-- Chart box — populated on lookup, hidden until then -->
+    <div class="bf-card hidden" id="wm-chart-card">
+      <h4>Wealth over time</h4>
+      <div class="wm-controls">
+        <div class="wm-control">
+          <label>View</label>
+          <div class="wm-seg" id="wm-metric-seg">
+            <button data-metric="total" class="active">Total</button>
+            <button data-metric="breakdown">Breakdown</button>
           </div>
-          <div class="step-count"></div>
+        </div>
+        <div class="wm-control">
+          <label>Bucket</label>
+          <div class="wm-seg" id="wm-bucket-seg">
+            <button data-bucket="day" class="active">Day</button>
+            <button data-bucket="week">Week</button>
+            <button data-bucket="month">Month</button>
+          </div>
         </div>
       </div>
-
-      <div id="wm-status" class="bf-inline-status hidden"></div>
-
-      <!-- Everything below stays empty until a username is looked up. -->
-      <div id="wm-results" class="hidden">
-        <div class="wm-summary" id="wm-summary"></div>
-        <div class="wm-bd" id="wm-breakdown"></div>
-        <div class="wm-monitor" id="wm-monitor"></div>
-
-        <div class="wm-chart-card">
-          <div class="wm-controls">
-            <div class="wm-control">
-              <label>View</label>
-              <div class="wm-seg" id="wm-metric-seg">
-                <button data-metric="total" class="active">Total</button>
-                <button data-metric="breakdown">Breakdown</button>
-              </div>
-            </div>
-            <div class="wm-control">
-              <label>Bucket</label>
-              <div class="wm-seg" id="wm-bucket-seg">
-                <button data-bucket="day" class="active">Day</button>
-                <button data-bucket="week">Week</button>
-                <button data-bucket="month">Month</button>
-              </div>
-            </div>
-          </div>
-          <div class="wm-chart-box" id="wm-chart-box"></div>
-          <div class="wm-legend" id="wm-legend"></div>
-        </div>
-      </div>
+      <div class="wm-chart-box" id="wm-chart-box"></div>
+      <div class="wm-legend" id="wm-legend"></div>
     </div>
 
     <details class="howto">
@@ -210,9 +206,10 @@
 /* ═══════════════════════════════════════════════════════════════════
  *  WEALTH MONITOR
  *
- *  Look up an Irish player → show their current wealth and a
- *  wealth-over-time chart (total or 5-way breakdown), bucketed by
- *  day/week/month. Nothing renders until a username is entered.
+ *  Look up an Irish player → show their current wealth (its own box) and
+ *  a wealth-over-time chart (total or 5-way breakdown), bucketed by
+ *  day/week/month. Nothing renders until a username is entered. Recently
+ *  looked-up names are kept as quick-pick chips (localStorage).
  *
  *  Data:
  *    - Current wealth: user.getUserById → stats.wealth (live).
@@ -242,15 +239,19 @@ const WealthMonitorTool = (() => {
   ];
   const TOTAL_COLOR = '#4ade80';
 
+  const RECENT_KEY = 'wm:recent-usernames';
+  const RECENT_MAX = 8;
+
   // DOM
   const $username  = document.getElementById('wm-username');
   const $submit    = document.getElementById('wm-submit');
+  const $recent    = document.getElementById('wm-recent');
   const $status    = document.getElementById('wm-status');
   const $count     = document.getElementById('wm-count');
-  const $results   = document.getElementById('wm-results');
+  const $statsCard = document.getElementById('wm-stats-card');
+  const $chartCard = document.getElementById('wm-chart-card');
   const $summary   = document.getElementById('wm-summary');
   const $breakdown = document.getElementById('wm-breakdown');
-  const $monitor   = document.getElementById('wm-monitor');
   const $metricSeg = document.getElementById('wm-metric-seg');
   const $bucketSeg = document.getElementById('wm-bucket-seg');
   const $chartBox  = document.getElementById('wm-chart-box');
@@ -260,7 +261,7 @@ const WealthMonitorTool = (() => {
   // State
   let monitored = [];                 // [{ userId, username }]
   let history   = { users: {} };      // wealth-history.json
-  let current   = null;               // { user, wealth } for the resolved player
+  let current   = null;               // { user, wealth, avatarUrl } for the resolved player
   const chart   = { user: null, metric: 'total', bucket: 'day' };
 
   // Helpers
@@ -340,6 +341,39 @@ const WealthMonitorTool = (() => {
     $count.innerHTML = `Monitoring <strong>${n}</strong> player${n === 1 ? '' : 's'}`;
   }
 
+  // ── Recent usernames (localStorage) — mirrors the toolkit shell ─
+  function readRecent() {
+    try { const a = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); return Array.isArray(a) ? a.filter(x => typeof x === 'string') : []; }
+    catch { return []; }
+  }
+  function writeRecent(list) {
+    try { localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, RECENT_MAX))); } catch { /* storage off */ }
+  }
+  function rememberUsername(u) {
+    const list = readRecent().filter(x => x.toLowerCase() !== u.toLowerCase());
+    list.unshift(u);
+    writeRecent(list);
+    renderRecent();
+  }
+  function forgetUsername(name) {
+    writeRecent(readRecent().filter(x => x.toLowerCase() !== name.toLowerCase()));
+    renderRecent();
+  }
+  function renderRecent() {
+    const list = readRecent();
+    if (!list.length) { $recent.innerHTML = ''; $recent.classList.add('hidden'); return; }
+    $recent.classList.remove('hidden');
+    $recent.innerHTML =
+      `<span class="stg-recent-label">Recent:</span>` +
+      list.map(u => {
+        const safe = escapeHtml(u);
+        return `<span class="stg-recent-chip">
+          <button class="stg-recent-pick" data-wm-recent="${safe}">${safe}</button>
+          <button class="stg-recent-del" data-wm-recent-del="${safe}" title="Remove">×</button>
+        </span>`;
+      }).join('');
+  }
+
   // ── Look-up flow ────────────────────────────────────────────────
   async function handleSubmit() {
     const raw = $username.value.trim();
@@ -347,7 +381,8 @@ const WealthMonitorTool = (() => {
     if (raw.length > 40) { showStatus('warn', 'Username looks too long. Please double-check.'); return; }
 
     $submit.disabled = true;
-    $results.classList.add('hidden');
+    $statsCard.classList.add('hidden');
+    $chartCard.classList.add('hidden');
     hideStatus();
     steps.reset();
 
@@ -370,17 +405,17 @@ const WealthMonitorTool = (() => {
       enforceIrishOnly(user.country ?? user.countryId, user.username);
       steps.setStep(1, 'done', { count: `→ ${user.username}` });
 
-      // Keep the URL shareable (?u=username), like the other tools.
+      // Shareable URL + remember the verified name as a quick-pick chip.
       try {
         const u = new URL(location.href);
         u.searchParams.set('u', user.username);
         window.history.replaceState(null, '', u);
       } catch {}
+      rememberUsername(user.username);
 
       steps.setStep(2, 'active', { sub: 'Fetching current wealth' });
       const live = await fetchCurrentWealth(user._id);
       if (!live) { steps.markActiveAsError('No wealth data'); throw new Error(`Couldn't read wealth for ${user.username}.`); }
-      // Make sure history is loaded (it is, from init — but refresh cheaply).
       const hist = await fetchJson(HISTORY_URL).catch(() => null);
       if (hist && hist.users) history = hist;
       steps.setStep(2, 'done');
@@ -398,56 +433,49 @@ const WealthMonitorTool = (() => {
   }
 
   // ── Results rendering ───────────────────────────────────────────
-  function avatarHtml(username, avatarUrl, cls = 'wm-avatar') {
+  function avatarHtml(username, avatarUrl) {
     const initial = (username || '?').slice(0, 1).toUpperCase();
     if (avatarUrl && /^https?:\/\//.test(avatarUrl)) {
-      return `<div class="${cls}"><img src="${escapeHtml(avatarUrl)}" alt="" onerror="this.parentElement.textContent='${escapeHtml(initial)}'"></div>`;
+      return `<div class="wm-avatar"><img src="${escapeHtml(avatarUrl)}" alt="" onerror="this.parentElement.textContent='${escapeHtml(initial)}'"></div>`;
     }
-    return `<div class="${cls}">${escapeHtml(initial)}</div>`;
+    return `<div class="wm-avatar">${escapeHtml(initial)}</div>`;
   }
 
-  function renderResults() {
-    const { user, wealth, avatarUrl } = current;
+  function monitorBtnHtml() {
+    const on = monitored.some(e => e.userId === current.user._id);
+    return on
+      ? `<button class="wm-mon-btn on" id="wm-mon" title="Click to stop monitoring">● Monitored</button>`
+      : `<button class="wm-mon-btn add" id="wm-mon" title="Start monitoring this player">+ Monitor</button>`;
+  }
 
+  function renderSummary() {
+    const { user, wealth, avatarUrl } = current;
     $summary.innerHTML =
       avatarHtml(user.username, avatarUrl) +
       `<span class="wm-name"><a href="${GAME_BASE}/user/${user._id}" target="_blank" rel="noopener">${escapeHtml(user.username)}</a></span>` +
+      monitorBtnHtml() +
+      `<span class="wm-mon-status" id="wm-mon-status"></span>` +
       `<span class="wm-total">${fmtK(wealth.total)}<small>total wealth</small></span>`;
+    document.getElementById('wm-mon').addEventListener('click', onMonClick);
+  }
 
+  function renderResults() {
+    renderSummary();
     $breakdown.innerHTML = COMPONENTS.map(c =>
-      `<span title="${c.label}"><span class="wm-dot" style="background:${c.color}"></span>${c.label}: <b>${fmtK(wealth[c.key])}</b></span>`
+      `<span title="${c.label}"><span class="wm-dot" style="background:${c.color}"></span>${c.label}: <b>${fmtK(current.wealth[c.key])}</b></span>`
     ).join('');
-
-    renderMonitorToggle();
-
-    $results.classList.remove('hidden');
+    $statsCard.classList.remove('hidden');
+    $chartCard.classList.remove('hidden');
     renderChart();
   }
 
-  function renderMonitorToggle() {
-    const uid = current.user._id;
-    const on = monitored.some(e => e.userId === uid);
-    $monitor.className = `wm-monitor${on ? ' on' : ''}`;
-    if (on) {
-      $monitor.innerHTML =
-        `<span class="wm-monitor-label">✅ <strong>${escapeHtml(current.user.username)}</strong> is being monitored — wealth is snapshotted every 6 hours.</span>` +
-        `<button id="wm-toggle">Stop monitoring</button>` +
-        `<span class="wm-toggle-status" id="wm-toggle-status"></span>`;
-    } else {
-      $monitor.innerHTML =
-        `<span class="wm-monitor-label">Not monitored yet — no history is being collected for <strong>${escapeHtml(current.user.username)}</strong>.</span>` +
-        `<button id="wm-toggle" class="btn-primary">Start monitoring</button>` +
-        `<span class="wm-toggle-status" id="wm-toggle-status"></span>`;
-    }
-    document.getElementById('wm-toggle').addEventListener('click', () => handleToggle(!on));
-  }
-
-  async function handleToggle(add) {
+  async function onMonClick() {
+    const add = !monitored.some(e => e.userId === current.user._id);
     const { user } = current;
-    const $btn = document.getElementById('wm-toggle');
-    const $st = document.getElementById('wm-toggle-status');
+    const $btn = document.getElementById('wm-mon');
+    const $st = document.getElementById('wm-mon-status');
     $btn.disabled = true;
-    $st.innerHTML = `<span class="bf-spinner"></span>${add ? 'Adding' : 'Removing'}…`;
+    $st.innerHTML = `<span class="bf-spinner"></span>`;
     try {
       await dispatchUpdate(add ? 'add' : 'remove', user._id, user.username);
     } catch (e) {
@@ -455,21 +483,17 @@ const WealthMonitorTool = (() => {
       $btn.disabled = false;
       return;
     }
-    // Reflect locally.
     if (add) {
-      if (!monitored.some(e => e.userId === user._id))
-        monitored.push({ userId: user._id, username: user.username });
+      if (!monitored.some(e => e.userId === user._id)) monitored.push({ userId: user._id, username: user.username });
     } else {
       monitored = monitored.filter(e => e.userId !== user._id);
     }
     setCount();
-    renderMonitorToggle();
-    const $st2 = document.getElementById('wm-toggle-status');
-    $st2.textContent = add
-      ? 'Added. Give it ~1 minute to land; history starts from the next snapshot.'
-      : 'Removed. Existing history is kept; no new snapshots will be collected.';
+    renderSummary();                       // re-renders the toggle in its new state
+    document.getElementById('wm-mon-status').textContent = add
+      ? 'added · ~1 min to land'
+      : 'removed · history kept';
     renderChart();
-    // Re-pull authoritative list after the Action runs.
     setTimeout(refreshMonitored, 60000);
   }
 
@@ -692,7 +716,7 @@ const WealthMonitorTool = (() => {
       }
       if (stacked && rows)
         rows += `<div class="wm-tt-row" style="border-top:1px solid var(--border);margin-top:4px;padding-top:4px"><span class="wm-dot" style="background:${TOTAL_COLOR}"></span>Total<span class="wm-tt-val">${fmtK(total)}</span></div>`;
-      if (!rows) { $tt.style.opacity = 0; $tt.innerHTML = `<div class="wm-tt-date">${escapeHtml(shortLabel(lab))} · no data</div>`; $tt.style.opacity = 1; positionTip(i); return; }
+      if (!rows) { $tt.innerHTML = `<div class="wm-tt-date">${escapeHtml(shortLabel(lab))} · no data</div>`; positionTip(i); return; }
       $tt.innerHTML = `<div class="wm-tt-date">${escapeHtml(shortLabel(lab))}</div>${rows}`;
       positionTip(i);
     }
@@ -710,6 +734,12 @@ const WealthMonitorTool = (() => {
   // ── Control wiring ──────────────────────────────────────────────
   $submit.addEventListener('click', handleSubmit);
   $username.addEventListener('keydown', e => { if (e.key === 'Enter') handleSubmit(); });
+  $recent.addEventListener('click', e => {
+    const del = e.target.closest('[data-wm-recent-del]');
+    if (del) { forgetUsername(del.dataset.wmRecentDel); return; }
+    const pick = e.target.closest('[data-wm-recent]');
+    if (pick) { $username.value = pick.dataset.wmRecent; handleSubmit(); }
+  });
   $metricSeg.addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
     chart.metric = b.dataset.metric;
@@ -727,12 +757,13 @@ const WealthMonitorTool = (() => {
     const data = await fetchJson(MONITORED_URL).catch(() => null);
     monitored = (data?.entries || []).filter(e => e && e.userId && e.username);
     setCount();
-    if (current) renderMonitorToggle();
+    if (current) renderSummary();
   }
 
   // ── Tool entry point (router calls this; standalone calls it below) ─
   return {
     async activate(params) {
+      renderRecent();
       const [mon, hist] = await Promise.all([
         fetchJson(MONITORED_URL).catch(() => null),
         fetchJson(HISTORY_URL).catch(() => null),

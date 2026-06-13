@@ -16,6 +16,11 @@
  *  class="view" data-view="wealth"> for index.html.
  * ═══════════════════════════════════════════════════════════════════ */
 
+/* The result cards start hidden and are revealed on lookup. styles.css has
+   no global .hidden utility (each component scopes its own), so scope one
+   here for the wealth-monitor cards. */
+#wm-stats-card.hidden, #wm-chart-card.hidden, #wm-monitor-card.hidden { display: none; }
+
 /* Resolved-player summary header (lives in its own stats box) */
 .wm-summary { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
 .wm-avatar {
@@ -472,8 +477,8 @@ const WealthMonitorTool = (() => {
       $monitorText.innerHTML = `✅ <strong>${name}</strong> is being monitored — wealth is snapshotted every 6 hours. Stopping keeps the history already collected.`;
       $monitorCard.querySelector('#wm-mon').outerHTML = `<button id="wm-mon" class="wm-stop-btn">Stop monitoring</button>`;
     } else {
-      $monitorText.innerHTML = `<strong>${name}</strong> isn't monitored yet. Add them to the watch list and their wealth will be snapshotted every 6 hours, building history over time.`;
-      $monitorCard.querySelector('#wm-mon').outerHTML = `<button id="wm-mon" class="btn-primary wm-mon-btn">➕ Monitor ${name}</button>`;
+      $monitorText.innerHTML = `<strong>${name}</strong> isn't monitored yet. Add them to the watch list and their wealth will be snapshotted every 6 hours — the chart builds up over the following day or so.`;
+      $monitorCard.querySelector('#wm-mon').outerHTML = `<button id="wm-mon" class="btn-primary wm-mon-btn">➕ Start monitoring ${name}</button>`;
     }
     document.getElementById('wm-mon').addEventListener('click', onMonClick);
   }
@@ -484,11 +489,18 @@ const WealthMonitorTool = (() => {
       `<span title="${c.label}"><span class="wm-dot" style="background:${c.color}"></span>${c.label}: <b>${fmtK(current.wealth[c.key])}</b></span>`
     ).join('');
     $statsCard.classList.remove('hidden');
-    $chartCard.classList.remove('hidden');
     $monitorCard.classList.remove('hidden');
     document.getElementById('wm-mon-status').textContent = '';
     renderMonitorCard();
-    renderChart();
+    updateChartVisibility();
+  }
+
+  // The chart only makes sense once a player is monitored — otherwise
+  // there's no history and never will be. Hide the whole section until then.
+  function updateChartVisibility() {
+    const on = monitored.some(e => e.userId === current.user._id);
+    $chartCard.classList.toggle('hidden', !on);
+    if (on) renderChart();
   }
 
   async function onMonClick() {
@@ -513,9 +525,9 @@ const WealthMonitorTool = (() => {
     setCount();
     renderMonitorCard();                   // flips the button to its new state
     document.getElementById('wm-mon-status').textContent = add
-      ? 'Added · give it ~1 minute to land; history starts from the next snapshot.'
+      ? 'Added! It takes about a minute to land on the list, then a snapshot is taken every 6 hours — so the chart will only start showing a trend after a day or so. Check back tomorrow.'
       : 'Removed · existing history is kept; no new snapshots will be collected.';
-    renderChart();
+    updateChartVisibility();
     setTimeout(refreshMonitored, 60000);
   }
 
@@ -607,8 +619,8 @@ const WealthMonitorTool = (() => {
 
     if (dataCount === 0) {
       $chartBox.innerHTML = `<div class="wm-chart-empty">${monitoredNow
-        ? 'No snapshots collected yet. The logger runs every 6 hours — check back shortly.'
-        : 'No history for this player. Start monitoring them above and history will build from the next snapshot.'}</div>`;
+        ? 'Monitoring has started, but no snapshots have landed yet. A snapshot is taken every 6 hours, so the chart will start filling in over the next day or so — check back tomorrow.'
+        : 'No history for this player. Start monitoring them below and the chart will build up over the following day or so.'}</div>`;
       $legend.innerHTML = '';
       return;
     }
@@ -779,7 +791,7 @@ const WealthMonitorTool = (() => {
     const data = await fetchJson(MONITORED_URL).catch(() => null);
     monitored = (data?.entries || []).filter(e => e && e.userId && e.username);
     setCount();
-    if (current && !$monitorCard.classList.contains('hidden')) renderMonitorCard();
+    if (current && !$monitorCard.classList.contains('hidden')) { renderMonitorCard(); updateChartVisibility(); }
   }
 
   // ── Tool entry point (router calls this; standalone calls it below) ─

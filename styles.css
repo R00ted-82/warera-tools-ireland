@@ -13,6 +13,44 @@
   --atk: #f4a48f;
   --def: #9bc1ee;
 }
+
+/* ── Light theme (day mode). Attribute selector outranks :root, so it wins
+   over the dark defaults regardless of source order. Toggle in the header. ── */
+html[data-theme="light"] {
+  --bg: #f4f6f9;
+  --panel: #ffffff;
+  --panel-2: #eceff3;
+  --border: #d4d9e1;
+  --text: #131822;
+  --muted: #5a6675;
+  --accent: #15803d;       /* darker green: legible as text/links on light */
+  --accent-dim: #d6f5e0;   /* light green: active-pill & primary-button bg */
+  --warn: #b45309;
+  --danger: #dc2626;
+  --link: #2563eb;
+  --atk: #c2410c;
+  --def: #2563eb;
+  --bf-orange: #ea580c;
+  --bf-orange-bg: rgba(234, 88, 12, 0.10);
+  --bf-orange-border: rgba(234, 88, 12, 0.5);
+}
+body { transition: background-color .2s ease, color .2s ease; }
+
+/* Theme toggle in the header */
+.header-actions { display: flex; align-items: center; gap: 12px; }
+.theme-toggle {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; padding: 0; flex: none;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+  color: var(--muted); cursor: pointer;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.theme-toggle:hover { color: var(--text); border-color: var(--muted); }
+.theme-toggle svg { width: 17px; height: 17px; }
+.theme-toggle .ic-moon { display: none; }
+html[data-theme="light"] .theme-toggle .ic-sun { display: none; }
+html[data-theme="light"] .theme-toggle .ic-moon { display: inline-block; }
+
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
 body {

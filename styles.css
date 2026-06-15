@@ -1542,6 +1542,20 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
 .stg-nav::-webkit-scrollbar { display: none; }
 .stg-tab { scroll-snap-align: start; }
 
+/* Mobile: show every tool at once as a 2-col grid instead of a horizontal
+   scroll, so nothing's hidden off-screen and there's no back-and-forth.
+   Placed after both .stg-nav rules so it wins on small screens. */
+@media (max-width: 680px) {
+  .stg-nav {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    overflow-x: visible; scroll-snap-type: none;
+  }
+  .stg-tab { flex: unset; justify-content: center; padding: 10px 8px; scroll-snap-align: none; }
+  /* A lone last tile (odd count) spans the full width. */
+  .stg-tab:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .stg-nav-wrap::after { display: none; }   /* no horizontal overflow to fade now */
+}
+
 /* Community tab category headings */
 .community-cat {
   margin: 28px 0 12px;

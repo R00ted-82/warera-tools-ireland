@@ -559,12 +559,20 @@ details.alts-wrap summary:hover { color: var(--text); }
 .alt .right .v { font-weight: 600; }
 
 @media (max-width: 720px) {
-  .header-top { padding: 14px 20px; }
-  main { padding: 16px 20px; }
+  .header-top { padding: 10px 20px; }
+  main { padding: 12px 20px; }
   footer { padding: 16px 20px; }
 
-  .brand h1 { font-size: 20px; }
+  .brand h1 { font-size: 18px; }
+  .brand .sub { display: none; }   /* tagline is dead weight on a phone */
   .back-link { padding: 6px 12px; font-size: 12px; }
+
+  /* Reclaim vertical space in the toolkit chrome on small screens. */
+  .stg-sticky { margin-bottom: 12px; }
+  .stg-idbar { padding: 8px 0 10px; }
+  .stg-tools-head { margin: 0 0 6px; }
+  .stg-tool-info { padding: 11px 13px; margin-bottom: 12px; }
+  .stg-tool-info .stg-ti-icon { font-size: 19px; }
 
   .tool-header {
     margin-bottom: 16px;
@@ -1607,12 +1615,14 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
    Placed after both .stg-nav rules so it wins on small screens. */
 @media (max-width: 680px) {
   .stg-nav {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
     overflow-x: visible; scroll-snap-type: none;
+    padding: 2px 0 10px;
   }
-  .stg-tab { flex: unset; justify-content: center; padding: 10px 8px; scroll-snap-align: none; }
-  /* A lone last tile (odd count) spans the full width. */
-  .stg-tab:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .stg-tab {
+    flex: unset; justify-content: center; gap: 5px;
+    padding: 8px 6px; font-size: 12px; scroll-snap-align: none;
+  }
   .stg-nav-wrap::after { display: none; }   /* no horizontal overflow to fade now */
 }
 

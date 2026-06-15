@@ -58,14 +58,16 @@
        username bar, like a home page. Powered by StagingTool. -->
   <section class="view" data-view="home">
     <div class="stg">
-      <div class="stg-sticky">
-        <div class="stg-idbar">
-          <div class="stg-idbar-row">
-            <input id="stg-username" type="text" placeholder="Your War Era username" autocomplete="off" spellcheck="false" />
-            <button id="stg-load" class="btn-primary">Load</button>
-          </div>
-          <div class="stg-recent hidden" id="stg-recent"></div>
+      <!-- Username bar lives in normal flow so it scrolls away; only the
+           tools below it stay pinned. Scroll up to change the username. -->
+      <div class="stg-idbar">
+        <div class="stg-idbar-row">
+          <input id="stg-username" type="text" placeholder="Your War Era username" autocomplete="off" spellcheck="false" />
+          <button id="stg-load" class="btn-primary">Load</button>
         </div>
+        <div class="stg-recent hidden" id="stg-recent"></div>
+      </div>
+      <div class="stg-sticky">
         <div class="stg-tools-head hidden" id="stg-tools-head">Tools</div>
         <div class="stg-nav-wrap" id="stg-nav-wrap">
           <nav class="stg-nav hidden" id="stg-nav" role="tablist" aria-label="Tools">

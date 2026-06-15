@@ -175,7 +175,8 @@ table.dp-table tbody tr.dp-owned:hover { background: rgba(74,222,128,.1); }
       <div class="howto-body">
         <ul>
           <li><strong>Net / PP</strong> = <code>(salePrice − Σ(recipe × rawPrice)) × (1 + bonus) ÷ productionPoints</code>.
-              Recipes &amp; production points from <code>gameConfig</code>; prices from the WarEra market (warerastats);
+              Recipes &amp; production points from <code>gameConfig</code>; prices are the live market <strong>lowest offer</strong>
+              (best ask, what the game shows) via <code>tradingOrder.getTopOrders</code>;
               the production bonus from the same region/country model the Migration Advisor uses (best region shown).</li>
           <li><strong>Daily throughput</strong> ≈ your employees' output (<code>production × energy × 0.24 × (1 + fidelity)</code> PP/day each),
               your own self-work (<code>production × entrepreneurship × 0.24</code>, no fidelity/wage), plus each company's
@@ -183,7 +184,7 @@ table.dp-table tbody tr.dp-owned:hover { background: rgba(74,222,128,.1); }
           <li><strong>Ceiling / day</strong> is a theoretical upper bound: 100% of your total throughput on one
               product, minus your employee wages (a fixed cost) — not a realistic target. <strong>Actual / day</strong>
               sums what your companies currently produce of each item at their own region's bonus.</li>
-          <li>Items not on the warerastats feed (e.g. <code>wood</code>, <code>paper</code>) are priced from the live market order book (<code>tradingOrder.getTopOrders</code> — midpoint of best bid/ask).</li>
+          <li>Prices come live from the market (lowest sell offer). The <a href="https://warerastats.io/" target="_blank" rel="noopener">warerastats</a> average is only a fallback for any item whose order book is empty.</li>
           <li>Irish-citizens only (<code>?bypass=1</code> lifts it).</li>
         </ul>
       </div>
@@ -204,7 +205,7 @@ table.dp-table tbody tr.dp-owned:hover { background: rgba(74,222,128,.1); }
  *  any Irish player. Net/PP is verified against the in-game economy:
  *    Net/PP = (salePrice − rawCost) × (1 + bonus) / productionPoints
  *      recipe + productionPoints : gameConfig.items[code]
- *      prices                    : warerastats /items (avg)
+ *      prices                    : live market lowest offer (tradingOrder.getTopOrders), warerastats /items avg as fallback
  *      bonus                     : region/country model (same as the Advisor)
  *
  *  Access: Irish-citizens-only via enforceIrishOnly, honouring ?bypass=1.
@@ -350,6 +351,14 @@ const DailyProfitTool = (() => {
     return null;
   }
 
+  // Lowest live sell offer (best ask) — the "buy it now" price the game shows.
+  function orderLowestOffer(d) {
+    const so = d?.sellOrders || [];
+    let ask = Infinity;
+    for (const o of so) if (typeof o.price === 'number' && o.price < ask) ask = o.price;
+    return isFinite(ask) ? ask : null;
+  }
+
   // Salary = wages the user RECEIVED in the last 24h. Wage transactions are
   // trades: sellerId is the worker (sold labour), buyerId the employer. So we
   // sum `money` for wage txns where sellerId === the user. (Same source as
@@ -451,21 +460,24 @@ const DailyProfitTool = (() => {
         dp_trpc('country.getAllCountries', {}),
         fetch(`${WS_BASE}/countries`).then(r => r.json()).catch(() => []),
       ]);
-      const prices = {};
-      (Array.isArray(itemsArr) ? itemsArr : []).forEach(it => { if (it?.itemCode != null && typeof it.avg === 'number') prices[it.itemCode] = it.avg; });
       const gameItems = gameConfig?.items || {};
-      // Items missing from the warerastats feed (e.g. wood, paper) still have
-      // a live order book — pull a mid price from tradingOrder.getTopOrders
-      // (works through the proxy, no auth).
-      const missingCodes = Object.keys(META).filter(c => gameItems[c] && prices[c] == null);
-      if (missingCodes.length) {
-        steps.setStep(3, 'active', { sub: `Pricing ${missingCodes.length} order-book item(s)` });
-        await mapConcurrent(missingCodes, async (code) => {
-          const ob = await dp_trpc('tradingOrder.getTopOrders', { itemCode: code }).catch(() => null);
-          const mid = orderMid(ob);
-          if (mid != null) prices[code] = mid;
-        });
-      }
+      // Pricing. The warerastats `avg` is a trailing average that lags the
+      // market when a price moves (e.g. livestock/coca read low). So price from
+      // the live order book — the LOWEST OFFER (best ask), i.e. the "buy it now"
+      // value the game shows — falling back to the book midpoint, then to the
+      // feed average only when an item's book is empty/thin.
+      const avgPrices = {};
+      (Array.isArray(itemsArr) ? itemsArr : []).forEach(it => { if (it?.itemCode != null && typeof it.avg === 'number') avgPrices[it.itemCode] = it.avg; });
+      const prices = {};
+      const priceCodes = Object.keys(META).filter(c => gameItems[c]);
+      steps.setStep(3, 'active', { sub: 'Pricing items from the live market', count: `0/${priceCodes.length}` });
+      let pd = 0;
+      await mapConcurrent(priceCodes, async (code) => {
+        const ob = await dp_trpc('tradingOrder.getTopOrders', { itemCode: code }).catch(() => null);
+        const p  = orderLowestOffer(ob) ?? orderMid(ob) ?? avgPrices[code];
+        if (p != null) prices[code] = p;
+        steps.setStep(3, 'active', { count: `${++pd}/${priceCodes.length}` });
+      });
       const aeLevels = gameConfig?.upgradesConfig?.automatedEngine?.levels || {};
       const aeDailyProd = (lvl) => aeLevels[lvl]?.stats?.dailyProd || 0;
       // Moving a company or changing its production each costs concrete

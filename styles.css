@@ -1551,18 +1551,11 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
 .stg-tool-info .stg-ti-body p { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.5; }
 
 /* Empty / waiting state */
-.stg-empty { text-align: center; padding: 48px 20px 56px; color: var(--muted); }
-.stg-empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.85; }
-.stg-empty-title { margin: 0 0 6px; font-size: 16px; color: var(--text); font-weight: 600; }
-.stg-empty-sub { margin: 0; font-size: 12.5px; }
-.stg-empty-sub.ready { color: var(--accent); }
+.stg-empty { padding: 0 0 40px; color: var(--muted); }
 
 /* Landing preview of the tools (shown before a username is entered) */
-.stg-preview {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 14px; max-width: 940px; margin: 28px auto 0; text-align: left;
-}
-/* Home preview reuses the .tool-card look; reset <button> defaults */
+/* Home landing reuses the .home/.tool-cards/.tool-card look from gov/community.
+   Reset <button> defaults so the preview cards match the <a> cards exactly. */
 .stg-preview button.tool-card {
   width: 100%; font: inherit; text-align: left; cursor: pointer;
 }

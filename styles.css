@@ -1769,7 +1769,7 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
 /* The result cards start hidden and are revealed on lookup. There is no
    global .hidden utility (each component scopes its own), so scope one
    here for the wealth-monitor cards. */
-#wm-stats-card.hidden, #wm-chart-card.hidden, #wm-monitor-card.hidden { display: none; }
+#wm-stats-card.hidden, #wm-chart-card.hidden { display: none; }
 
 /* Resolved-player summary header (lives in its own stats box) */
 .wm-summary { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
@@ -1785,20 +1785,6 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
 .wm-name a:hover { color: var(--link); }
 .wm-total { margin-left: auto; font-size: 18px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; text-align: right; }
 .wm-total small { display: block; font-size: 11px; font-weight: 500; color: var(--muted); }
-
-/* Compact, inline monitor toggle / CTA card at the bottom of the page */
-.wm-monitor-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-.wm-monitor-text { flex: 1; min-width: 220px; font-size: 13px; color: var(--muted); line-height: 1.5; }
-.wm-monitor-text strong { color: var(--text); font-weight: 600; }
-.wm-mon-btn { white-space: nowrap; padding: 9px 18px; font-size: 13px; }
-.wm-stop-btn {
-  white-space: nowrap; padding: 9px 18px; font-size: 13px; cursor: pointer;
-  background: var(--bg); border: 1px solid var(--border); color: var(--muted);
-  border-radius: 6px; font-family: inherit;
-}
-.wm-stop-btn:hover:not(:disabled) { border-color: var(--danger); color: var(--danger); }
-.wm-mon-btn:disabled, .wm-stop-btn:disabled { opacity: .5; cursor: default; }
-.wm-mon-status { font-size: 12px; color: var(--muted); margin-top: 10px; }
 
 .wm-bd { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .wm-bd span b { color: var(--text); font-weight: 600; }

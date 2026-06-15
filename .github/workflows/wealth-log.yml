@@ -2,7 +2,12 @@ name: Wealth logger
 
 on:
   schedule:
-    - cron: "37 */2 * * *"   # every 2h, offset off the hour
+    # Twice a day, late UTC, for redundancy: if one run fails (API hiccup,
+    # etc.) the other still captures the day. History is daily-deduped, so
+    # both land on the same day's single point (latest wins) — the page reads
+    # the live value for "today" regardless.
+    - cron: "37 21 * * *"   # 21:37 UTC
+    - cron: "37 23 * * *"   # 23:37 UTC
   workflow_dispatch:
 
 permissions:
@@ -26,7 +31,7 @@ jobs:
         run: |
           git config user.name "wealth-log-bot"
           git config user.email "wealth-log-bot@users.noreply.github.com"
-          git add data/wealth-history.json 2>/dev/null || true
+          git add data/wealth 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "no changes"
           else

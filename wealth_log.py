@@ -2,54 +2,31 @@
 """
 wealth_log.py
 
-Wealth tracker for the Wealth Monitor tool (wealth-monitor.html on
-tools.we-ie.com). Companion to bunker_log.py: that one remembers regions,
-this one remembers player wealth.
+Wealth tracker for the Wealth Monitor tool (the #wealth tab on
+tools.we-ie.com). Snapshots the wealth of EVERY Irish citizen each run.
 
-Polls every 2h via GitHub Actions cron. For every user on the monitored
-list it fetches the public wealth breakdown and appends a timestamped
-snapshot to a rolling per-user history. The page reads that history and
-draws the wealth-over-time graph (total + the five-way breakdown), bucketed
-by day / week / month in the browser.
+STORAGE — per-user files, daily resolution:
+  Each citizen gets data/wealth/<userId>.json:
+    { "userId", "username", "snapshots": [ {t, total, companies, items,
+      money, equipments, weapons}, ... ] }
+  The page fetches only the one file for the player being viewed, so this
+  scales to hundreds of citizens without a giant download.
 
-The wealth breakdown is PUBLIC. user.getUserById returns:
+  We keep ONE snapshot per UTC day per user (the latest reading wins). The
+  chart only ever buckets by day/week/month and the page reads the live
+  "now" value client-side, so finer-than-daily history would never be shown.
+  Running more often than daily just refreshes the current day's point.
+
+The wealth breakdown is PUBLIC: user.getUserById returns
   stats.wealth = { companies, items, money, equipments, weapons, total }
-These are the exact figures the in-game profile shows under WEALTH. We store
-all five components plus the total so the page can graph any of them without
-re-fetching history.
+the exact figures the in-game profile shows under WEALTH.
 
-NOTE ON THE ORIGIN HEADER:
-  The warera-proxy Worker's CORS gate rejects GitHub Action runners (HTTP 403)
-  unless the request carries an Origin the proxy recognises. The waitlist
-  workflow hit the same wall. We send Origin: https://tools.we-ie.com on every
-  call for the same reason. (bunker_log.py's region endpoint happens not to
-  need it, but the user.* endpoints do.)
-
-NOTE ON rankings.userWealth vs stats.wealth.total:
-  rankings.userWealth.value is a separately-computed, slightly-lagged ranking
-  figure. stats.wealth.total is the exact sum of the five components shown on
-  the profile, so that is what we store as "total".
+ORIGIN header: the warera-proxy Worker rejects GitHub Action runners (HTTP
+403) unless the request carries a recognised Origin. We send
+tools.we-ie.com on every call, same as the other workflows.
 
 Run:
   python wealth_log.py
-
-Input:
-  monitored-users.json   { "entries": [ { "userId", "username" }, ... ] }
-
-Output (committed back by the workflow):
-  data/wealth-history.json
-    {
-      "users": {
-        "<userId>": {
-          "username": "toie",
-          "snapshots": [
-            { "t": "<iso>", "total", "companies", "items",
-              "money", "equipments", "weapons" }, ...
-          ]
-        }
-      },
-      "updatedAt": "<iso>"
-    }
 """
 
 import json
@@ -57,25 +34,24 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 # Config
-PROXY_BASE     = "https://warera-proxy.toie.workers.dev/trpc"
-ORIGIN         = "https://tools.we-ie.com"
-ROOT           = Path(__file__).parent
-MONITORED_FILE = ROOT / "monitored-users.json"
-DATA_DIR       = ROOT / "data"
-HISTORY_FILE   = DATA_DIR / "wealth-history.json"
-HTTP_TIMEOUT   = 30
-MAX_RETRIES    = 3
-RETRY_BACKOFF  = 5      # seconds, multiplied by attempt number
-USER_AGENT     = "warera-wealth-log/1.0"
-RETENTION_DAYS = 730    # keep two years of snapshots per user
-FETCH_PAUSE    = 0.2    # seconds between per-user fetches, be polite
+PROXY_BASE         = "https://warera-proxy.toie.workers.dev/trpc"
+ORIGIN             = "https://tools.we-ie.com"
+IRELAND_COUNTRY_ID = "6813b6d446e731854c7ac7fe"
+ROOT               = Path(__file__).parent
+WEALTH_DIR         = ROOT / "data" / "wealth"
+HTTP_TIMEOUT       = 30
+MAX_RETRIES        = 3
+RETRY_BACKOFF      = 4      # seconds * attempt
+USER_AGENT         = "warera-wealth-log/2.0"
+RETENTION_DAYS     = 365
+WORKERS            = 8      # concurrent getUserById fetches
+PAGE_LIMIT         = 100
 
-# The five components the profile breaks wealth into, plus the total. Keys are
-# exactly what stats.wealth uses. The page expects these same keys.
 WEALTH_KEYS = ("total", "companies", "items", "money", "equipments", "weapons")
 
 
@@ -98,70 +74,37 @@ def http_get_json(url):
         except (urllib.error.URLError, urllib.error.HTTPError,
                 json.JSONDecodeError, TimeoutError) as e:
             last_err = e
-            log(f"GET failed (attempt {attempt}/{MAX_RETRIES}): {e}")
             if attempt < MAX_RETRIES:
                 time.sleep(RETRY_BACKOFF * attempt)
-    raise RuntimeError(f"GET {url} failed after {MAX_RETRIES} attempts: {last_err}")
+    raise RuntimeError(f"GET failed after {MAX_RETRIES} attempts: {last_err}")
 
 
 def trpc(method, payload):
     inp = urllib.parse.quote(json.dumps(payload, separators=(",", ":")))
-    url = f"{PROXY_BASE}/{method}?input={inp}"
-    body = http_get_json(url)
-    return (body or {}).get("result", {}).get("data")
+    return (http_get_json(f"{PROXY_BASE}/{method}?input={inp}") or {}).get("result", {}).get("data")
 
 
-def parse_iso(s):
-    if not s:
-        return None
-    try:
-        return datetime.fromisoformat(s.replace("Z", "+00:00"))
-    except (ValueError, AttributeError):
-        return None
+def fetch_all_irish():
+    """Paginate user.getUsersByCountry → list of citizen dicts ({_id, username})."""
+    items, cursor, safety = [], None, 0
+    while safety < 300:
+        inp = {"countryId": IRELAND_COUNTRY_ID, "limit": PAGE_LIMIT}
+        if cursor:
+            inp["cursor"] = cursor
+        page = trpc("user.getUsersByCountry", inp)
+        arr = page.get("items") if isinstance(page, dict) else (page if isinstance(page, list) else [])
+        items.extend(arr or [])
+        nxt = (page.get("nextCursor") or page.get("cursor")) if isinstance(page, dict) else None
+        if not nxt or not arr:
+            break
+        cursor = nxt
+        safety += 1
+    return items
 
 
-# Monitored list + history I/O
-
-def load_monitored():
-    try:
-        with MONITORED_FILE.open("r", encoding="utf-8") as f:
-            data = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError) as e:
-        log(f"could not read monitored-users.json ({e}); nothing to track")
-        return []
-    entries = data.get("entries") if isinstance(data, dict) else None
-    return entries if isinstance(entries, list) else []
-
-
-def load_history():
-    if not HISTORY_FILE.exists():
-        return {"users": {}, "updatedAt": None}
-    try:
-        with HISTORY_FILE.open("r", encoding="utf-8") as f:
-            data = json.load(f)
-        if isinstance(data, dict) and isinstance(data.get("users"), dict):
-            return data
-    except (json.JSONDecodeError, OSError) as e:
-        log(f"failed to load wealth-history.json ({e}); starting fresh")
-    return {"users": {}, "updatedAt": None}
-
-
-def save_history(history):
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    tmp = HISTORY_FILE.with_suffix(".json.tmp")
-    with tmp.open("w", encoding="utf-8") as f:
-        json.dump(history, f, indent=2)
-    tmp.replace(HISTORY_FILE)
-    n_users = len(history.get("users", {}))
-    n_snaps = sum(len(u.get("snapshots", [])) for u in history.get("users", {}).values())
-    log(f"wrote wealth-history.json ({n_users} users, {n_snaps} snapshots total)")
-
-
-# Snapshot
-
-def fetch_wealth(user_id):
-    """Return (username, {component: value}) or (None, None) on failure."""
-    data = trpc("user.getUserById", {"userId": user_id})
+def fetch_wealth(uid):
+    """Return (username, {component: value}) or (username, None) on no data."""
+    data = trpc("user.getUserById", {"userId": uid})
     if not isinstance(data, dict):
         return None, None
     wealth = (data.get("stats") or {}).get("wealth")
@@ -170,67 +113,77 @@ def fetch_wealth(user_id):
     snap = {}
     for k in WEALTH_KEYS:
         v = wealth.get(k)
-        snap[k] = round(float(v), 2) if isinstance(v, (int, float)) else None
-    return data.get("username"), snap
+        if isinstance(v, (int, float)):
+            snap[k] = round(float(v), 2)
+    return data.get("username"), (snap if snap.get("total") is not None else None)
 
 
-def prune_old(snapshots, now):
-    cutoff = now - timedelta(days=RETENTION_DAYS)
-    kept = []
-    for s in snapshots:
-        dt = parse_iso(s.get("t"))
-        # Keep undated rows rather than silently dropping them.
-        if dt is None or dt >= cutoff:
-            kept.append(s)
-    return kept
+def upsert(uid, username, snap, now_iso, today, cutoff_iso):
+    """Append today's point (or replace today's existing one), prune old."""
+    path = WEALTH_DIR / f"{uid}.json"
+    rec = None
+    if path.exists():
+        try:
+            with path.open("r", encoding="utf-8") as f:
+                rec = json.load(f)
+        except (json.JSONDecodeError, OSError):
+            rec = None
+    if not isinstance(rec, dict) or not isinstance(rec.get("snapshots"), list):
+        rec = {"userId": uid, "username": username, "snapshots": []}
+    if username:
+        rec["username"] = username
+
+    point = {"t": now_iso}
+    point.update(snap)
+    snaps = rec["snapshots"]
+    # One point per UTC day — replace today's if it already exists.
+    if snaps and isinstance(snaps[-1].get("t"), str) and snaps[-1]["t"][:10] == today:
+        snaps[-1] = point
+    else:
+        snaps.append(point)
+    # Retention prune (keep undated rows rather than silently dropping them).
+    rec["snapshots"] = [s for s in snaps if not s.get("t") or s["t"] >= cutoff_iso]
+
+    with path.open("w", encoding="utf-8") as f:
+        json.dump(rec, f, separators=(",", ":"))
 
 
 def main():
     now = datetime.now(timezone.utc)
     now_iso = now.isoformat()
+    today = now_iso[:10]
+    cutoff_iso = (now - timedelta(days=RETENTION_DAYS)).isoformat()
 
-    entries = load_monitored()
-    if not entries:
-        log("monitored list is empty; nothing to do")
-        # Still ensure the history file exists so the page can fetch it.
-        if not HISTORY_FILE.exists():
-            save_history({"users": {}, "updatedAt": now_iso})
+    WEALTH_DIR.mkdir(parents=True, exist_ok=True)
+
+    citizens = fetch_all_irish()
+    ids = [c["_id"] for c in citizens if isinstance(c, dict) and c.get("_id")]
+    log(f"fetched {len(ids)} Irish citizens")
+    if not ids:
+        log("no citizens returned; aborting without changes")
         return 0
 
-    history = load_history()
-    users = history.setdefault("users", {})
-
-    taken = 0
-    for entry in entries:
-        uid = (entry or {}).get("userId")
-        if not uid:
-            continue
+    # Concurrent wealth fetches.
+    def worker(uid):
         try:
-            username, snap = fetch_wealth(uid)
+            return uid, fetch_wealth(uid)
         except Exception as e:
-            log(f"fetch failed for {uid} (non-fatal): {e}; keeping prior history")
+            return uid, ("__error__", str(e))
+
+    results = {}
+    with ThreadPoolExecutor(max_workers=WORKERS) as ex:
+        for uid, res in ex.map(worker, ids):
+            results[uid] = res
+
+    written = skipped = 0
+    for uid, (username, snap) in results.items():
+        if username == "__error__" or not snap or snap.get("total") is None:
+            skipped += 1
             continue
-        if not snap or snap.get("total") is None:
-            log(f"no wealth data for {uid} ({username}); skipping this run")
-            continue
+        upsert(uid, username, snap, now_iso, today, cutoff_iso)
+        written += 1
 
-        rec = users.setdefault(uid, {"username": username or entry.get("username"),
-                                     "snapshots": []})
-        # Canonical username from the API wins, keeps the file tidy over time.
-        if username:
-            rec["username"] = username
-
-        point = {"t": now_iso}
-        point.update(snap)
-        rec.setdefault("snapshots", []).append(point)
-        rec["snapshots"] = prune_old(rec["snapshots"], now)
-        taken += 1
-        log(f"snapshotted {rec['username']}: total={snap['total']}")
-        time.sleep(FETCH_PAUSE)
-
-    history["updatedAt"] = now_iso
-    save_history(history)
-    log(f"done: {taken} snapshot(s) taken this run")
+    log(f"done: wrote {written} user files, skipped {skipped}")
     return 0
 
 

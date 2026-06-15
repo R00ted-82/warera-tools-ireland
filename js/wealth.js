@@ -9,20 +9,19 @@
  *
  *  Data:
  *    - Current wealth: user.getUserById → stats.wealth (live).
- *    - History: data/wealth-history.json, collected every 2h by
+ *    - History: per-user data/wealth/<id>.json, collected daily by
  *      wealth_log.py. The API has no per-user wealth history, so the
  *      chart only covers the period since a player was added; gaps
  *      (incl. removed-then-re-added) render as real-width blanks.
- *    - Monitor list: monitored-users.json, toggled via the Worker's
- *      /monitored-update route (repository_dispatch → Action).
+ *    - Coverage: every Irish citizen is tracked automatically by the
+ *      logger (no opt-in) — each gets a per-user file under data/wealth/.
  *
  *  Access: Irish-citizens-only via enforceIrishOnly (shared.js),
  *  honouring ?bypass=1.
  * ═══════════════════════════════════════════════════════════════════ */
 const WealthMonitorTool = (() => {
-  const MONITORED_URL = 'monitored-users.json';
-  const HISTORY_URL   = 'data/wealth-history.json';
-  const MONITORED_UPDATE_URL = 'https://warera-proxy.toie.workers.dev/monitored-update';
+  // Per-user history file written by wealth_log.py for every Irish citizen.
+  const histUrl = uid => `data/wealth/${uid}.json`;
 
   const COMPONENTS = [
     { key: 'companies',  label: 'Companies', color: '#60a5fa' },
@@ -41,11 +40,8 @@ const WealthMonitorTool = (() => {
   const $submit    = document.getElementById('wm-submit');
   const $recent    = document.getElementById('wm-recent');
   const $status    = document.getElementById('wm-status');
-  const $count     = document.getElementById('wm-count');
   const $statsCard = document.getElementById('wm-stats-card');
   const $chartCard = document.getElementById('wm-chart-card');
-  const $monitorCard = document.getElementById('wm-monitor-card');
-  const $monitorText = document.getElementById('wm-monitor-text');
   const $summary   = document.getElementById('wm-summary');
   const $breakdown = document.getElementById('wm-breakdown');
   const $metricSeg = document.getElementById('wm-metric-seg');
@@ -55,11 +51,9 @@ const WealthMonitorTool = (() => {
   const steps      = makeSteps(document.getElementById('wm-steps'));
 
   // State
-  let monitored = [];                 // [{ userId, username }]
-  let history   = { users: {} };      // wealth-history.json
-  let current   = null;               // { user, wealth, avatarUrl } for the resolved player
-  let dataLoaded = false;             // monitored list + history fetched once
-  const chart   = { user: null, metric: 'total', bucket: 'day' };
+  let current      = null;            // { user, wealth, avatarUrl } for the resolved player
+  let historySnaps = [];              // the resolved player's snapshots
+  const chart      = { user: null, metric: 'total', bucket: 'day' };
 
   // Helpers
   const wm_trpc = (endpoint, input) => trpc(endpoint, input, { retry: true });
@@ -118,25 +112,6 @@ const WealthMonitorTool = (() => {
     return { username: data.username, avatarUrl: data.avatarUrl, wealth };
   }
 
-  async function dispatchUpdate(action, userId, username) {
-    const res = await fetch(MONITORED_UPDATE_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, userId, username }),
-    });
-    if (!res.ok) {
-      let detail = '';
-      try { const b = await res.json(); detail = b?.error ? `: ${b.error}` : ''; }
-      catch { const t = await res.text().catch(() => ''); if (t) detail = `: ${t.slice(0, 200)}`; }
-      throw new Error(`Update failed (HTTP ${res.status})${detail}`);
-    }
-    return true;
-  }
-
-  function setCount() {
-    const n = monitored.length;
-    $count.innerHTML = `Monitoring <strong>${n}</strong> player${n === 1 ? '' : 's'}`;
-  }
 
   // ── Recent usernames (localStorage) — mirrors the toolkit shell ─
   function readRecent() {
@@ -180,7 +155,6 @@ const WealthMonitorTool = (() => {
     $submit.disabled = true;
     $statsCard.classList.add('hidden');
     $chartCard.classList.add('hidden');
-    $monitorCard.classList.add('hidden');
     hideStatus();
     steps.reset();
 
@@ -205,16 +179,15 @@ const WealthMonitorTool = (() => {
 
       // Shareable URL + remember the verified name as a quick-pick chip.
       // The hash rewrite (same shape as the other tools) is what the home
-      // shell's hash guard folds back into #home?u=…&tool=wealth. Use the
-      // real window.history — `history` is our local wealth-history state.
+      // shell's hash guard folds back into #home?u=…&tool=wealth.
       try { window.history.replaceState(null, '', `#wealth?u=${encodeURIComponent(user.username)}`); } catch {}
       rememberUsername(user.username);
 
-      steps.setStep(2, 'active', { sub: 'Fetching current wealth' });
+      steps.setStep(2, 'active', { sub: 'Fetching wealth & history' });
       const live = await fetchCurrentWealth(user._id);
       if (!live) { steps.markActiveAsError('No wealth data'); throw new Error(`Couldn't read wealth for ${user.username}.`); }
-      const hist = await fetchJson(HISTORY_URL).catch(() => null);
-      if (hist && hist.users) history = hist;
+      const hist = await fetchJson(histUrl(user._id)).catch(() => null);
+      historySnaps = (hist && Array.isArray(hist.snapshots)) ? hist.snapshots : [];
       steps.setStep(2, 'done');
       steps.fadeOut(300);
 
@@ -246,67 +219,14 @@ const WealthMonitorTool = (() => {
       `<span class="wm-total">${fmtK(wealth.total)}<small>total wealth</small></span>`;
   }
 
-  // The clear monitor CTA at the bottom. Re-rendered whenever the
-  // monitored state flips so the label always matches reality.
-  function renderMonitorCard() {
-    const on = monitored.some(e => e.userId === current.user._id);
-    const name = escapeHtml(current.user.username);
-    if (on) {
-      $monitorText.innerHTML = `✅ <strong>${name}</strong> is being monitored — wealth is snapshotted every 2 hours. Stopping keeps the history already collected.`;
-      $monitorCard.querySelector('#wm-mon').outerHTML = `<button id="wm-mon" class="wm-stop-btn">Stop monitoring</button>`;
-    } else {
-      $monitorText.innerHTML = `<strong>${name}</strong> isn't monitored yet. Add them to the watch list and their wealth will be snapshotted every 2 hours — the chart builds up over the following day or so.`;
-      $monitorCard.querySelector('#wm-mon').outerHTML = `<button id="wm-mon" class="btn-primary wm-mon-btn">➕ Start monitoring ${name}</button>`;
-    }
-    document.getElementById('wm-mon').addEventListener('click', onMonClick);
-  }
-
   function renderResults() {
     renderSummary();
     $breakdown.innerHTML = COMPONENTS.map(c =>
       `<span title="${c.label}"><span class="wm-dot" style="background:${c.color}"></span>${c.label}: <b>${fmtK(current.wealth[c.key])}</b></span>`
     ).join('');
     $statsCard.classList.remove('hidden');
-    $monitorCard.classList.remove('hidden');
-    document.getElementById('wm-mon-status').textContent = '';
-    renderMonitorCard();
-    updateChartVisibility();
-  }
-
-  // The chart only makes sense once a player is monitored — otherwise
-  // there's no history and never will be. Hide the whole section until then.
-  function updateChartVisibility() {
-    const on = monitored.some(e => e.userId === current.user._id);
-    $chartCard.classList.toggle('hidden', !on);
-    if (on) renderChart();
-  }
-
-  async function onMonClick() {
-    const add = !monitored.some(e => e.userId === current.user._id);
-    const { user } = current;
-    const $btn = document.getElementById('wm-mon');
-    const $st = document.getElementById('wm-mon-status');
-    $btn.disabled = true;
-    $st.innerHTML = `<span class="bf-spinner"></span>${add ? 'Adding' : 'Removing'}…`;
-    try {
-      await dispatchUpdate(add ? 'add' : 'remove', user._id, user.username);
-    } catch (e) {
-      $st.textContent = `Failed: ${e.message}`;
-      $btn.disabled = false;
-      return;
-    }
-    if (add) {
-      if (!monitored.some(e => e.userId === user._id)) monitored.push({ userId: user._id, username: user.username });
-    } else {
-      monitored = monitored.filter(e => e.userId !== user._id);
-    }
-    setCount();
-    renderMonitorCard();                   // flips the button to its new state
-    document.getElementById('wm-mon-status').textContent = add
-      ? 'Added! It takes about a minute to land on the list, then a snapshot is taken every 2 hours — so the chart will only start showing a trend after a day or so. Check back tomorrow.'
-      : 'Removed · existing history is kept; no new snapshots will be collected.';
-    updateChartVisibility();
-    setTimeout(refreshMonitored, 60000);
+    $chartCard.classList.remove('hidden');
+    renderChart();
   }
 
   // ── Bucketing ───────────────────────────────────────────────────
@@ -368,11 +288,10 @@ const WealthMonitorTool = (() => {
   }
 
   function buildSeries() {
-    const snaps = (history.users[chart.user]?.snapshots || []).slice();
+    const snaps = historySnaps.slice();
     // Append the live "now" reading so the chart's right edge matches the
     // game. Stored snapshots lag by up to the cron interval, so without this
-    // the last point can sit hours behind the in-game figure. `current` is
-    // the resolved player and chart.user is always their id.
+    // the last point can sit hours behind the in-game figure.
     if (current && current.user._id === chart.user && current.wealth) {
       const w = current.wealth;
       snaps.push({
@@ -404,17 +323,14 @@ const WealthMonitorTool = (() => {
 
   function renderChart() {
     const { labels, series, dataCount } = buildSeries();
-    const monitoredNow = monitored.some(e => e.userId === chart.user);
 
     if (dataCount === 0) {
-      $chartBox.innerHTML = `<div class="wm-chart-empty">${monitoredNow
-        ? 'Monitoring has started, but no snapshots have landed yet. A snapshot is taken every 2 hours, so the chart will start filling in over the next day or so — check back tomorrow.'
-        : 'No history for this player. Start monitoring them below and the chart will build up over the following day or so.'}</div>`;
+      $chartBox.innerHTML = `<div class="wm-chart-empty">No history yet for this player. A daily snapshot is collected, so the chart fills in over the next few days — check back tomorrow.</div>`;
       $legend.innerHTML = '';
       return;
     }
     if (dataCount === 1) {
-      $chartBox.innerHTML = `<div class="wm-chart-empty">Only one snapshot so far. Lines appear once there are at least two data points in this bucket.</div>`;
+      $chartBox.innerHTML = `<div class="wm-chart-empty">Only one data point so far — the chart fills in as more daily snapshots are collected. Check back tomorrow.</div>`;
       $legend.innerHTML = '';
       return;
     }
@@ -679,23 +595,6 @@ const WealthMonitorTool = (() => {
     renderChart();
   });
 
-  async function loadData() {
-    const [mon, hist] = await Promise.all([
-      fetchJson(MONITORED_URL).catch(() => null),
-      fetchJson(HISTORY_URL).catch(() => null),
-    ]);
-    monitored = (mon?.entries || []).filter(e => e && e.userId && e.username);
-    history = (hist && hist.users) ? hist : { users: {} };
-    setCount();
-  }
-
-  async function refreshMonitored() {
-    const data = await fetchJson(MONITORED_URL).catch(() => null);
-    monitored = (data?.entries || []).filter(e => e && e.userId && e.username);
-    setCount();
-    if (current && !$monitorCard.classList.contains('hidden')) { renderMonitorCard(); updateChartVisibility(); }
-  }
-
   return {
     /**
      * Router/shell entry. Driven by the shared username in the home shell
@@ -703,9 +602,8 @@ const WealthMonitorTool = (() => {
      * Idempotent: re-runs the lookup only when the username changes.
      * @param {URLSearchParams} [params]
      */
-    async activate(params) {
+    activate(params) {
       renderRecent();
-      if (!dataLoaded) { dataLoaded = true; await loadData(); }
 
       const u = (params && params.get && params.get('u'))
              || new URLSearchParams(location.search).get('u');

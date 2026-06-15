@@ -636,9 +636,8 @@
     <div class="tool-header">
       <div class="title-block">
         <h2><span>💰</span> Wealth Monitor</h2>
-        <p>Track an Irish player's wealth over time — total, or broken down by source.</p>
+        <p>Track any Irish player's wealth over time — total, or broken down by source.</p>
       </div>
-      <div class="bf-stats-line" id="wm-count">&nbsp;</div>
     </div>
 
     <!-- Look up a player — same input bar + recent chips as the rest of the tools -->
@@ -701,32 +700,19 @@
       <div class="wm-legend" id="wm-legend"></div>
     </div>
 
-    <!-- Monitor action — clear CTA, hidden until a player is looked up -->
-    <div class="bf-card hidden" id="wm-monitor-card">
-      <div class="wm-monitor-row">
-        <div class="wm-monitor-text" id="wm-monitor-text"></div>
-        <button id="wm-mon"></button>
-      </div>
-      <div class="wm-mon-status" id="wm-mon-status"></div>
-    </div>
-
     <details class="howto">
       <summary>How this works</summary>
       <div class="howto-body">
         <ul>
           <li>The wealth breakdown is public: <code>user.getUserById</code> returns
               <code>stats.wealth = { companies, items, money, equipments, weapons, total }</code> —
-              the exact figures on the profile.</li>
-          <li>A GitHub Action snapshots every monitored player every 2 hours and appends to
-              <code>data/wealth-history.json</code>. The chart buckets those snapshots by day,
-              week or month in your browser. Periods with no snapshots (e.g. before a player was
-              added, or while they were removed) show as <strong>real gaps</strong> in the line.</li>
-          <li>Adding or removing a player posts to the <code>warera-proxy</code> Worker, which fires
-              a <code>repository_dispatch</code>; a second Action edits <code>monitored-users.json</code>.
-              That's the ~1 minute lag.</li>
-          <li>Only <strong>Irish citizens</strong> can be monitored (checked in the browser and again
-              server-side). Append <code>?bypass=1</code> to the URL to lift the browser-side gate
-              for admin or debugging.</li>
+              the exact figures on the profile. The current value is read live when you look a player up.</li>
+          <li>All Irish citizens are snapshotted daily by a GitHub Action into a per-player history
+              file. The chart buckets those daily snapshots by day, week or month in your browser; the
+              live value is plotted as the final point. Periods with no snapshots show as
+              <strong>real gaps</strong> in the line.</li>
+          <li>Only <strong>Irish citizens</strong> can be looked up. Append <code>?bypass=1</code> to the
+              URL to lift that gate for admin or debugging.</li>
         </ul>
       </div>
     </details>

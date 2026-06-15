@@ -48,7 +48,7 @@ const ToolkitShell = (() => {
   const $navWrap  = document.getElementById('stg-nav-wrap');
   const $username = document.getElementById('stg-username');
   const $load     = document.getElementById('stg-load');
-  const $hint     = document.getElementById('stg-idbar-hint');
+  const $toolsHead = document.getElementById('stg-tools-head');
   const $empty    = document.getElementById('stg-empty');
   const $emptySub = document.getElementById('stg-empty-sub');
   const $recent   = document.getElementById('stg-recent');
@@ -291,12 +291,14 @@ const ToolkitShell = (() => {
   /* ── Gate ───────────────────────────────────────────────── */
   function revealTools() {
     $nav.classList.remove('hidden');
+    $toolsHead.classList.remove('hidden');
     $mount.classList.remove('hidden');
     $empty.classList.add('hidden');
     updateNavFade();
   }
   function gateTools() {
     $nav.classList.add('hidden');
+    $toolsHead.classList.add('hidden');
     $mount.classList.add('hidden');
     $empty.classList.remove('hidden');
   }
@@ -313,12 +315,6 @@ const ToolkitShell = (() => {
     catch (e) { console.error(`[home] activate ${state.active} failed`, e); }
   }
 
-  function updateHint() {
-    $hint.innerHTML = USERNAME_DRIVEN.has(state.active)
-      ? `Your username is reused across Migration, Clock-In, Wealth and Buddy Finder.`
-      : `Military Units don't need a username. Pick another tool to use yours.`;
-  }
-
   function selectTool(tool, { run = true } = {}) {
     if (!TOOLS.includes(tool)) tool = DEFAULT_TOOL;
     if (state.active === tool) { if (run) driveActive(); writeStagingHash(); return; }
@@ -328,7 +324,6 @@ const ToolkitShell = (() => {
     $nav.querySelectorAll('.stg-tab').forEach(b =>
       b.classList.toggle('active', b.dataset.stgTab === tool));
     $mount.dataset.active = tool;
-    updateHint();
     if (run) driveActive();
     writeStagingHash();
   }

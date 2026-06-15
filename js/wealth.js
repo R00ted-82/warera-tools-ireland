@@ -368,7 +368,19 @@ const WealthMonitorTool = (() => {
   }
 
   function buildSeries() {
-    const snaps = history.users[chart.user]?.snapshots || [];
+    const snaps = (history.users[chart.user]?.snapshots || []).slice();
+    // Append the live "now" reading so the chart's right edge matches the
+    // game. Stored snapshots lag by up to the cron interval, so without this
+    // the last point can sit hours behind the in-game figure. `current` is
+    // the resolved player and chart.user is always their id.
+    if (current && current.user._id === chart.user && current.wealth) {
+      const w = current.wealth;
+      snaps.push({
+        t: new Date().toISOString(),
+        companies: w.companies, items: w.items, money: w.money,
+        equipments: w.equipments, weapons: w.weapons, total: w.total,
+      });
+    }
     if (!snaps.length) return { labels: [], series: [], dataCount: 0 };
     const times = snaps.map(s => s.t).filter(Boolean).sort();
     const labels = allBuckets(times[0], times[times.length - 1], chart.bucket);

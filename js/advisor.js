@@ -90,6 +90,8 @@ const AdvisorTool = (() => {
     petroleum:  { name: 'Petroleum',       file: 'petroleum.png',  fb: '🛢️' },
     iron:       { name: 'Iron',            file: 'iron.png',       fb: '⛓️' },
     limestone:  { name: 'Limestone',       file: 'limestone.png',  fb: '🪨' },
+    paper:      { name: 'Paper',           file: 'paper.png',      fb: '📄' },
+    wood:       { name: 'Wood',            file: 'wood.png',       fb: '🪵' },
   };
 
   const OPTIMAL_THRESHOLD = 2;

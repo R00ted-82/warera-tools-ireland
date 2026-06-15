@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Daily Profit · War Era tools</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'%3E%3Crect width='1' height='2' fill='%23009A49'/%3E%3Crect x='1' width='1' height='2' fill='white'/%3E%3Crect x='2' width='1' height='2' fill='%23FF7900'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="styles.css" />
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+ *  DAILY PROFIT — tool-specific styles (dp- prefix). Drop-in
+ *  <section class="view" data-view="profit"> for index.html on merge.
+ * ═══════════════════════════════════════════════════════════════════ */
+#dp-stats-card.hidden, #dp-table-card.hidden { display: none; }
+
+.dp-assump { display: flex; flex-wrap: wrap; gap: 12px 22px; align-items: flex-end; }
+.dp-field { display: flex; flex-direction: column; gap: 3px; }
+.dp-field label { font-size: 11px; color: var(--muted); }
+.dp-field input {
+  background: var(--bg); color: var(--text); border: 1px solid var(--border);
+  border-radius: 6px; padding: 6px 9px; font-size: 13px; font-family: inherit;
+  font-variant-numeric: tabular-nums; width: 140px;
+}
+.dp-field .dp-suffix { font-size: 11px; color: var(--muted); }
+
+/* Income summary cards */
+.dp-income { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 14px; }
+.dp-inc { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 11px 13px; }
+.dp-inc .dp-inc-label { font-size: 12px; color: var(--muted); }
+.dp-inc .dp-inc-val { font-size: 17px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; margin-top: 2px; }
+.dp-inc .dp-inc-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.dp-inc.total { border-color: rgba(74,222,128,.35); }
+.dp-inc.total .dp-inc-val { color: var(--accent); }
+
+/* Per-product table */
+.dp-table-wrap { overflow-x: auto; }
+table.dp-table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+table.dp-table th, table.dp-table td { padding: 7px 10px; text-align: right; white-space: nowrap; }
+table.dp-table th { color: var(--muted); font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: .03em; border-bottom: 1px solid var(--border); }
+table.dp-table td.dp-l, table.dp-table th.dp-l { text-align: left; }
+table.dp-table tbody tr { border-bottom: 1px solid var(--border); }
+table.dp-table tbody tr:hover { background: var(--panel-2); }
+table.dp-table tbody tr.dp-owned { background: rgba(74,222,128,.06); }
+table.dp-table tbody tr.dp-owned:hover { background: rgba(74,222,128,.1); }
+.dp-prod { display: inline-flex; align-items: center; gap: 7px; }
+.dp-prod .icon-box { width: 22px; height: 22px; }
+.dp-cat { font-size: 11px; color: var(--muted); }
+.dp-pill { display: inline-block; font-size: 10.5px; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
+.dp-pill.product { border-color: rgba(96,165,250,.4); color: var(--link); }
+.dp-netpp { font-weight: 700; color: var(--text); }
+.dp-netpp.neg { color: var(--danger); }
+.dp-bonus { color: var(--accent); }
+.dp-muted { color: var(--muted); }
+.dp-actual { color: var(--accent); font-weight: 600; }
+.dp-na { color: var(--muted); opacity: .6; }
+.dp-note { font-size: 12px; color: var(--muted); margin: 12px 0 0; line-height: 1.5; }
+.dp-note code { background: var(--panel-2); padding: 1px 5px; border-radius: 3px; font-family: ui-monospace, monospace; font-size: 11px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <a class="brand" href="index.html">
+      <h1>🇮🇪 War Era tools</h1>
+      <div class="sub">An Irish player's toolkit</div>
+    </a>
+    <a class="back-link" href="index.html">← Back</a>
+  </div>
+</header>
+
+<main>
+  <!-- Drop-in view for index.html. Register 'profit' in router.js + the
+       shell (toolkit.js) on merge; JS already follows activate(params). -->
+  <section class="view active" data-view="profit">
+    <div class="tool-header">
+      <div class="title-block">
+        <h2><span>📈</span> Daily Profit</h2>
+        <p>What each product is worth per production point, and your projected daily profit — auto-filled from the game.</p>
+      </div>
+    </div>
+
+    <div class="stg-idbar">
+      <div class="stg-idbar-row">
+        <input type="text" id="dp-username" placeholder="In-game username" autocomplete="off" spellcheck="false" />
+        <button id="dp-submit" class="btn-primary">Load</button>
+      </div>
+      <div class="stg-recent hidden" id="dp-recent"></div>
+    </div>
+
+    <div id="dp-steps" class="steps hidden">
+      <div class="step" data-state="pending" data-step="1">
+        <div class="step-icon"></div>
+        <div class="step-body"><div class="step-title">Find player</div><div class="step-sub"></div></div>
+        <div class="step-count"></div>
+      </div>
+      <div class="step" data-state="pending" data-step="2">
+        <div class="step-icon"></div>
+        <div class="step-body"><div class="step-title">Load companies &amp; workers</div><div class="step-sub"></div></div>
+        <div class="step-count"></div>
+      </div>
+      <div class="step" data-state="pending" data-step="3">
+        <div class="step-icon"></div>
+        <div class="step-body"><div class="step-title">Load market &amp; region bonuses</div><div class="step-sub"></div></div>
+        <div class="step-count"></div>
+      </div>
+    </div>
+
+    <div id="dp-status" class="bf-inline-status hidden"></div>
+
+    <!-- Income summary + assumptions -->
+    <div class="bf-card hidden" id="dp-stats-card">
+      <h3 id="dp-stats-head">Projected income</h3>
+      <p class="bf-card-sub">Per day, at current market prices. Tweak the throughput to model hypotheticals — everything recalculates live.</p>
+      <div class="dp-assump" id="dp-assump"></div>
+      <div class="dp-income" id="dp-income"></div>
+    </div>
+
+    <!-- Per-product profitability table -->
+    <div class="bf-card hidden" id="dp-table-card">
+      <h3>Profit by product</h3>
+      <p class="bf-card-sub"><strong>Net / PP</strong> = profit per production point at the best region bonus. <strong>Max / day</strong> = Net/PP × your daily throughput (if 100% of it went to that one product). <strong>Actual / day</strong> = what your companies currently make of it.</p>
+      <div class="dp-table-wrap">
+        <table class="dp-table" id="dp-table"></table>
+      </div>
+      <p class="dp-note" id="dp-table-note"></p>
+    </div>
+
+    <details class="howto">
+      <summary>How this works · methodology</summary>
+      <div class="howto-body">
+        <ul>
+          <li><strong>Net / PP</strong> = <code>(salePrice − Σ(recipe × rawPrice)) × (1 + bonus) ÷ productionPoints</code>.
+              Recipes &amp; production points from <code>gameConfig</code>; prices from the WarEra market (warerastats);
+              the production bonus from the same region/country model the Migration Advisor uses (best region shown).</li>
+          <li><strong>Daily throughput</strong> ≈ your own + your employees' output (<code>production × energy × 0.343</code> PP/day each)
+              plus each company's automated-engine production. It's an estimate — edit the field to match your real numbers.</li>
+          <li><strong>Max / day</strong> assumes 100% of that throughput goes to one product. <strong>Actual / day</strong>
+              sums what your companies currently produce of each item at their own region's bonus.</li>
+          <li>A few items aren't priced on the market yet (e.g. <code>wood</code>, <code>paper</code>) and show “–”.</li>
+          <li>Irish-citizens only (<code>?bypass=1</code> lifts it).</li>
+        </ul>
+      </div>
+    </details>
+  </section>
+</main>
+
+<footer>
+  Made with <span class="heart">♥️</span> by toie. <span class="sep">·</span> Live data via <a href="https://gateway.warerastats.io/" target="_blank" rel="noopener">War Era Gateway</a> &amp; <a href="https://warerastats.io/" target="_blank" rel="noopener">warerastats</a>.
+</footer>
+
+<script src="js/shared.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+ *  DAILY PROFIT
+ *
+ *  Auto-computes per-product profitability and projected daily profit for
+ *  any Irish player. Net/PP is verified against the in-game economy:
+ *    Net/PP = (salePrice − rawCost) × (1 + bonus) / productionPoints
+ *      recipe + productionPoints : gameConfig.items[code]
+ *      prices                    : warerastats /items (avg)
+ *      bonus                     : region/country model (same as the Advisor)
+ *
+ *  Access: Irish-citizens-only via enforceIrishOnly, honouring ?bypass=1.
+ * ═══════════════════════════════════════════════════════════════════ */
+const DailyProfitTool = (() => {
+  const WS_BASE = (typeof WARERASTATS_BASE !== 'undefined') ? WARERASTATS_BASE : 'https://warera-proxy.toie.workers.dev/warerastats';
+  const ITEMS_URL = 'https://api.warerastats.io/items';
+  const ACTIONS_PER_ENERGY = 0.343;   // daily PP per player ≈ production × energy × this
+  const RECENT_KEY = 'dp:recent-usernames';
+  const RECENT_MAX = 8;
+
+  // Display name + category, matching the in-game / spreadsheet labels.
+  const META = {
+    paper:     { name: 'Paper',       cat: 'Construction' },
+    iron:      { name: 'Iron',        cat: 'Construction' },
+    steel:     { name: 'Steel',       cat: 'Construction' },
+    limestone: { name: 'Limestone',   cat: 'Construction' },
+    concrete:  { name: 'Concrete',    cat: 'Construction' },
+    wood:      { name: 'Wood',        cat: 'Construction' },
+    oil:       { name: 'Oil',         cat: 'Construction' },
+    petroleum: { name: 'Petroleum',   cat: 'Construction' },
+    fish:      { name: 'Fish',        cat: 'Food' },
+    steak:     { name: 'Steak',       cat: 'Food' },
+    grain:     { name: 'Grain',       cat: 'Food' },
+    cookedFish:{ name: 'Cooked Fish', cat: 'Food' },
+    livestock: { name: 'Cow',         cat: 'Food' },
+    bread:     { name: 'Bread',       cat: 'Food' },
+    lead:      { name: 'Lead',        cat: 'War' },
+    coca:      { name: 'Plant',       cat: 'War' },
+    lightAmmo: { name: 'Light Ammo',  cat: 'War' },
+    ammo:      { name: 'Ammo',        cat: 'War' },
+    cocain:    { name: 'Pill',        cat: 'War' },
+    heavyAmmo: { name: 'Heavy Ammo',  cat: 'War' },
+  };
+  const ICON_FILE = {
+    iron:'iron.png',steel:'steel.png',limestone:'limestone.png',concrete:'concrete.png',
+    oil:'oil.png',petroleum:'petroleum.png',fish:'fish.png',steak:'steak.png',grain:'grain.png',
+    cookedFish:'cookedFish.png',livestock:'livestock.png',bread:'bread.png',lead:'lead.png',
+    coca:'coca.png',lightAmmo:'lightAmmo.png',ammo:'ammo.png',cocain:'cocain.png',heavyAmmo:'heavyAmmo.png',
+  };
+
+  // ── Advisor's verified production-bonus model (see js/advisor.js) ──
+  const AGRARIAN_ITEMS = new Set(['steak','bread','fish','cookedFish','livestock','grain','coca','cocain']);
+  let GAME_DEPOSIT_BONUS = 30;
+  const isDepositActive = (d) => {
+    if (!d) return false;
+    const now = Date.now();
+    const s = d.startsAt ? new Date(d.startsAt).getTime() : 0;
+    const e = d.endsAt ? new Date(d.endsAt).getTime() : 0;
+    return now >= s && now <= e;
+  };
+  const ethicsLean = (c) => {
+    const ind = c?.industrialism;
+    if (typeof ind !== 'number' || ind === 0) return 'neutral';
+    return ind > 0 ? 'industrialist' : 'agrarian';
+  };
+  function computeBonus(country, region, itemCode) {
+    if (!country) return null;
+    const isSpec = country.specializedItem === itemCode;
+    const lean = ethicsLean(country);
+    const strategic = isSpec ? (country.strategicResources?.bonuses?.productionPercent || 0) : 0;
+    const specialisation = isSpec && lean === 'industrialist' && !AGRARIAN_ITEMS.has(itemCode) ? 30 : 0;
+    const hasDep = !!region?.deposit && region.deposit.type === itemCode && isDepositActive(region.deposit)
+      && !(isSpec && lean === 'industrialist');
+    const deposit = hasDep ? (region.deposit.bonusPercent || 0) : 0;
+    const depositCountry = hasDep && lean === 'agrarian' ? GAME_DEPOSIT_BONUS : 0;
+    const total = strategic + specialisation + deposit + depositCountry;
+    const tax = country.taxes?.income ?? 0;
+    return { total, tax, region, country };
+  }
+
+  // ── DOM ─────────────────────────────────────────────────────────
+  const $username = document.getElementById('dp-username');
+  const $submit   = document.getElementById('dp-submit');
+  const $recent   = document.getElementById('dp-recent');
+  const $status   = document.getElementById('dp-status');
+  const $statsCard= document.getElementById('dp-stats-card');
+  const $tableCard= document.getElementById('dp-table-card');
+  const $statsHead= document.getElementById('dp-stats-head');
+  const $assump   = document.getElementById('dp-assump');
+  const $income   = document.getElementById('dp-income');
+  const $table    = document.getElementById('dp-table');
+  const $tableNote= document.getElementById('dp-table-note');
+  const steps     = makeSteps(document.getElementById('dp-steps'));
+
+  // ── State ───────────────────────────────────────────────────────
+  let model = null;
+  const dp_trpc = (ep, input) => trpc(ep, input, { retry: true });
+
+  // ── Helpers ─────────────────────────────────────────────────────
+  const fmt2 = (v) => (v == null || !isFinite(v)) ? '–' : v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmt3 = (v) => (v == null || !isFinite(v)) ? '–' : v.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+  const fmtK = (v) => (v == null || !isFinite(v)) ? '–' : (Math.abs(v) >= 1000 ? (v/1000).toFixed(2) + 'K' : v.toFixed(2));
+
+  function showStatus(level, html) { $status.className = `bf-inline-status ${level}`; $status.innerHTML = html; $status.classList.remove('hidden'); }
+  function hideStatus() { $status.classList.add('hidden'); $status.innerHTML = ''; }
+
+  async function fetchJsonUrl(url) {
+    const res = await fetch(url, { cache: 'no-cache' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  }
+  async function mapConcurrent(items, worker, concurrency = 12) {
+    const out = new Array(items.length); let i = 0;
+    async function pump() { while (i < items.length) { const idx = i++; try { out[idx] = await worker(items[idx]); } catch { out[idx] = null; } } }
+    await Promise.all(Array(Math.min(concurrency, items.length || 1)).fill(0).map(pump));
+    return out;
+  }
+
+  async function resolveUsername(username) {
+    const needle = username.trim().toLowerCase();
+    if (!needle) return null;
+    const res = await dp_trpc('search.searchAnything', { searchText: username });
+    const ids = (res?.userIds || []).slice(0, 10);
+    if (!ids.length) return null;
+    const profiles = await mapConcurrent(ids, async (id) => { try { return await dp_trpc('user.getUserLite', { userId: id }); } catch { return null; } });
+    return profiles.find(u => u && typeof u.username === 'string' && u.username.toLowerCase() === needle) || null;
+  }
+
+  function skill(u, name) {
+    const sk = u?.skills?.[name];
+    if (!sk || typeof sk !== 'object') return 0;
+    for (const k of ['total','value','level']) { const n = sk[k]; if (typeof n === 'number' && isFinite(n)) return n; }
+    return 0;
+  }
+  const dailyPPof = (u) => Math.round(skill(u, 'production') * skill(u, 'energy') * ACTIONS_PER_ENERGY);
+
+  // ── Recent chips (mirrors the shell) ────────────────────────────
+  const readRecent = () => { try { const a = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); return Array.isArray(a) ? a.filter(x => typeof x === 'string') : []; } catch { return []; } };
+  const writeRecent = (l) => { try { localStorage.setItem(RECENT_KEY, JSON.stringify(l.slice(0, RECENT_MAX))); } catch {} };
+  function rememberUsername(u) { const l = readRecent().filter(x => x.toLowerCase() !== u.toLowerCase()); l.unshift(u); writeRecent(l); renderRecent(); }
+  function forgetUsername(n) { writeRecent(readRecent().filter(x => x.toLowerCase() !== n.toLowerCase())); renderRecent(); }
+  function renderRecent() {
+    const l = readRecent();
+    if (!l.length) { $recent.innerHTML = ''; $recent.classList.add('hidden'); return; }
+    $recent.classList.remove('hidden');
+    $recent.innerHTML = `<span class="stg-recent-label">Recent:</span>` + l.map(u => {
+      const s = escapeHtml(u);
+      return `<span class="stg-recent-chip"><button class="stg-recent-pick" data-dp-recent="${s}">${s}</button><button class="stg-recent-del" data-dp-recent-del="${s}" title="Remove">×</button></span>`;
+    }).join('');
+  }
+
+  // ── Load + compute ──────────────────────────────────────────────
+  async function handleSubmit() {
+    const raw = $username.value.trim();
+    if (!raw) { showStatus('warn', 'Please enter an in-game username.'); $username.focus(); return; }
+
+    $submit.disabled = true;
+    $statsCard.classList.add('hidden');
+    $tableCard.classList.add('hidden');
+    hideStatus();
+    steps.reset();
+
+    try {
+      steps.setStep(1, 'active', { sub: `Searching for "${raw}"` });
+      let user;
+      try { user = await resolveUsername(raw); }
+      catch (e) {
+        steps.markActiveAsError('Lookup failed');
+        throw new Error(isTransientError(e) ? `The data server is having a moment (${e.message}). Try again shortly.` : `Username lookup failed: ${e.message}`);
+      }
+      if (!user) { steps.markActiveAsError('No user found'); throw new Error(`No War Era user found with username "${raw}".`); }
+      enforceIrishOnly(user.country ?? user.countryId, user.username);
+      steps.setStep(1, 'done', { count: `→ ${user.username}` });
+      try { window.history.replaceState(null, '', `#profit?u=${encodeURIComponent(user.username)}`); } catch {}
+      rememberUsername(user.username);
+
+      // Step 2: companies + workers
+      steps.setStep(2, 'active', { sub: 'Fetching companies' });
+      const [companyList, workersData] = await Promise.all([
+        dp_trpc('company.getCompanies', { userId: user._id, perPage: 100 }),
+        dp_trpc('worker.getWorkers', { userId: user._id }).catch(() => null),
+      ]);
+      const companyIds = companyList?.items || [];
+      steps.setStep(2, 'active', { sub: 'Loading company details', count: `0/${companyIds.length}` });
+      let loaded = 0;
+      const companies = (await mapConcurrent(companyIds, async (id) => {
+        const c = await dp_trpc('company.getById', { companyId: id }).catch(() => null);
+        steps.setStep(2, 'active', { count: `${++loaded}/${companyIds.length}` });
+        return c;
+      })).filter(Boolean);
+
+      const workerEntries = [];
+      (workersData?.workersPerCompany || []).forEach(({ company, workers }) => {
+        (workers || []).forEach(w => { if (w && w.user) workerEntries.push({ companyId: company?._id, userId: w.user, wage: w.wage }); });
+      });
+      const uniqueWorkerIds = [...new Set(workerEntries.map(w => w.userId).filter(id => id !== user._id))];
+      const workerProfiles = {};
+      await mapConcurrent(uniqueWorkerIds, async (id) => {
+        const lite = await dp_trpc('user.getUserLite', { userId: id }).catch(() => null);
+        if (lite) workerProfiles[id] = lite;
+      });
+      steps.setStep(2, 'done', { count: `${companies.length} companies` });
+
+      // Step 3: market + bonuses
+      steps.setStep(3, 'active', { sub: 'Loading market, regions & countries' });
+      const [itemsArr, gameConfig, regionsObj, allCountriesRaw, wsCountries] = await Promise.all([
+        fetchJsonUrl(ITEMS_URL).catch(() => []),
+        dp_trpc('gameConfig.getGameConfig', {}).catch(() => null),
+        dp_trpc('region.getRegionsObject', {}),
+        dp_trpc('country.getAllCountries', {}),
+        fetch(`${WS_BASE}/countries`).then(r => r.json()).catch(() => []),
+      ]);
+      const prices = {};
+      (Array.isArray(itemsArr) ? itemsArr : []).forEach(it => { if (it?.itemCode != null && typeof it.avg === 'number') prices[it.itemCode] = it.avg; });
+      const gameItems = gameConfig?.items || {};
+      const cfgDep = gameConfig?.company?.depositResourceBonus;
+      if (typeof cfgDep === 'number') GAME_DEPOSIT_BONUS = cfgDep;
+      const missionMoney = (gameConfig?.mission?.reward?.daily?.money || 0)
+        + (gameConfig?.mission?.reward?.weekly?.money || 0) / 7;
+
+      const allCountries = Array.isArray(allCountriesRaw) ? allCountriesRaw : (allCountriesRaw?.items || []);
+      steps.setStep(3, 'active', { sub: 'Loading country bonuses', count: `0/${allCountries.length}` });
+      let cl = 0;
+      const countryById = {};
+      await mapConcurrent(allCountries, async (c) => {
+        const full = await dp_trpc('country.getCountryById', { countryId: c._id }).catch(() => null);
+        if (full) countryById[c._id] = full;
+        steps.setStep(3, 'active', { count: `${++cl}/${allCountries.length}` });
+      }, 25);
+      (Array.isArray(wsCountries) ? wsCountries : []).forEach(c => {
+        if (c && c.countryId != null && c.industrialism != null && countryById[c.countryId]) countryById[c.countryId].industrialism = c.industrialism;
+      });
+      steps.setStep(3, 'done', { count: `${Object.keys(countryById).length} countries` });
+      steps.fadeOut(300);
+
+      // Best region bonus per item (across all regions) → "max" framing.
+      const regionsByCountry = {};
+      Object.values(regionsObj).forEach(r => { if (r?.country) (regionsByCountry[r.country] = regionsByCountry[r.country] || []).push(r); });
+      const bestBonus = {};
+      for (const code in META) {
+        let best = { total: 0, region: null, country: null };
+        for (const cid in countryById) {
+          const country = countryById[cid];
+          for (const region of (regionsByCountry[cid] || [])) {
+            const b = computeBonus(country, region, code);
+            if (b && b.total > best.total) best = b;
+          }
+        }
+        bestBonus[code] = best;
+      }
+
+      // Per-company current-region bonus + automated-engine PP/day.
+      companies.forEach(c => {
+        const region = regionsObj[c.region];
+        const country = region ? countryById[region.country] : null;
+        c._bonus = computeBonus(country, region, c.itemCode);
+        c._dailyPP = (typeof c.production === 'number' ? c.production : 0);
+      });
+
+      const selfPP = dailyPPof(user);
+      const employeePP = workerEntries.reduce((s, w) => s + (workerProfiles[w.userId] ? dailyPPof(workerProfiles[w.userId]) : 0), 0);
+      const companyAEPP = companies.reduce((s, c) => s + (c._dailyPP || 0), 0);
+      const throughputPP = Math.round(selfPP + employeePP + companyAEPP);
+
+      model = { user, prices, gameItems, bestBonus, companies, missionMoney,
+                selfPP, employeePP, companyAEPP, priceOverrides: {},
+                assumptions: { throughputPP } };
+      renderAll();
+    } catch (e) {
+      steps.markActiveAsError(e.message);
+      showStatus('error', escapeHtml(e.message));
+    } finally {
+      $submit.disabled = false;
+    }
+  }
+
+  // ── Economics ───────────────────────────────────────────────────
+  function price(code) {
+    const o = model.priceOverrides[code];
+    if (o != null && o !== '' && isFinite(+o)) return +o;
+    return model.prices[code] != null ? model.prices[code] : null;
+  }
+  function rawCostOf(code) {
+    const needs = model.gameItems[code]?.productionNeeds;
+    if (!needs) return 0;
+    let cost = 0;
+    for (const r in needs) { const p = price(r); if (p == null) return null; cost += needs[r] * p; }
+    return cost;
+  }
+  // Net profit per production point for an item at a given bonus %.
+  function netPerPP(code, bonusPct) {
+    const it = model.gameItems[code];
+    const pp = it?.productionPoints || 0;
+    if (!pp) return null;
+    const sale = price(code);
+    if (sale == null) return null;
+    const rc = rawCostOf(code);
+    if (rc == null) return null;
+    return (sale - rc) * (1 + bonusPct / 100) / pp;
+  }
+
+  // ── Render ──────────────────────────────────────────────────────
+  function renderAll() {
+    renderAssumptions();
+    renderTableAndIncome();
+    $statsCard.classList.remove('hidden');
+    $tableCard.classList.remove('hidden');
+  }
+
+  function renderAssumptions() {
+    const a = model.assumptions;
+    $statsHead.textContent = `Projected income · ${model.user.username}`;
+    $assump.innerHTML = `
+      <div class="dp-field">
+        <label title="Total production points output per day (you + employees + company engines)">Daily PP throughput</label>
+        <input type="number" id="dp-tp" value="${a.throughputPP}" min="0" step="1">
+        <span class="dp-suffix">self ${model.selfPP} + staff ${model.employeePP} + engines ${Math.round(model.companyAEPP)}</span>
+      </div>
+    `;
+    $assump.querySelector('#dp-tp').addEventListener('input', e => {
+      const v = parseFloat(e.target.value);
+      model.assumptions.throughputPP = isFinite(v) ? v : 0;
+      renderTableAndIncome();
+    });
+  }
+
+  function buildRows() {
+    const rows = [];
+    for (const code in META) {
+      const it = model.gameItems[code];
+      if (!it) continue;
+      const bb = model.bestBonus[code] || { total: 0 };
+      const npp = netPerPP(code, bb.total);
+      let actual = 0, makesIt = false;
+      for (const c of model.companies) {
+        if (c.itemCode !== code) continue;
+        makesIt = true;
+        const cnpp = netPerPP(code, c._bonus ? c._bonus.total : 0);
+        if (cnpp != null) actual += cnpp * (c._dailyPP || 0);
+      }
+      rows.push({ code, name: META[code].name, cat: META[code].cat, type: it.type,
+                  netPP: npp, bonus: bb.total, region: bb.region, country: bb.country,
+                  makesIt, actual: makesIt ? actual : null });
+    }
+    rows.sort((a, b) => (b.netPP ?? -Infinity) - (a.netPP ?? -Infinity));
+    return rows;
+  }
+
+  function iconHtml(code) {
+    const f = ICON_FILE[code];
+    if (!f) return `<span>📦</span>`;
+    return `<div class="icon-box"><img src="images/${f}" alt="" onerror="this.parentElement.innerHTML='📦'"></div>`;
+  }
+
+  function renderTableAndIncome() {
+    const tp = model.assumptions.throughputPP || 0;
+    const rows = buildRows();
+
+    $table.innerHTML = `
+      <thead><tr>
+        <th class="dp-l">Product</th>
+        <th class="dp-l">Type</th>
+        <th>Sale</th>
+        <th>Raw cost</th>
+        <th>Bonus</th>
+        <th>Net / PP</th>
+        <th>Max / day</th>
+        <th>Actual / day</th>
+      </tr></thead>
+      <tbody>${rows.map(r => {
+        const sale = price(r.code);
+        const rc = rawCostOf(r.code);
+        const maxDay = r.netPP != null ? r.netPP * tp : null;
+        const regionTip = r.region ? `${escapeHtml(r.region.name)}${r.country ? ' · ' + escapeHtml(r.country.name) : ''}` : 'no bonus region';
+        return `<tr class="${r.makesIt ? 'dp-owned' : ''}">
+          <td class="dp-l"><span class="dp-prod">${iconHtml(r.code)}<span>${escapeHtml(r.name)}</span></span> <span class="dp-cat">· ${r.cat}</span></td>
+          <td class="dp-l"><span class="dp-pill ${r.type}">${r.type === 'product' ? 'Finished' : 'Raw'}</span></td>
+          <td>${sale == null ? '<span class="dp-na">–</span>' : fmt3(sale)}</td>
+          <td>${rc == null ? '<span class="dp-na">–</span>' : (rc ? fmt3(rc) : '<span class="dp-muted">0</span>')}</td>
+          <td class="dp-bonus" title="${regionTip}">${r.bonus ? '+' + fmt2(r.bonus) + '%' : '<span class="dp-muted">0%</span>'}</td>
+          <td class="dp-netpp ${r.netPP != null && r.netPP < 0 ? 'neg' : ''}">${r.netPP == null ? '<span class="dp-na">–</span>' : fmt3(r.netPP)}</td>
+          <td>${maxDay == null ? '<span class="dp-na">–</span>' : fmtK(maxDay)}</td>
+          <td>${r.actual == null ? '<span class="dp-na">—</span>' : `<span class="dp-actual">${fmtK(r.actual)}</span>`}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    `;
+
+    const priced = rows.filter(r => r.netPP != null).length;
+    const missing = rows.filter(r => r.netPP == null).map(r => r.name);
+    const top = rows[0];
+    $tableNote.innerHTML = `Best Net/PP: <strong>${top && top.netPP != null ? top.name + ' (' + fmt3(top.netPP) + '/PP)' : '–'}</strong>. `
+      + `${priced}/${rows.length} products priced.` + (missing.length ? ` No market price for: <code>${missing.join('</code>, <code>')}</code>.` : '');
+
+    const companiesIncome = rows.reduce((s, r) => s + (r.actual || 0), 0);
+    const items = [
+      { label: 'Companies', val: companiesIncome, sub: `${model.companies.length} companies, current output` },
+      { label: 'Daily missions', val: model.missionMoney, sub: 'daily + weekly/7' },
+    ];
+    const total = items.reduce((s, x) => s + (x.val || 0), 0);
+    $income.innerHTML = items.map(x =>
+      `<div class="dp-inc"><div class="dp-inc-label">${x.label}</div><div class="dp-inc-val">${fmtK(x.val)}</div><div class="dp-inc-sub">${x.sub}</div></div>`
+    ).join('') + `<div class="dp-inc total"><div class="dp-inc-label">Total / day</div><div class="dp-inc-val">${fmtK(total)}</div><div class="dp-inc-sub">≈ ${fmtK(total * 7)} / week</div></div>`;
+  }
+
+  // ── Wiring ──────────────────────────────────────────────────────
+  $submit.addEventListener('click', handleSubmit);
+  $username.addEventListener('keydown', e => { if (e.key === 'Enter') handleSubmit(); });
+  $recent.addEventListener('click', e => {
+    const del = e.target.closest('[data-dp-recent-del]');
+    if (del) { forgetUsername(del.dataset.dpRecentDel); return; }
+    const pick = e.target.closest('[data-dp-recent]');
+    if (pick) { $username.value = pick.dataset.dpRecent; handleSubmit(); }
+  });
+
+  return {
+    activate(params) {
+      renderRecent();
+      const u = (params && params.get && params.get('u')) || new URLSearchParams(location.search).get('u');
+      if (u && $username.value.toLowerCase() !== u.toLowerCase()) { $username.value = u; handleSubmit(); }
+      else if (!u && !$username.value) $username.focus();
+    },
+  };
+})();
+
+// Standalone bootstrap — delete on merge into index.html (router drives activate).
+DailyProfitTool.activate(new URLSearchParams(location.search));
+</script>
+</body>
+</html>

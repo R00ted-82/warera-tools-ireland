@@ -223,11 +223,11 @@ const DailyProfitTool = (() => {
 
   // Display name + category, matching the in-game / spreadsheet labels.
   const META = {
-    paper:     { name: 'Paper',       cat: 'Construction' },
     iron:      { name: 'Iron',        cat: 'Construction' },
     steel:     { name: 'Steel',       cat: 'Construction' },
     limestone: { name: 'Limestone',   cat: 'Construction' },
     concrete:  { name: 'Concrete',    cat: 'Construction' },
+    paper:     { name: 'Paper',       cat: 'Construction' },
     wood:      { name: 'Wood',        cat: 'Construction' },
     oil:       { name: 'Oil',         cat: 'Construction' },
     petroleum: { name: 'Petroleum',   cat: 'Construction' },
@@ -473,10 +473,11 @@ const DailyProfitTool = (() => {
       const moveCost = gameConfig?.company?.moveCost ?? gameConfig?.company?.changeItemCost ?? 5;
       const cfgDep = gameConfig?.company?.depositResourceBonus;
       if (typeof cfgDep === 'number') GAME_DEPOSIT_BONUS = cfgDep;
-      // Recurring mission rewards. The game has Daily and Weekly sets only
-      // (no Monthly). Daily is counted as-is; Weekly's 30 is spread over 7 days
-      // for the per-day view. Mission cases (daily + weekly/7) flow into the
-      // Case-sales line. (Starting missions are one-time, so they're excluded.)
+      // Recurring mission rewards. Daily is counted as-is; weekly and monthly
+      // are prorated to a daily figure (÷7 and ÷30) and shown on their own
+      // income lines, so the Daily line stays the true daily reward. Mission
+      // cases (daily + weekly/7 + monthly/30) all flow into the Case-sales line.
+      // (Starting missions are one-time, so they're excluded.)
       const mr = gameConfig?.mission?.reward || {};
       const missionMoney       = (mr.daily?.money  || 0);
       const missionMoneyWeekly = (mr.weekly?.money || 0) / 7;

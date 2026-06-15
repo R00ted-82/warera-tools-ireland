@@ -13,9 +13,9 @@
  * ═══════════════════════════════════════════════════════════════════ */
 #dp-stats-card.hidden, #dp-table-card.hidden { display: none; }
 
-.dp-assump { display: flex; flex-wrap: wrap; gap: 12px 22px; align-items: flex-end; }
-.dp-field { display: flex; flex-direction: column; gap: 3px; }
-.dp-field label { font-size: 11px; color: var(--muted); }
+.dp-assump { display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: flex-start; }
+.dp-field { display: flex; flex-direction: column; gap: 4px; }
+.dp-field label { font-size: 11px; color: var(--muted); white-space: nowrap; }
 .dp-field input {
   background: var(--bg); color: var(--text); border: 1px solid var(--border);
   border-radius: 6px; padding: 6px 9px; font-size: 13px; font-family: inherit;
@@ -137,7 +137,7 @@ table.dp-table tbody tr.dp-owned:hover { background: rgba(74,222,128,.1); }
               plus each company's automated-engine production. It's an estimate — edit the field to match your real numbers.</li>
           <li><strong>Max / day</strong> assumes 100% of that throughput goes to one product. <strong>Actual / day</strong>
               sums what your companies currently produce of each item at their own region's bonus.</li>
-          <li>A few items aren't priced on the market yet (e.g. <code>wood</code>, <code>paper</code>) and show “–”.</li>
+          <li>Items not on the warerastats feed (e.g. <code>wood</code>, <code>paper</code>) are priced from the live market order book (<code>tradingOrder.getTopOrders</code> — midpoint of best bid/ask).</li>
           <li>Irish-citizens only (<code>?bypass=1</code> lifts it).</li>
         </ul>
       </div>
@@ -289,6 +289,20 @@ const DailyProfitTool = (() => {
     for (const k of ['total','value','level']) { const n = sk[k]; if (typeof n === 'number' && isFinite(n)) return n; }
     return 0;
   }
+
+  // Representative price from an order book: midpoint of best bid/ask
+  // (falls back to whichever side exists). Matches the warerastats avg well.
+  function orderMid(d) {
+    const bo = d?.buyOrders || [], so = d?.sellOrders || [];
+    let bid = -Infinity, ask = Infinity;
+    for (const o of bo) if (typeof o.price === 'number' && o.price > bid) bid = o.price;
+    for (const o of so) if (typeof o.price === 'number' && o.price < ask) ask = o.price;
+    const hasBid = isFinite(bid), hasAsk = isFinite(ask);
+    if (hasBid && hasAsk) return (bid + ask) / 2;
+    if (hasAsk) return ask;
+    if (hasBid) return bid;
+    return null;
+  }
   // ── Recent chips (mirrors the shell) ────────────────────────────
   const readRecent = () => { try { const a = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); return Array.isArray(a) ? a.filter(x => typeof x === 'string') : []; } catch { return []; } };
   const writeRecent = (l) => { try { localStorage.setItem(RECENT_KEY, JSON.stringify(l.slice(0, RECENT_MAX))); } catch {} };
@@ -368,6 +382,18 @@ const DailyProfitTool = (() => {
       const prices = {};
       (Array.isArray(itemsArr) ? itemsArr : []).forEach(it => { if (it?.itemCode != null && typeof it.avg === 'number') prices[it.itemCode] = it.avg; });
       const gameItems = gameConfig?.items || {};
+      // Items missing from the warerastats feed (e.g. wood, paper) still have
+      // a live order book — pull a mid price from tradingOrder.getTopOrders
+      // (works through the proxy, no auth).
+      const missingCodes = Object.keys(META).filter(c => gameItems[c] && prices[c] == null);
+      if (missingCodes.length) {
+        steps.setStep(3, 'active', { sub: `Pricing ${missingCodes.length} order-book item(s)` });
+        await mapConcurrent(missingCodes, async (code) => {
+          const ob = await dp_trpc('tradingOrder.getTopOrders', { itemCode: code }).catch(() => null);
+          const mid = orderMid(ob);
+          if (mid != null) prices[code] = mid;
+        });
+      }
       const aeLevels = gameConfig?.upgradesConfig?.automatedEngine?.levels || {};
       const aeDailyProd = (lvl) => aeLevels[lvl]?.stats?.dailyProd || 0;
       const cfgDep = gameConfig?.company?.depositResourceBonus;
@@ -496,8 +522,9 @@ const DailyProfitTool = (() => {
     const unpriced = Object.keys(META).filter(c => model.gameItems[c] && model.prices[c] == null);
     const priceFields = unpriced.map(c => `
       <div class="dp-field">
-        <label>${escapeHtml(META[c].name)} price <span class="dp-suffix">· untraded, set it</span></label>
+        <label>${escapeHtml(META[c].name)} price</label>
         <input type="number" class="dp-price-in" data-code="${c}" value="${model.priceOverrides[c] ?? ''}" min="0" step="0.001" placeholder="—">
+        <span class="dp-suffix">untraded · set it</span>
       </div>`).join('');
     const salaryPP = Math.round(model.selfProd * model.selfEnergy * WORK_FACTOR);
     $assump.innerHTML = `
@@ -514,6 +541,7 @@ const DailyProfitTool = (() => {
       <div class="dp-field">
         <label title="Any daily costs to subtract (taxes, upkeep, etc.)">Deductions / day</label>
         <input type="number" id="dp-deduct" value="${a.deductions}" min="0" step="0.01" placeholder="0">
+        <span class="dp-suffix">tax, upkeep, etc.</span>
       </div>
       ${priceFields}
     `;
@@ -591,7 +619,7 @@ const DailyProfitTool = (() => {
         const maxDay = r.netPP != null ? r.netPP * tp : null;
         const regionTip = r.region ? `${escapeHtml(r.region.name)}${r.country ? ' · ' + escapeHtml(r.country.name) : ''}` : 'no bonus region';
         return `<tr class="${r.makesIt ? 'dp-owned' : ''}">
-          <td class="dp-l"><span class="dp-prod">${iconHtml(r.code)}<span>${escapeHtml(r.name)}</span></span> <span class="dp-cat">· ${r.cat}</span></td>
+          <td class="dp-l"><span class="dp-prod">${iconHtml(r.code)}<span>${escapeHtml(r.name)}</span><span class="dp-cat">· ${r.cat}</span></span></td>
           <td class="dp-l"><span class="dp-pill ${r.type}">${r.type === 'product' ? 'Finished' : 'Raw'}</span></td>
           <td>${sale == null ? '<span class="dp-na">–</span>' : fmt3(sale)}</td>
           <td>${rc == null ? '<span class="dp-na">–</span>' : (rc ? fmt3(rc) : '<span class="dp-muted">0</span>')}</td>

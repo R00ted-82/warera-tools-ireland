@@ -14848,5 +14848,174 @@
     "name": "Punjab",
     "cc": "pk",
     "occ": "pk"
+  },
+  {
+    "at": "2026-06-15T22:29:15.044877+00:00",
+    "type": "battle_started",
+    "rid": "6813b70d9403bc4170a5db91",
+    "code": "af-east",
+    "name": "Eastern Afghanistan",
+    "cc": "af",
+    "occ": "af"
+  },
+  {
+    "at": "2026-06-15T22:29:15.044877+00:00",
+    "type": "came_online",
+    "rid": "683ddd3f36dbc90b780475cb",
+    "code": "lk-eastern",
+    "name": "Eastern Sri Lanka",
+    "cc": "in",
+    "occ": "lk",
+    "to": 2
+  },
+  {
+    "at": "2026-06-15T22:29:15.044877+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b7059403bc4170a5d789",
+    "code": "hr-dalmatia",
+    "name": "Dalmatia",
+    "cc": "me",
+    "occ": "hr",
+    "from": "hr",
+    "to": "me"
+  },
+  {
+    "at": "2026-06-15T22:29:15.044877+00:00",
+    "type": "went_offline",
+    "rid": "6813b7059403bc4170a5d789",
+    "code": "hr-dalmatia",
+    "name": "Dalmatia",
+    "cc": "me",
+    "occ": "hr",
+    "from": 1
+  },
+  {
+    "at": "2026-06-15T22:29:15.044877+00:00",
+    "type": "battle_ended",
+    "rid": "6813b7059403bc4170a5d789",
+    "code": "hr-dalmatia",
+    "name": "Dalmatia",
+    "cc": "me",
+    "occ": "hr"
+  },
+  {
+    "at": "2026-06-15T22:29:15.044877+00:00",
+    "type": "battle_started",
+    "rid": "6873d11594e6b3b7989a4c3e",
+    "code": "cg-cuvette-and-plateaux",
+    "name": "Cuvette and Plateaux",
+    "cc": "cg",
+    "occ": "cg"
+  },
+  {
+    "at": "2026-06-15T22:29:15.044877+00:00",
+    "type": "resistance_full",
+    "rid": "6813b7049403bc4170a5d708",
+    "code": "at-styria",
+    "name": "Styria",
+    "cc": "si",
+    "occ": "at",
+    "val": 2077,
+    "max": 2077
+  },
+  {
+    "at": "2026-06-15T22:29:15.044877+00:00",
+    "type": "battle_started",
+    "rid": "6813b70c9403bc4170a5dae9",
+    "code": "sv-west",
+    "name": "Western El Salvador",
+    "cc": "cr",
+    "occ": "sv"
+  },
+  {
+    "at": "2026-06-15T22:29:15.044877+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b7049403bc4170a5d702",
+    "code": "pt-center",
+    "name": "Central Portugal",
+    "cc": "pt",
+    "occ": "pt",
+    "from": "ma",
+    "to": "pt"
+  },
+  {
+    "at": "2026-06-15T22:29:15.044877+00:00",
+    "type": "battle_ended",
+    "rid": "6813b7049403bc4170a5d702",
+    "code": "pt-center",
+    "name": "Central Portugal",
+    "cc": "pt",
+    "occ": "pt"
+  },
+  {
+    "at": "2026-06-15T22:29:15.044877+00:00",
+    "type": "battle_ended",
+    "rid": "6873d11494e6b3b7989a4c0b",
+    "code": "ne-agadez",
+    "name": "Agadez",
+    "cc": "eg",
+    "occ": "ne"
+  },
+  {
+    "at": "2026-06-15T22:29:15.044877+00:00",
+    "type": "battle_started",
+    "rid": "6813b70b9403bc4170a5dad1",
+    "code": "ir-tehran",
+    "name": "Tehran",
+    "cc": "tr",
+    "occ": "ir"
+  },
+  {
+    "at": "2026-06-15T22:29:15.044877+00:00",
+    "type": "resistance_full",
+    "rid": "6813b70c9403bc4170a5db1c",
+    "code": "kg-osh",
+    "name": "Osh",
+    "cc": "pl",
+    "occ": "kg",
+    "val": 1446,
+    "max": 1446
+  },
+  {
+    "at": "2026-06-15T22:29:15.044877+00:00",
+    "type": "bunker_activating",
+    "rid": "6813b70a9403bc4170a5d9db",
+    "code": "in-yamuna",
+    "name": "Uttar Pradesh",
+    "cc": "in",
+    "occ": "in",
+    "active_at": "2026-06-16T08:59:59.999Z",
+    "level": 4
+  },
+  {
+    "at": "2026-06-15T22:29:15.044877+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b70c9403bc4170a5db34",
+    "code": "sa-al-hudud-ash-shamaliyah",
+    "name": "Al Hudud ash Shamaliyah",
+    "cc": "iq",
+    "occ": "sa",
+    "from": "sa",
+    "to": "iq"
+  },
+  {
+    "at": "2026-06-15T22:29:15.044877+00:00",
+    "type": "battle_ended",
+    "rid": "6813b70c9403bc4170a5db34",
+    "code": "sa-al-hudud-ash-shamaliyah",
+    "name": "Al Hudud ash Shamaliyah",
+    "cc": "iq",
+    "occ": "sa"
+  },
+  {
+    "at": "2026-06-15T22:29:15.044877+00:00",
+    "type": "bunker_activating",
+    "rid": "6813b7079403bc4170a5d85b",
+    "code": "fi-south",
+    "name": "Southern Finland",
+    "cc": "lt",
+    "occ": "fi",
+    "active_at": "2026-06-16T08:59:59.999Z",
+    "level": 4
   }
 ]

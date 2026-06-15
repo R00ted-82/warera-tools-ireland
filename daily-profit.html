@@ -303,6 +303,31 @@ const DailyProfitTool = (() => {
     if (hasBid) return bid;
     return null;
   }
+
+  // Salary = wages the user RECEIVED in the last 24h. Wage transactions are
+  // trades: sellerId is the worker (sold labour), buyerId the employer. So we
+  // sum `money` for wage txns where sellerId === the user. (Same source as
+  // the Clock-In tool.) Paginates back until older than 24h.
+  async function dailySalary(userId) {
+    const cutoff = Date.now() - 86400000;
+    let cursor = null, pages = 0, total = 0, count = 0, older = false;
+    while (pages < 6 && !older) {
+      const input = { userId, transactionType: 'wage', limit: 100 };
+      if (cursor) input.cursor = cursor;
+      const page = await dp_trpc('transaction.getPaginatedTransactions', input).catch(() => null);
+      if (!page) break;
+      const items = page.items || page.data || [];
+      for (const tx of items) {
+        if (new Date(tx.createdAt).getTime() < cutoff) { older = true; continue; }
+        if (tx.sellerId === userId) { total += (tx.money || 0); count++; }
+      }
+      cursor = page.nextCursor ?? null;
+      pages++;
+      if (!cursor || !items.length) break;
+    }
+    return { total, count };
+  }
+
   // ── Recent chips (mirrors the shell) ────────────────────────────
   const readRecent = () => { try { const a = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); return Array.isArray(a) ? a.filter(x => typeof x === 'string') : []; } catch { return []; } };
   const writeRecent = (l) => { try { localStorage.setItem(RECENT_KEY, JSON.stringify(l.slice(0, RECENT_MAX))); } catch {} };
@@ -345,9 +370,10 @@ const DailyProfitTool = (() => {
 
       // Step 2: companies + workers
       steps.setStep(2, 'active', { sub: 'Fetching companies' });
-      const [companyList, workersData] = await Promise.all([
+      const [companyList, workersData, salaryInfo] = await Promise.all([
         dp_trpc('company.getCompanies', { userId: user._id, perPage: 100 }),
         dp_trpc('worker.getWorkers', { userId: user._id }).catch(() => null),
+        dailySalary(user._id),
       ]);
       const companyIds = companyList?.items || [];
       steps.setStep(2, 'active', { sub: 'Loading company details', count: `0/${companyIds.length}` });
@@ -469,9 +495,9 @@ const DailyProfitTool = (() => {
 
       model = { user, prices, gameItems, bestBonus, companies,
                 missionMoney, missionCases, casePrice: (prices['case1'] ?? null),
-                selfProd: skill(user, 'production'), selfEnergy: skill(user, 'energy'),
+                salaryDaily: salaryInfo.total, salaryCount: salaryInfo.count,
                 enginesPP, staffPP, priceOverrides: {},
-                assumptions: { throughputPP, netWage: 0, deductions: 0 } };
+                assumptions: { throughputPP } };
       renderAll();
     } catch (e) {
       steps.markActiveAsError(e.message);
@@ -526,38 +552,17 @@ const DailyProfitTool = (() => {
         <input type="number" class="dp-price-in" data-code="${c}" value="${model.priceOverrides[c] ?? ''}" min="0" step="0.001" placeholder="—">
         <span class="dp-suffix">untraded · set it</span>
       </div>`).join('');
-    const salaryPP = Math.round(model.selfProd * model.selfEnergy * WORK_FACTOR);
     $assump.innerHTML = `
       <div class="dp-field">
         <label title="Total production points output per day (you + employees + company engines)">Daily PP throughput</label>
         <input type="number" id="dp-tp" value="${a.throughputPP}" min="0" step="1">
         <span class="dp-suffix">engines ${model.enginesPP} + staff ${model.staffPP} PP/day</span>
       </div>
-      <div class="dp-field">
-        <label title="What you're paid per production point working as an employee, after tax. 0 if you only work your own companies.">Your net wage / PP</label>
-        <input type="number" id="dp-netwage" value="${a.netWage}" min="0" step="0.001" placeholder="0">
-        <span class="dp-suffix">${salaryPP} PP/day if you work for wages</span>
-      </div>
-      <div class="dp-field">
-        <label title="Any daily costs to subtract (taxes, upkeep, etc.)">Deductions / day</label>
-        <input type="number" id="dp-deduct" value="${a.deductions}" min="0" step="0.01" placeholder="0">
-        <span class="dp-suffix">tax, upkeep, etc.</span>
-      </div>
       ${priceFields}
     `;
     $assump.querySelector('#dp-tp').addEventListener('input', e => {
       const v = parseFloat(e.target.value);
       model.assumptions.throughputPP = isFinite(v) ? v : 0;
-      renderTableAndIncome();
-    });
-    $assump.querySelector('#dp-netwage').addEventListener('input', e => {
-      const v = parseFloat(e.target.value);
-      model.assumptions.netWage = isFinite(v) ? v : 0;
-      renderTableAndIncome();
-    });
-    $assump.querySelector('#dp-deduct').addEventListener('input', e => {
-      const v = parseFloat(e.target.value);
-      model.assumptions.deductions = isFinite(v) ? v : 0;
       renderTableAndIncome();
     });
     $assump.querySelectorAll('.dp-price-in').forEach(inp => {
@@ -638,18 +643,13 @@ const DailyProfitTool = (() => {
       + `${priced}/${rows.length} products priced.` + (missing.length ? ` No market price for: <code>${missing.join('</code>, <code>')}</code>.` : '');
 
     const companiesIncome = rows.reduce((s, r) => s + (r.actual || 0), 0);
-    const netWage = model.assumptions.netWage || 0;
-    const salaryPP = model.selfProd * model.selfEnergy * WORK_FACTOR;
-    const salary = salaryPP * netWage;
     const caseSales = (model.casePrice != null) ? model.missionCases * model.casePrice : 0;
-    const deductions = model.assumptions.deductions || 0;
 
     const items = [
       { label: 'Companies',  val: companiesIncome, sub: `${model.companies.length} companies, current output` },
-      { label: 'Salary',     val: salary, sub: netWage ? `${Math.round(salaryPP)} PP/day × ${fmt3(netWage)}` : 'set your net wage →' },
+      { label: 'Salary',     val: model.salaryDaily, sub: model.salaryCount ? `${model.salaryCount} wage payments · last 24h` : 'no wages in last 24h' },
       { label: 'Case sales', val: caseSales, sub: model.casePrice != null ? `${fmt2(model.missionCases)} cases/day × ${fmt2(model.casePrice)}` : 'no case price' },
       { label: 'Daily missions', val: model.missionMoney, sub: 'daily reward' },
-      { label: 'Deductions', val: -deductions, sub: deductions ? 'subtracted' : 'none' },
     ];
     const total = items.reduce((s, x) => s + (x.val || 0), 0);
     $income.innerHTML = items.map(x =>

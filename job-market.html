@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Job Market · War Era tools</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'%3E%3Crect width='1' height='2' fill='%23009A49'/%3E%3Crect x='1' width='1' height='2' fill='white'/%3E%3Crect x='2' width='1' height='2' fill='%23FF7900'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="styles.css" />
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+ *  JOB MARKET — labour-market snapshot for employers. jm- prefixed.
+ *  Drop-in <section class="view" data-view="jobmarket"> for index.html.
+ * ═══════════════════════════════════════════════════════════════════ */
+#jm-results.hidden { display: none; }
+
+.jm-verdict { border-radius: 10px; padding: 16px 18px; margin-bottom: 16px; border: 1px solid var(--border); }
+.jm-verdict.ripe   { background: rgba(74,222,128,.10); border-color: rgba(74,222,128,.4); }
+.jm-verdict.mixed  { background: rgba(251,191,36,.08); border-color: rgba(251,191,36,.35); }
+.jm-verdict.cold   { background: rgba(248,113,113,.08); border-color: rgba(248,113,113,.35); }
+.jm-verdict h3 { margin: 0 0 6px; font-size: 16px; }
+.jm-verdict p { margin: 0; font-size: 13px; color: var(--text); line-height: 1.55; }
+.jm-verdict p strong { color: var(--text); }
+
+.jm-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 18px; }
+.jm-metric { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 11px 13px; }
+.jm-metric .jm-m-label { font-size: 12px; color: var(--muted); }
+.jm-metric .jm-m-val { font-size: 18px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; margin-top: 2px; }
+.jm-metric .jm-m-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.jm-metric.accent .jm-m-val { color: var(--accent); }
+
+.jm-chart-box { position: relative; }
+.jm-chart { width: 100%; height: auto; display: block; }
+.jm-bar { fill: var(--accent-dim); stroke: var(--accent); stroke-width: 1; }
+.jm-grid-line { stroke: var(--border); stroke-width: 1; }
+.jm-axis-text { fill: var(--muted); font-size: 10px; font-family: inherit; }
+.jm-marker { stroke: var(--warn); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.jm-marker-text { fill: var(--warn); font-size: 10px; font-family: inherit; }
+.jm-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 10px; font-size: 12px; color: var(--muted); }
+
+.jm-note { font-size: 12px; color: var(--muted); margin-top: 12px; line-height: 1.55; }
+.jm-note code { background: var(--panel-2); padding: 1px 5px; border-radius: 3px; font-family: ui-monospace, monospace; font-size: 11px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <a class="brand" href="index.html">
+      <h1>🇮🇪 War Era tools</h1>
+      <div class="sub">An Irish player's toolkit</div>
+    </a>
+    <a class="back-link" href="index.html">← Back</a>
+  </div>
+</header>
+
+<main>
+  <!-- Drop-in view. Register 'jobmarket' in router.js on merge; the JS
+       follows the IIFE + activate() pattern. No username needed — it
+       analyses the whole labour market. -->
+  <section class="view active" data-view="jobmarket">
+    <div class="tool-header">
+      <div class="title-block">
+        <h2><span>🧑‍🏭</span> Job Market</h2>
+        <p>How cheaply can you hire right now? A live read of the whole job market — the wage floor, where employers are clustered, and whether workers are taking jobs.</p>
+      </div>
+    </div>
+
+    <div class="bf-card">
+      <p class="bf-card-sub">The market has thousands of open offers, so this pulls them in pages — give it a few seconds. It's a live snapshot; reload to refresh.</p>
+      <div class="bf-input-row">
+        <button id="jm-go" class="btn-primary">Analyse the job market</button>
+      </div>
+      <div id="jm-steps" class="steps hidden">
+        <div class="step" data-state="pending" data-step="1">
+          <div class="step-icon"></div>
+          <div class="step-body"><div class="step-title">Pull open job offers</div><div class="step-sub"></div></div>
+          <div class="step-count"></div>
+        </div>
+        <div class="step" data-state="pending" data-step="2">
+          <div class="step-icon"></div>
+          <div class="step-body"><div class="step-title">Analyse the market</div><div class="step-sub"></div></div>
+          <div class="step-count"></div>
+        </div>
+      </div>
+      <div id="jm-status" class="bf-inline-status hidden"></div>
+
+      <div id="jm-results" class="hidden">
+        <div class="jm-verdict" id="jm-verdict"></div>
+        <div class="jm-metrics" id="jm-metrics"></div>
+        <h4 style="margin:0 0 10px;font-size:13.5px;">Open slots by wage (net, after tax)</h4>
+        <div class="jm-chart-box" id="jm-chart-box"></div>
+        <div class="jm-legend">Each bar = how many open job slots are posted at that net wage. The dashed lines mark the <span style="color:var(--warn)">floor</span> and <span style="color:var(--warn)">median</span>.</div>
+        <p class="jm-note" id="jm-note"></p>
+      </div>
+    </div>
+
+    <details class="howto">
+      <summary>How to read this · methodology</summary>
+      <div class="howto-body">
+        <ul>
+          <li>Pulls every open offer from <code>workOffer.getWorkOffersPaginated</code> (through the proxy). Each carries a
+              net wage (<code>wageAfterTax</code>), slots left/total (<code>quantity</code>/<code>initialQuantity</code>) and region.</li>
+          <li><strong>Fill rate</strong> = filled slots ÷ posted slots across all open offers. High = workers are snapping jobs up
+              (good time to lowball); low = lots of jobs sitting unfilled (workers are picky, a lowball will sit empty).</li>
+          <li><strong>Wage floor</strong> = the lowest net wage anyone's currently posting. To be the cheapest option, post at or
+              just above it — but it only fills if workers are actually taking low offers (see fill rate).</li>
+          <li><strong>Snapshot only.</strong> "Ripe vs normal" is a heuristic from the current fill rate — there's no history yet,
+              so treat the verdict as a rough read. (Tracking it over time would make ripeness exact.)</li>
+        </ul>
+      </div>
+    </details>
+  </section>
+</main>
+
+<footer>
+  Made with <span class="heart">♥️</span> by toie. <span class="sep">·</span> Live data via <a href="https://gateway.warerastats.io/" target="_blank" rel="noopener">War Era Gateway</a>.
+</footer>
+
+<script src="js/shared.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+ *  JOB MARKET
+ *
+ *  Live snapshot of the whole labour market for employers deciding how
+ *  low to post a job. Paginates workOffer.getWorkOffersPaginated, then
+ *  shows the net-wage floor, distribution and fill rate, with a heuristic
+ *  read on whether workers are desperate enough to take low offers.
+ * ═══════════════════════════════════════════════════════════════════ */
+const JobMarketTool = (() => {
+  const PAGE = 100;
+  const MAX_PAGES = 120;          // safety cap (~12k offers)
+
+  const $go      = document.getElementById('jm-go');
+  const $status  = document.getElementById('jm-status');
+  const $results = document.getElementById('jm-results');
+  const $verdict = document.getElementById('jm-verdict');
+  const $metrics = document.getElementById('jm-metrics');
+  const $chartBox= document.getElementById('jm-chart-box');
+  const $note    = document.getElementById('jm-note');
+  const steps    = makeSteps(document.getElementById('jm-steps'));
+
+  const jm_trpc = (ep, input) => trpc(ep, input, { retry: true });
+
+  const fmtW = (v) => (v == null || !isFinite(v)) ? '–' : v.toFixed(3);
+  const fmtPct = (v) => (v == null || !isFinite(v)) ? '–' : v.toFixed(1);
+  const fmtN = (v) => (v == null || !isFinite(v)) ? '–' : Math.round(v).toLocaleString();
+  function showStatus(level, html) { $status.className = `bf-inline-status ${level}`; $status.innerHTML = html; $status.classList.remove('hidden'); }
+  function hideStatus() { $status.classList.add('hidden'); $status.innerHTML = ''; }
+
+  function quantile(sorted, q) {
+    if (!sorted.length) return null;
+    const pos = (sorted.length - 1) * q, base = Math.floor(pos), rest = pos - base;
+    return sorted[base + 1] !== undefined ? sorted[base] + rest * (sorted[base + 1] - sorted[base]) : sorted[base];
+  }
+
+  // ── Load every open offer (paginated, with progress) ────────────
+  async function loadOffers() {
+    const offers = [];
+    let cursor = null, pages = 0, fails = 0;
+    while (pages < MAX_PAGES) {
+      const input = { limit: PAGE };
+      if (cursor) input.cursor = cursor;
+      let page;
+      try { page = await jm_trpc('workOffer.getWorkOffersPaginated', input); }
+      catch (e) { if (++fails > 3) throw e; await new Promise(r => setTimeout(r, 800 * fails)); continue; }
+      const items = page?.items || [];
+      offers.push(...items);
+      pages++;
+      steps.setStep(1, 'active', { count: `${offers.length} offers` });
+      cursor = page?.nextCursor ?? null;
+      if (!cursor || !items.length) break;
+    }
+    return { offers, capped: pages >= MAX_PAGES && !!cursor };
+  }
+
+  // ── Aggregate the overall market ────────────────────────────────
+  function analyse(offers) {
+    let openSlots = 0, initialSlots = 0;
+    const netWages = [];           // one entry per open SLOT (slot-weighted)
+    for (const o of offers) {
+      const q = o.quantity || 0, init = o.initialQuantity || 0;
+      const net = o.wageAfterTax;
+      openSlots += q;
+      initialSlots += init;
+      if (typeof net === 'number' && q > 0) for (let i = 0; i < q; i++) netWages.push(net);
+    }
+    netWages.sort((a, b) => a - b);
+    const filled = initialSlots - openSlots;
+    const fillPct = initialSlots ? (filled / initialSlots) * 100 : 0;
+    return {
+      offers: offers.length,
+      openSlots, initialSlots, filled, fillPct,
+      employers: new Set(offers.map(o => o.user).filter(Boolean)).size,
+      floor: netWages[0] ?? null,
+      p10: quantile(netWages, 0.10),
+      median: quantile(netWages, 0.50),
+      p90: quantile(netWages, 0.90),
+      max: netWages[netWages.length - 1] ?? null,
+      netWages,
+    };
+  }
+
+  // ── Render ──────────────────────────────────────────────────────
+  function render(a, capped) {
+    // Verdict — heuristic from fill rate.
+    let cls, head, body;
+    const floorTxt = `<strong>${fmtW(a.floor)}</strong> net`;
+    const medTxt = `<strong>${fmtW(a.median)}</strong> net`;
+    if (a.fillPct >= 15) {
+      cls = 'ripe'; head = '🟢 Workers are taking jobs — good time to post low';
+      body = `${fmtPct(a.fillPct)}% of posted slots are already filled. Post at or just above the floor (${floorTxt}) to be the cheapest option and still expect fills.`;
+    } else if (a.fillPct >= 7) {
+      cls = 'mixed'; head = '🟡 Mixed — some uptake, but plenty of jobs sitting';
+      body = `${fmtPct(a.fillPct)}% of slots filled. A floor offer (${floorTxt}) may fill slowly; around the median (${medTxt}) fills faster.`;
+    } else {
+      cls = 'cold'; head = '🔴 Not ripe — lots of jobs, few takers';
+      body = `Only ${fmtPct(a.fillPct)}% of posted slots are filled, so workers are picky right now. A lowball near the floor (${floorTxt}) will likely sit empty — you'd need to get near the median (${medTxt}) to attract anyone.`;
+    }
+    $verdict.className = `jm-verdict ${cls}`;
+    $verdict.innerHTML = `<h3>${head}</h3><p>${body}</p>`;
+
+    // Metrics.
+    const metrics = [
+      { label: 'Wage floor', val: fmtW(a.floor), sub: 'lowest net wage posted', accent: true },
+      { label: 'Median wage', val: fmtW(a.median), sub: 'net, slot-weighted' },
+      { label: 'Fill rate', val: `${fmtPct(a.fillPct)}%`, sub: `${fmtN(a.filled)} of ${fmtN(a.initialSlots)} slots` },
+      { label: 'Open slots', val: fmtN(a.openSlots), sub: `${fmtN(a.offers)} offers` },
+      { label: 'Employers', val: fmtN(a.employers), sub: 'hiring now' },
+    ];
+    $metrics.innerHTML = metrics.map(m =>
+      `<div class="jm-metric ${m.accent ? 'accent' : ''}"><div class="jm-m-label">${m.label}</div><div class="jm-m-val">${m.val}</div><div class="jm-m-sub">${m.sub}</div></div>`
+    ).join('');
+
+    renderHistogram(a);
+
+    $note.innerHTML = `Analysed <strong>${fmtN(a.offers)}</strong> open offers (${fmtN(a.openSlots)} slots).`
+      + (capped ? ` <span style="color:var(--warn)">Capped at ${MAX_PAGES * PAGE} — more offers exist, so the true floor may be lower than shown (the median/shape stay representative).</span>` : '')
+      + ` Verdict is a heuristic from the current fill rate (no history yet).`;
+    $results.classList.remove('hidden');
+  }
+
+  // Histogram: open slots per net-wage band, with floor + median markers.
+  const W = 900, H = 300, M = { top: 14, right: 14, bottom: 30, left: 52 };
+  const PW = W - M.left - M.right, PH = H - M.top - M.bottom;
+  function renderHistogram(a) {
+    if (!a.netWages.length) { $chartBox.innerHTML = ''; return; }
+    const lo = a.floor, hi = a.max;
+    const BANDS = 24;
+    const step = (hi - lo) / BANDS || 0.001;
+    const bins = new Array(BANDS).fill(0);
+    for (const w of a.netWages) {
+      let idx = Math.floor((w - lo) / step);
+      if (idx < 0) idx = 0; if (idx >= BANDS) idx = BANDS - 1;
+      bins[idx]++;
+    }
+    const yMax = Math.max(...bins, 1);
+    const x = i => M.left + (i / BANDS) * PW;
+    const bw = PW / BANDS;
+    const y = v => M.top + PH - (v / yMax) * PH;
+    const wageToX = w => M.left + ((w - lo) / (hi - lo || 1)) * PW;
+
+    let svg = '';
+    // y gridlines
+    for (let g = 0; g <= 4; g++) {
+      const val = (yMax / 4) * g, yy = y(val);
+      svg += `<line class="jm-grid-line" x1="${M.left}" y1="${yy.toFixed(1)}" x2="${M.left + PW}" y2="${yy.toFixed(1)}"/>`;
+      svg += `<text class="jm-axis-text" x="${M.left - 8}" y="${(yy + 3).toFixed(1)}" text-anchor="end">${fmtN(val)}</text>`;
+    }
+    // bars
+    for (let i = 0; i < BANDS; i++) {
+      if (!bins[i]) continue;
+      const bx = x(i) + 1, by = y(bins[i]), bh = M.top + PH - by;
+      svg += `<rect class="jm-bar" x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${(bw - 2).toFixed(1)}" height="${bh.toFixed(1)}"><title>${(lo + i * step).toFixed(3)}–${(lo + (i + 1) * step).toFixed(3)} net · ${bins[i]} slots</title></rect>`;
+    }
+    // x labels (wage) thinned
+    for (let i = 0; i <= BANDS; i += 4) {
+      svg += `<text class="jm-axis-text" x="${x(i).toFixed(1)}" y="${H - 10}" text-anchor="middle">${(lo + i * step).toFixed(3)}</text>`;
+    }
+    // markers
+    const mark = (w, label) => {
+      if (w == null) return '';
+      const mx = wageToX(w).toFixed(1);
+      return `<line class="jm-marker" x1="${mx}" y1="${M.top}" x2="${mx}" y2="${M.top + PH}"/>`
+           + `<text class="jm-marker-text" x="${mx}" y="${M.top - 3}" text-anchor="middle">${label}</text>`;
+    };
+    svg += mark(a.floor, 'floor');
+    svg += mark(a.median, 'median');
+
+    $chartBox.innerHTML = `<svg class="jm-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${svg}</svg>`;
+  }
+
+  // ── Run ─────────────────────────────────────────────────────────
+  async function run() {
+    $go.disabled = true;
+    $results.classList.add('hidden');
+    hideStatus();
+    steps.reset();
+    try {
+      steps.setStep(1, 'active', { sub: 'Paginating open offers' });
+      const { offers, capped } = await loadOffers();
+      if (!offers.length) { steps.markActiveAsError('No offers returned'); throw new Error('The job market returned no offers. Try again shortly.'); }
+      steps.setStep(1, 'done', { count: `${offers.length} offers` });
+      steps.setStep(2, 'active', { sub: 'Crunching wages & fill rate' });
+      const a = analyse(offers);
+      steps.setStep(2, 'done');
+      steps.fadeOut(300);
+      render(a, capped);
+    } catch (e) {
+      steps.markActiveAsError(e.message);
+      showStatus('error', escapeHtml(isTransientError(e) ? `The data server is busy (${e.message}). Try again shortly.` : e.message));
+    } finally {
+      $go.disabled = false;
+    }
+  }
+
+  $go.addEventListener('click', run);
+
+  return {
+    // Heavy load, so don't auto-run — wait for the button. (Router/shell calls this.)
+    activate() { /* no-op; user clicks Analyse */ },
+  };
+})();
+
+// Standalone bootstrap — delete on merge into index.html.
+JobMarketTool.activate();
+</script>
+</body>
+</html>

@@ -315,6 +315,24 @@ const ToolkitShell = (() => {
     $empty.classList.remove('hidden');
   }
 
+  /* Full reset back to the landing state: clear the loaded username, hand
+   *  the active tool's view back, and re-show the preview. Wired to the
+   *  brand link so clicking the title is a clean "start over". */
+  function resetHome() {
+    if (state.active) restore(state.active);
+    state.active = null;
+    state.pendingTool = null;
+    state.username = '';
+    $username.value = '';
+    syncSecondaryInputs('');
+    $nav.querySelectorAll('.stg-tab').forEach(b => b.classList.remove('active'));
+    gateTools();
+    // No hash rewrite here: the brand's href="#home" fires the navigation,
+    // and the router re-activates the shell. Because state.username is now
+    // cleared, that re-activation lands on the gated landing. (A replaceState
+    // here would suppress that hashchange and strand other views on-screen.)
+  }
+
   /* ── Driving the active tool ─────────────────────────────
    *  Tools' activate() is idempotent: it re-runs only when the passed ?u=
    *  differs from their own input, so repeated calls are safe no-ops. */
@@ -401,6 +419,13 @@ const ToolkitShell = (() => {
     const card = e.target.closest('[data-prev]');
     if (card) { state.pendingTool = card.dataset.prev; $username.focus(); }
   });
+
+  // Clicking the brand/title is a clean "start over": reset to the landing
+  // and clear the loaded username. The href="#home" still handles the view
+  // switch when we're coming from another tab; resetHome() clears the state
+  // first, so the router's re-activation lands on the gated landing.
+  const $brand = document.querySelector('.brand');
+  if ($brand) $brand.addEventListener('click', () => resetHome());
 
   // Leaving home: turn off the shared cache (clears it), hand the borrowed
   // views back, and reset so the next entry re-warms cleanly.

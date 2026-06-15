@@ -62,6 +62,7 @@ const ToolkitShell = (() => {
   const $toolsHead = document.getElementById('stg-tools-head');
   const $empty    = document.getElementById('stg-empty');
   const $emptySub = document.getElementById('stg-empty-sub');
+  const $preview  = document.getElementById('stg-preview');
   const $recent   = document.getElementById('stg-recent');
 
   const state = { active: null, username: '', mounted: false, pendingTool: null };
@@ -326,6 +327,20 @@ const ToolkitShell = (() => {
     catch (e) { console.error(`[home] activate ${state.active} failed`, e); }
   }
 
+  // Preview of every tool on the empty/landing state, so newcomers see
+  // what's inside before typing a name. Clicking one pre-selects it.
+  function renderPreview() {
+    if (!$preview || $preview.dataset.done) return;
+    $preview.innerHTML = TOOLS.map(t => {
+      const i = TOOL_INFO[t]; if (!i) return '';
+      return `<button class="stg-preview-card" data-prev="${t}">
+        <span class="ic">${i.icon}</span>
+        <span class="stg-prev-body"><h4>${escapeHtml(i.title)}</h4><p>${escapeHtml(i.desc)}</p></span>
+      </button>`;
+    }).join('');
+    $preview.dataset.done = '1';
+  }
+
   function renderToolInfo(tool) {
     const info = TOOL_INFO[tool];
     $toolInfo.innerHTML = info
@@ -377,6 +392,11 @@ const ToolkitShell = (() => {
     const pick = e.target.closest('[data-stg-recent]');
     if (pick) { $username.value = pick.dataset.stgRecent; loadUsername(); }
   });
+  // Landing preview: clicking a tool pre-selects it, then prompts for a name.
+  $preview.addEventListener('click', e => {
+    const card = e.target.closest('[data-prev]');
+    if (card) { state.pendingTool = card.dataset.prev; $username.focus(); }
+  });
 
   // Leaving home: turn off the shared cache (clears it), hand the borrowed
   // views back, and reset so the next entry re-warms cleanly.
@@ -403,6 +423,7 @@ const ToolkitShell = (() => {
       setTrpcCache(true);
       prefetch();
       renderRecent();
+      renderPreview();
 
       const tool = (params && TOOLS.includes(params.get('tool'))) ? params.get('tool') : null;
       const u = (params && params.get('u')) || state.username || '';

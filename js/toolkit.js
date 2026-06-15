@@ -347,9 +347,15 @@ const ToolkitShell = (() => {
 
   // Preview of every tool on the empty/landing state, so newcomers see
   // what's inside before typing a name. Clicking one pre-selects it.
+  // Landing cards, grouped into sections (same style as the Community tab).
+  const PREVIEW_CATS = [
+    { title: '🏭 Production', tools: ['advisor', 'clockin'] },
+    { title: '💰 Profits',    tools: ['wealth', 'buddy-finder'] },
+    { title: '🪖 Military',   tools: ['mu'] },
+  ];
   function renderPreview() {
     if (!$preview || $preview.dataset.done) return;
-    $preview.innerHTML = TOOLS.map(t => {
+    const card = t => {
       const i = TOOL_INFO[t]; if (!i) return '';
       return `<button class="tool-card" data-prev="${t}">
         <div class="tool-card-icon">${i.icon}</div>
@@ -359,7 +365,10 @@ const ToolkitShell = (() => {
           <span class="tool-link">Open ${escapeHtml(i.title)} →</span>
         </div>
       </button>`;
-    }).join('');
+    };
+    $preview.innerHTML = PREVIEW_CATS.map(c =>
+      `<h3 class="community-cat">${c.title}</h3><div class="tool-cards">${c.tools.map(card).join('')}</div>`
+    ).join('');
     $preview.dataset.done = '1';
   }
 

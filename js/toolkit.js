@@ -351,7 +351,7 @@ const ToolkitShell = (() => {
   const PREVIEW_CATS = [
     { title: '🏭 Production', tools: ['advisor', 'clockin'] },
     { title: '💰 Profits',    tools: ['wealth', 'buddy-finder'] },
-    { title: '🪖 Military',   tools: ['mu'] },
+    { title: '⚔️ Combat',   tools: ['mu'] },
   ];
   function renderPreview() {
     if (!$preview || $preview.dataset.done) return;

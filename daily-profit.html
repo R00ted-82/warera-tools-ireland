@@ -43,16 +43,23 @@
 }
 .dp-inc-deduct .dp-inc-val { color: var(--danger); }
 
-/* Plain-language "how to use" box */
-.dp-howto {
-  background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px;
-  padding: 12px 15px; margin: 0 0 16px; font-size: 13px; color: var(--muted); line-height: 1.55;
+/* Throughput trio (Engine / Staff / Total): equal widths, no spinners, and a
+   clean read-only "result" look for the disabled total so they harmonise. */
+#dp-engines, #dp-staff, #dp-tp-total { width: 150px; }
+#dp-tp-total {
+  color: var(--accent); -webkit-text-fill-color: var(--accent);
+  font-weight: 600; opacity: 1; cursor: default; background: var(--panel-2);
 }
+.dp-field input[type=number]::-webkit-outer-spin-button,
+.dp-field input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.dp-field input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+
+/* "How to use" intro: a collapsible details (reuses details.howto), sitting at
+   the very top so it needs no top margin; Adro credit line at the foot. */
+.dp-howto { margin-top: 0; margin-bottom: 16px; }
 .dp-howto strong { color: var(--text); }
-.dp-howto ul { margin: 7px 0 0; padding-left: 18px; }
-.dp-howto li { margin: 2px 0; }
-.dp-credit { margin-top: 9px; padding-top: 9px; border-top: 1px solid var(--border); font-size: 12px; }
-.dp-credit strong { color: var(--accent); }
+.dp-howto .dp-credit { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 12px; }
+.dp-howto .dp-credit strong { color: var(--accent); }
 
 /* Per-product table */
 .dp-table-wrap { overflow-x: auto; }
@@ -102,17 +109,20 @@ table.dp-table tbody tr.dp-owned:hover { background: rgba(74,222,128,.1); }
       </div>
     </div>
 
-    <div class="dp-howto">
-      <strong>How to use</strong> — type your War Era username and hit <strong>Load</strong>. You'll get your
-      estimated profit per day (companies, salary, missions, case sales) and a table of which products pay best.
-      It all fills in from the game automatically; then you can fine-tune:
-      <ul>
-        <li>Tick only the missions you actually complete.</li>
-        <li>Enter cases sold today, and any company moves / production changes.</li>
-        <li>Adjust the engine / staff boxes to try "what if". Totals update instantly.</li>
-      </ul>
-      <div class="dp-credit">💡 Tool idea, formulas &amp; testing by <strong>Adro</strong>.</div>
-    </div>
+    <details class="howto dp-howto">
+      <summary>How to use</summary>
+      <div class="howto-body">
+        <p>Type your War Era username and hit <strong>Load</strong>. You'll get your estimated profit per day
+        (companies, salary, missions, case sales) and a table of which products pay best. It all fills in from
+        the game automatically; then you can fine-tune:</p>
+        <ul>
+          <li>Tick only the missions you actually complete.</li>
+          <li>Enter cases sold today, and any company moves / production changes.</li>
+          <li>Adjust the engine / staff boxes to try "what if". Totals update instantly.</li>
+        </ul>
+        <div class="dp-credit">💡 Tool idea, formulas &amp; testing by <strong>Adro</strong>.</div>
+      </div>
+    </details>
 
     <div class="stg-idbar">
       <div class="stg-idbar-row">
@@ -463,18 +473,15 @@ const DailyProfitTool = (() => {
       const moveCost = gameConfig?.company?.moveCost ?? gameConfig?.company?.changeItemCost ?? 5;
       const cfgDep = gameConfig?.company?.depositResourceBonus;
       if (typeof cfgDep === 'number') GAME_DEPOSIT_BONUS = cfgDep;
-      // Recurring mission rewards. Daily is counted as-is; weekly and monthly
-      // are prorated to a daily figure (÷7 and ÷30) and shown on their own
-      // income lines, so the Daily line stays the true daily reward. Mission
-      // cases (daily + weekly/7 + monthly/30) all flow into the Case-sales line.
-      // (Starting missions are one-time, so they're excluded.)
+      // Recurring mission rewards. The game has Daily and Weekly sets only
+      // (no Monthly). Daily is counted as-is; Weekly's 30 is spread over 7 days
+      // for the per-day view. Mission cases (daily + weekly/7) flow into the
+      // Case-sales line. (Starting missions are one-time, so they're excluded.)
       const mr = gameConfig?.mission?.reward || {};
-      const missionMoney        = (mr.daily?.money   || 0);
-      const missionMoneyWeekly  = (mr.weekly?.money  || 0) / 7;
-      const missionMoneyMonthly = (mr.monthly?.money || 0) / 30;
-      const missionCasesDaily   = (mr.daily?.cases   || 0);
-      const missionCasesWeekly  = (mr.weekly?.cases  || 0) / 7;
-      const missionCasesMonthly = (mr.monthly?.cases || 0) / 30;
+      const missionMoney       = (mr.daily?.money  || 0);
+      const missionMoneyWeekly = (mr.weekly?.money || 0) / 7;
+      const missionCasesDaily  = (mr.daily?.cases  || 0);
+      const missionCasesWeekly = (mr.weekly?.cases || 0) / 7;
 
       const allCountries = Array.isArray(allCountriesRaw) ? allCountriesRaw : (allCountriesRaw?.items || []);
       steps.setStep(3, 'active', { sub: 'Loading country bonuses', count: `0/${allCountries.length}` });
@@ -571,9 +578,9 @@ const DailyProfitTool = (() => {
       const salaryModeled     = salaryWorksPerDay * salaryAvgPerWork;
 
       model = { user, prices, gameItems, bestBonus, companies,
-                missionMoney, missionMoneyWeekly, missionMoneyMonthly,
-                missionCasesDaily, missionCasesWeekly, missionCasesMonthly,
-                missionsDone: { daily: true, weekly: true, monthly: true },
+                missionMoney, missionMoneyWeekly,
+                missionCasesDaily, missionCasesWeekly,
+                missionsDone: { daily: true, weekly: true },
                 casesManual: null,   // manual "cases sold today" override; null = use modeled
                 movesManual: null,   // manual count of company moves / production changes
                 moveCost, concretePrice: (prices['concrete'] ?? null),
@@ -757,9 +764,8 @@ const DailyProfitTool = (() => {
   // (no full re-render, so typing keeps focus). Checkbox toggles do re-render.
   function renderIncome() {
     const done = model.missionsDone;
-    const modeledCases = (done.daily   ? model.missionCasesDaily   : 0)
-                       + (done.weekly  ? model.missionCasesWeekly  : 0)
-                       + (done.monthly ? model.missionCasesMonthly : 0);
+    const modeledCases = (done.daily  ? model.missionCasesDaily  : 0)
+                       + (done.weekly ? model.missionCasesWeekly : 0);
     const casePriced     = model.casePrice != null;
     const concretePriced = model.concretePrice != null;
 
@@ -767,9 +773,8 @@ const DailyProfitTool = (() => {
     const fixedIncome =
         (model._companiesIncome || 0)
       + (model.salaryDaily || 0)
-      + (done.daily   ? model.missionMoney        : 0)
-      + (done.weekly  ? model.missionMoneyWeekly  : 0)
-      + (done.monthly ? model.missionMoneyMonthly : 0);
+      + (done.daily  ? model.missionMoney       : 0)
+      + (done.weekly ? model.missionMoneyWeekly : 0);
 
     const caseVal   = () => casePriced ? ((model.casesManual != null ? model.casesManual : modeledCases) * model.casePrice) : 0;
     // Each move / production change costs `moveCost` concrete (5), valued live.
@@ -781,9 +786,8 @@ const DailyProfitTool = (() => {
       { label: 'Salary',     val: model.salaryDaily, sub: model.salaryCount
           ? `~${model.salaryWorksPerDay.toFixed(1)} works/day × ${fmt2(model.salaryAvgPerWork)} net · modeled (24h actual: ${fmtK(model.salaryActual)})`
           : 'no recent wages to model from' },
-      { label: 'Daily missions',   val: model.missionMoney,        sub: 'daily reward',  toggle: 'daily',   done: done.daily },
-      { label: 'Weekly missions',  val: model.missionMoneyWeekly,  sub: '30/week ÷ 7',   toggle: 'weekly',  done: done.weekly },
-      { label: 'Monthly missions', val: model.missionMoneyMonthly, sub: '50/month ÷ 30', toggle: 'monthly', done: done.monthly },
+      { label: 'Daily missions',  val: model.missionMoney,       sub: 'daily reward',          toggle: 'daily',  done: done.daily },
+      { label: 'Weekly missions', val: model.missionMoneyWeekly, sub: '30 / week (spread over 7 days)', toggle: 'weekly', done: done.weekly },
     ];
 
     // Case sales: manual "cases sold today" (empty → modeled count via placeholder).

@@ -230,7 +230,7 @@ footer a:hover { color: var(--text); }
   font-size: 36px; line-height: 1; flex-shrink: 0;
 }
 .tool-card-body { flex: 1; min-width: 0; }
-.tool-card h3 { margin: 0 0 6px; font-size: 16px; font-weight: 600; }
+.tool-card h3 { margin: 0 0 6px; font-size: 16px; font-weight: 600; color: var(--text); }
 .tool-card p {
   margin: 0 0 10px;
   color: var(--muted); font-size: 13px; line-height: 1.5;
@@ -1559,7 +1559,7 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
 .stg-tool-info .stg-ti-body p { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.5; }
 
 /* Empty / waiting state */
-.stg-empty { padding: 0 0 40px; color: var(--muted); }
+.stg-empty { padding: 0 0 40px; }
 
 /* Landing preview of the tools (shown before a username is entered) */
 /* Home landing reuses the .home/.tool-cards/.tool-card look from gov/community.

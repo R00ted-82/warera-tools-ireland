@@ -6,7 +6,7 @@ Wealth tracker for the Wealth Monitor tool (wealth-monitor.html on
 tools.we-ie.com). Companion to bunker_log.py: that one remembers regions,
 this one remembers player wealth.
 
-Polls every 6h via GitHub Actions cron. For every user on the monitored
+Polls every 2h via GitHub Actions cron. For every user on the monitored
 list it fetches the public wealth breakdown and appends a timestamped
 snapshot to a rolling per-user history. The page reads that history and
 draws the wealth-over-time graph (total + the five-way breakdown), bucketed

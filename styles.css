@@ -1847,3 +1847,11 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
 
 .wm-chart-box .wm-chart-empty { color: var(--muted); font-size: 13px; padding: 28px 4px; text-align: center; }
 #wm-chart-card h4 { margin: 0 0 14px; font-size: 13.5px; font-weight: 600; color: var(--text); }
+
+/* Breakdown: small multiples (one mini-chart per category, own scale) */
+.wm-mini-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.wm-mini { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px 4px; }
+.wm-mini-head { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); margin-bottom: 2px; }
+.wm-mini-head .wm-dot { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+.wm-mini-val { margin-left: auto; color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.wm-mini-chart { width: 100%; height: auto; display: block; touch-action: none; }

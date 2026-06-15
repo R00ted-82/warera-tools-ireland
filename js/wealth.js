@@ -9,7 +9,7 @@
  *
  *  Data:
  *    - Current wealth: user.getUserById → stats.wealth (live).
- *    - History: data/wealth-history.json, collected every 6h by
+ *    - History: data/wealth-history.json, collected every 2h by
  *      wealth_log.py. The API has no per-user wealth history, so the
  *      chart only covers the period since a player was added; gaps
  *      (incl. removed-then-re-added) render as real-width blanks.
@@ -59,7 +59,7 @@ const WealthMonitorTool = (() => {
   let history   = { users: {} };      // wealth-history.json
   let current   = null;               // { user, wealth, avatarUrl } for the resolved player
   let dataLoaded = false;             // monitored list + history fetched once
-  const chart   = { user: null, metric: 'total', bucket: 'day', hiddenKeys: new Set() };
+  const chart   = { user: null, metric: 'total', bucket: 'day' };
 
   // Helpers
   const wm_trpc = (endpoint, input) => trpc(endpoint, input, { retry: true });
@@ -252,10 +252,10 @@ const WealthMonitorTool = (() => {
     const on = monitored.some(e => e.userId === current.user._id);
     const name = escapeHtml(current.user.username);
     if (on) {
-      $monitorText.innerHTML = `✅ <strong>${name}</strong> is being monitored — wealth is snapshotted every 6 hours. Stopping keeps the history already collected.`;
+      $monitorText.innerHTML = `✅ <strong>${name}</strong> is being monitored — wealth is snapshotted every 2 hours. Stopping keeps the history already collected.`;
       $monitorCard.querySelector('#wm-mon').outerHTML = `<button id="wm-mon" class="wm-stop-btn">Stop monitoring</button>`;
     } else {
-      $monitorText.innerHTML = `<strong>${name}</strong> isn't monitored yet. Add them to the watch list and their wealth will be snapshotted every 6 hours — the chart builds up over the following day or so.`;
+      $monitorText.innerHTML = `<strong>${name}</strong> isn't monitored yet. Add them to the watch list and their wealth will be snapshotted every 2 hours — the chart builds up over the following day or so.`;
       $monitorCard.querySelector('#wm-mon').outerHTML = `<button id="wm-mon" class="btn-primary wm-mon-btn">➕ Start monitoring ${name}</button>`;
     }
     document.getElementById('wm-mon').addEventListener('click', onMonClick);
@@ -303,7 +303,7 @@ const WealthMonitorTool = (() => {
     setCount();
     renderMonitorCard();                   // flips the button to its new state
     document.getElementById('wm-mon-status').textContent = add
-      ? 'Added! It takes about a minute to land on the list, then a snapshot is taken every 6 hours — so the chart will only start showing a trend after a day or so. Check back tomorrow.'
+      ? 'Added! It takes about a minute to land on the list, then a snapshot is taken every 2 hours — so the chart will only start showing a trend after a day or so. Check back tomorrow.'
       : 'Removed · existing history is kept; no new snapshots will be collected.';
     updateChartVisibility();
     setTimeout(refreshMonitored, 60000);
@@ -396,32 +396,32 @@ const WealthMonitorTool = (() => {
 
     if (dataCount === 0) {
       $chartBox.innerHTML = `<div class="wm-chart-empty">${monitoredNow
-        ? 'Monitoring has started, but no snapshots have landed yet. A snapshot is taken every 6 hours, so the chart will start filling in over the next day or so — check back tomorrow.'
+        ? 'Monitoring has started, but no snapshots have landed yet. A snapshot is taken every 2 hours, so the chart will start filling in over the next day or so — check back tomorrow.'
         : 'No history for this player. Start monitoring them below and the chart will build up over the following day or so.'}</div>`;
       $legend.innerHTML = '';
       return;
     }
-
-    // Legend (with toggles) renders even in the edge states below.
-    renderLegend(series);
-
-    const visible = series.filter(s => !chart.hiddenKeys.has(s.key));
-    if (!visible.length) {
-      $chartBox.innerHTML = `<div class="wm-chart-empty">All categories hidden — tap a label below to show one.</div>`;
-      return;
-    }
     if (dataCount === 1) {
-      $chartBox.innerHTML = `<div class="wm-chart-empty">Only one snapshot so far. A line appears once there are at least two data points in this bucket.</div>`;
+      $chartBox.innerHTML = `<div class="wm-chart-empty">Only one snapshot so far. Lines appear once there are at least two data points in this bucket.</div>`;
+      $legend.innerHTML = '';
       return;
     }
 
+    // Breakdown: a grid of per-category mini-charts, each on its OWN scale,
+    // so a big category (Companies) can't flatten the small ones.
+    if (chart.metric === 'breakdown') {
+      $legend.innerHTML = '';
+      renderSmallMultiples(labels, series);
+      return;
+    }
+
+    // Total: one large single-series chart.
+    renderLegend(series);
+    const s = series[0];
     const n = labels.length;
     const x = i => M.left + (n === 1 ? PW / 2 : (i / (n - 1)) * PW);
-
-    // Data-driven y-range over the VISIBLE series — does not pin to zero, so
-    // small day-to-day moves are visible, and hiding a big category (e.g.
-    // Companies) rescales the axis to fit the rest.
-    const { min: yMin, max: yMax, step } = yDomain(visible);
+    // Data-driven y-range (not pinned to zero) so small moves are visible.
+    const { min: yMin, max: yMax, step } = yDomain(series);
     const y = v => M.top + PH - ((v - yMin) / (yMax - yMin || 1)) * PH;
 
     let svg = '';
@@ -429,44 +429,117 @@ const WealthMonitorTool = (() => {
     for (let i = 0; i <= ticks; i++) {
       const val = yMin + step * i, yy = y(val);
       svg += `<line class="wm-grid-line" x1="${M.left}" y1="${yy.toFixed(1)}" x2="${M.left + PW}" y2="${yy.toFixed(1)}"/>`;
-      svg += `<text class="wm-axis-text" x="${M.left - 8}" y="${(yy + 3).toFixed(1)}" text-anchor="end">${fmtK(val, 1)}</text>`;
+      svg += `<text class="wm-axis-text" x="${M.left - 8}" y="${(yy + 3).toFixed(1)}" text-anchor="end">${fmtTick(val, step)}</text>`;
     }
     const xstep = Math.max(1, Math.ceil(n / 8));
     for (let i = 0; i < n; i += xstep) {
       svg += `<text class="wm-axis-text" x="${x(i).toFixed(1)}" y="${H - 10}" text-anchor="middle">${escapeHtml(shortLabel(labels[i]))}</text>`;
     }
-
-    // One line per visible series; gaps (missing buckets) break the line.
-    for (const s of visible) {
-      let d = '', pen = false;
-      for (let i = 0; i < n; i++) {
-        if (s.values.has(labels[i])) {
-          d += `${pen ? 'L' : 'M'}${x(i).toFixed(1)} ${y(s.values.get(labels[i])).toFixed(1)}`;
-          pen = true;
-        } else pen = false;
-      }
-      svg += `<path class="wm-series-line" d="${d}" stroke="${s.color}"/>`;
-      for (let i = 0; i < n; i++) {
-        if (s.values.has(labels[i]))
-          svg += `<circle class="wm-series-dot" cx="${x(i).toFixed(1)}" cy="${y(s.values.get(labels[i])).toFixed(1)}" r="2.6" fill="${s.color}"/>`;
-      }
-    }
-
+    svg += linePath(s, labels, x, y, n);
     svg += `<line id="wm-hover-line" class="wm-hover-line" x1="0" y1="${M.top}" x2="0" y2="${M.top + PH}" style="display:none"/>`;
     $chartBox.innerHTML =
       `<svg class="wm-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${svg}</svg>` +
       `<div class="wm-tooltip" id="wm-tooltip"></div>`;
-    wireHover(labels, visible, x, n);
+    wireHover(labels, series, x, n);
   }
 
-  // Legend doubles as the category toggle when there's more than one series.
+  // The <path> + dots for one series, gap-aware (missing buckets break it).
+  function linePath(s, labels, x, y, n, dotR = 2.6) {
+    let d = '', pen = false, dots = '';
+    for (let i = 0; i < n; i++) {
+      if (s.values.has(labels[i])) {
+        const px = x(i).toFixed(1), py = y(s.values.get(labels[i])).toFixed(1);
+        d += `${pen ? 'L' : 'M'}${px} ${py}`;
+        pen = true;
+        dots += `<circle class="wm-series-dot" cx="${px}" cy="${py}" r="${dotR}" fill="${s.color}"/>`;
+      } else pen = false;
+    }
+    return `<path class="wm-series-line" d="${d}" stroke="${s.color}"/>${dots}`;
+  }
+
   function renderLegend(series) {
-    const toggleable = series.length > 1;
-    $legend.innerHTML = series.map(s => {
-      const off = chart.hiddenKeys.has(s.key);
-      return `<span class="wm-legend-item${toggleable ? ' wm-toggle' : ''}${off ? ' off' : ''}"${toggleable ? ` data-wm-key="${s.key}"` : ''}>` +
-        `<span class="wm-dot" style="background:${s.color}"></span>${escapeHtml(s.label)}</span>`;
-    }).join('') + (toggleable ? `<span class="wm-legend-hint">tap to show / hide</span>` : '');
+    $legend.innerHTML = series.map(s =>
+      `<span class="wm-legend-item"><span class="wm-dot" style="background:${s.color}"></span>${escapeHtml(s.label)}</span>`
+    ).join('');
+  }
+
+  // Axis tick label with enough precision that adjacent ticks differ. fmtK at
+  // 1dp collapses e.g. 12,015 and 11,990 both to "12.0K"; this picks decimals
+  // from the tick step so the real range is legible.
+  function fmtTick(v, step) {
+    const a = Math.abs(v);
+    if (a >= 1000 || (a === 0 && step >= 1000)) {
+      const dp = Math.min(3, Math.max(0, Math.ceil(-Math.log10(step / 1000))));
+      return (v / 1000).toFixed(dp) + 'K';
+    }
+    const dp = Math.min(2, Math.max(0, Math.ceil(-Math.log10(step || 1))));
+    return v.toFixed(dp);
+  }
+
+  // ── Small multiples (breakdown) ─────────────────────────────────
+  const MINI = { W: 320, H: 150, m: { top: 12, right: 12, bottom: 22, left: 48 } };
+
+  function lastValue(values, labels) {
+    for (let i = labels.length - 1; i >= 0; i--) if (values.has(labels[i])) return values.get(labels[i]);
+    return null;
+  }
+
+  function renderSmallMultiples(labels, series) {
+    $chartBox.innerHTML = `<div class="wm-mini-grid">${series.map((s, idx) => {
+      const last = lastValue(s.values, labels);
+      return `<div class="wm-mini">
+        <div class="wm-mini-head">
+          <span class="wm-dot" style="background:${s.color}"></span>${escapeHtml(s.label)}
+          <span class="wm-mini-val" data-mini-val="${idx}">${last == null ? '–' : fmtK(last)}</span>
+        </div>
+        ${miniSvg(s, labels, idx)}
+      </div>`;
+    }).join('')}</div>`;
+    series.forEach((s, idx) => wireMiniHover(idx, labels, s));
+  }
+
+  function miniSvg(s, labels, idx) {
+    const { W, H, m } = MINI;
+    const pw = W - m.left - m.right, ph = H - m.top - m.bottom;
+    const n = labels.length;
+    const x = i => m.left + (n === 1 ? pw / 2 : (i / (n - 1)) * pw);
+    const dom = yDomain([s]);
+    const y = v => m.top + ph - ((v - dom.min) / (dom.max - dom.min || 1)) * ph;
+
+    let svg = '';
+    for (const val of [dom.max, dom.min]) {            // just the bounds
+      const yy = y(val);
+      svg += `<line class="wm-grid-line" x1="${m.left}" y1="${yy.toFixed(1)}" x2="${m.left + pw}" y2="${yy.toFixed(1)}"/>`;
+      svg += `<text class="wm-axis-text" x="${m.left - 6}" y="${(yy + 3).toFixed(1)}" text-anchor="end">${fmtTick(val, (dom.max - dom.min) || 1)}</text>`;
+    }
+    svg += `<text class="wm-axis-text" x="${x(0).toFixed(1)}" y="${H - 7}" text-anchor="start">${escapeHtml(shortLabel(labels[0]))}</text>`;
+    svg += `<text class="wm-axis-text" x="${x(n - 1).toFixed(1)}" y="${H - 7}" text-anchor="end">${escapeHtml(shortLabel(labels[n - 1]))}</text>`;
+    svg += linePath(s, labels, x, y, n, 2);
+    svg += `<line id="wm-mhl-${idx}" class="wm-hover-line" x1="0" y1="${m.top}" x2="0" y2="${m.top + ph}" style="display:none"/>`;
+    return `<svg class="wm-mini-chart" id="wm-msvg-${idx}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${svg}</svg>`;
+  }
+
+  function wireMiniHover(idx, labels, s) {
+    const svg = document.getElementById(`wm-msvg-${idx}`);
+    const hl = document.getElementById(`wm-mhl-${idx}`);
+    const valEl = $chartBox.querySelector(`[data-mini-val="${idx}"]`);
+    if (!svg || !hl || !valEl) return;
+    const { W, m } = MINI;
+    const pw = W - m.left - m.right, n = labels.length;
+    const x = i => m.left + (n === 1 ? pw / 2 : (i / (n - 1)) * pw);
+    const last = lastValue(s.values, labels);
+    const resetText = last == null ? '–' : fmtK(last);
+
+    svg.addEventListener('mousemove', e => {
+      const r = svg.getBoundingClientRect();
+      const sx = (e.clientX - r.left) / r.width * W;
+      let best = 0, bd = Infinity;
+      for (let i = 0; i < n; i++) { const d = Math.abs(x(i) - sx); if (d < bd) { bd = d; best = i; } }
+      const lab = labels[best];
+      hl.setAttribute('x1', x(best)); hl.setAttribute('x2', x(best)); hl.style.display = '';
+      valEl.textContent = (s.values.has(lab) ? fmtK(s.values.get(lab)) : '–') + ' · ' + shortLabel(lab);
+    });
+    svg.addEventListener('mouseleave', () => { hl.style.display = 'none'; valEl.textContent = resetText; });
   }
 
   function niceNum(range, round) {
@@ -559,14 +632,6 @@ const WealthMonitorTool = (() => {
     const b = e.target.closest('button'); if (!b) return;
     chart.bucket = b.dataset.bucket;
     $bucketSeg.querySelectorAll('button').forEach(x => x.classList.toggle('active', x === b));
-    renderChart();
-  });
-  // Click a legend entry to hide/show that category; the y-axis rescales.
-  $legend.addEventListener('click', e => {
-    const item = e.target.closest('[data-wm-key]'); if (!item) return;
-    const key = item.dataset.wmKey;
-    if (chart.hiddenKeys.has(key)) chart.hiddenKeys.delete(key);
-    else chart.hiddenKeys.add(key);
     renderChart();
   });
 

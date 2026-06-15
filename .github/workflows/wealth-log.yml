@@ -2,7 +2,7 @@ name: Wealth logger
 
 on:
   schedule:
-    - cron: "37 */6 * * *"   # every 6h, offset off the hour
+    - cron: "37 */2 * * *"   # every 2h, offset off the hour
   workflow_dispatch:
 
 permissions:

@@ -73,8 +73,9 @@
           <nav class="stg-nav hidden" id="stg-nav" role="tablist" aria-label="Tools">
             <button class="stg-tab active" data-stg-tab="advisor" role="tab">🏭 <span>Migration</span></button>
             <button class="stg-tab" data-stg-tab="clockin" role="tab">⏱ <span>Clock-In</span></button>
-            <button class="stg-tab" data-stg-tab="wealth" role="tab">💰 <span>Wealth tracker</span></button>
             <button class="stg-tab" data-stg-tab="buddy-finder" role="tab">🤝 <span>Buddy Finder</span></button>
+            <button class="stg-tab" data-stg-tab="profit" role="tab">📈 <span>Daily Profit</span></button>
+            <button class="stg-tab" data-stg-tab="wealth" role="tab">💰 <span>Wealth tracker</span></button>
             <button class="stg-tab" data-stg-tab="mu" role="tab">🔫 <span>Military Units</span></button>
           </nav>
         </div>
@@ -747,6 +748,97 @@
     </details>
   </section>
 
+  <!-- ─── Daily Profit view (powers DailyProfitTool) ───────────────── -->
+  <section class="view" data-view="profit">
+    <div class="tool-header">
+      <div class="title-block">
+        <h2><span>📈</span> Daily Profit</h2>
+        <p>What each product is worth per production point, and your projected daily profit — auto-filled from the game.</p>
+      </div>
+    </div>
+
+    <details class="howto dp-howto">
+      <summary>How to use</summary>
+      <div class="howto-body">
+        <p>Type your War Era username and hit <strong>Load</strong>. You'll get your estimated profit per day
+        (companies, salary, missions, case sales) and a table of which products pay best. It all fills in from
+        the game automatically; then you can fine-tune:</p>
+        <ul>
+          <li>Tick only the missions you actually complete.</li>
+          <li>Enter cases sold today, and any company moves / production changes.</li>
+          <li>Adjust the engine / staff boxes to try "what if". Totals update instantly.</li>
+        </ul>
+        <div class="dp-credit">💡 Tool idea, formulas &amp; testing by <strong>Adro</strong>.</div>
+      </div>
+    </details>
+
+    <div class="stg-idbar">
+      <div class="stg-idbar-row">
+        <input type="text" id="dp-username" placeholder="In-game username" autocomplete="off" spellcheck="false" />
+        <button id="dp-submit" class="btn-primary">Load</button>
+      </div>
+      <div class="stg-recent hidden" id="dp-recent"></div>
+    </div>
+
+    <div id="dp-steps" class="steps hidden">
+      <div class="step" data-state="pending" data-step="1">
+        <div class="step-icon"></div>
+        <div class="step-body"><div class="step-title">Find player</div><div class="step-sub"></div></div>
+        <div class="step-count"></div>
+      </div>
+      <div class="step" data-state="pending" data-step="2">
+        <div class="step-icon"></div>
+        <div class="step-body"><div class="step-title">Load companies &amp; workers</div><div class="step-sub"></div></div>
+        <div class="step-count"></div>
+      </div>
+      <div class="step" data-state="pending" data-step="3">
+        <div class="step-icon"></div>
+        <div class="step-body"><div class="step-title">Load market &amp; region bonuses</div><div class="step-sub"></div></div>
+        <div class="step-count"></div>
+      </div>
+    </div>
+
+    <div id="dp-status" class="bf-inline-status hidden"></div>
+
+    <!-- Income summary + assumptions -->
+    <div class="bf-card hidden" id="dp-stats-card">
+      <h3 id="dp-stats-head">Projected income</h3>
+      <p class="bf-card-sub">Per day, at current market prices. Tweak the throughput to model hypotheticals — everything recalculates live.</p>
+      <div class="dp-assump" id="dp-assump"></div>
+      <div class="dp-income" id="dp-income"></div>
+    </div>
+
+    <!-- Per-product profitability table -->
+    <div class="bf-card hidden" id="dp-table-card">
+      <h3>Profit by product</h3>
+      <p class="bf-card-sub"><strong>Net / PP</strong> = profit per production point at the best region bonus. <strong>Ceiling / day</strong> = Net/PP × your <em>total</em> daily throughput − employee wages — a theoretical upper bound if every company's output went to this one product (not a realistic target). <strong>Actual / day</strong> = what your companies currently make of it.</p>
+      <div class="dp-table-wrap">
+        <table class="dp-table" id="dp-table"></table>
+      </div>
+      <p class="dp-note" id="dp-table-note"></p>
+    </div>
+
+    <details class="howto">
+      <summary>How this works · methodology</summary>
+      <div class="howto-body">
+        <ul>
+          <li><strong>Net / PP</strong> = <code>(salePrice − Σ(recipe × rawPrice)) × (1 + bonus) ÷ productionPoints</code>.
+              Recipes &amp; production points from <code>gameConfig</code>; prices are the live market <strong>lowest offer</strong>
+              (best ask, what the game shows) via <code>tradingOrder.getTopOrders</code>;
+              the production bonus from the same region/country model the Migration Advisor uses (best region shown).</li>
+          <li><strong>Daily throughput</strong> ≈ your employees' output (<code>production × energy × 0.24 × (1 + fidelity)</code> PP/day each),
+              your own self-work (<code>production × entrepreneurship × 0.24</code>, no fidelity/wage), plus each company's
+              automated-engine production. It's an estimate — edit the field to match your real numbers.</li>
+          <li><strong>Ceiling / day</strong> is a theoretical upper bound: 100% of your total throughput on one
+              product, minus your employee wages (a fixed cost) — not a realistic target. <strong>Actual / day</strong>
+              sums what your companies currently produce of each item at their own region's bonus.</li>
+          <li>Prices come live from the market (lowest sell offer). The <a href="https://warerastats.io/" target="_blank" rel="noopener">warerastats</a> average is only a fallback for any item whose order book is empty.</li>
+          <li>Irish-citizens only (<code>?bypass=1</code> lifts it).</li>
+        </ul>
+      </div>
+    </details>
+  </section>
+
   <!-- ─── Buddy System view (encrypted; MoECON password required) ───── -->
   <section class="view" data-view="buddy">
     <div class="tool-header">
@@ -838,6 +930,7 @@
 <script src="js/advisor.js"></script>
 <script src="js/clockin.js"></script>
 <script src="js/wealth.js"></script>
+<script src="js/daily-profit.js"></script>
 <script src="js/buddy.js"></script>
 <script src="js/battle-orders.js"></script>
 <script src="js/beer.js"></script>

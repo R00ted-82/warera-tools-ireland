@@ -33,7 +33,7 @@
 (() => {
   const VALID = new Set([
     'home', 'community', 'gov', 'mu', 'buddy-finder',
-    'advisor', 'clockin', 'wealth', 'buddy', 'battle-orders',  'beer',
+    'advisor', 'clockin', 'profit', 'wealth', 'buddy', 'battle-orders',  'beer',
   ]);
   const LANDING = new Set(['home', 'community', 'gov', 'beer']);
   const DEFAULT_VIEW = 'home';
@@ -50,6 +50,7 @@
     'buddy-finder': BuddyFinderTool,
     advisor: AdvisorTool,
     clockin: ClockInTool,
+    profit: DailyProfitTool,
     wealth: WealthMonitorTool,
     buddy: BuddySystemGate,
     'battle-orders': BattleOrdersGate,

@@ -1939,3 +1939,83 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
 .wm-mini-expand { display: inline-flex; color: var(--muted); opacity: .6; }
 .wm-mini:hover .wm-mini-expand { opacity: 1; color: var(--link); }
 .wm-mini-chart { width: 100%; height: auto; display: block; touch-action: none; }
+/* ═══════════════════════════════════════════════════════════════════
+ *  DAILY PROFIT (dp-) — merged from daily-profit.html
+ * ═══════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════
+ *  DAILY PROFIT — tool-specific styles (dp- prefix). Drop-in
+ *  <section class="view" data-view="profit"> for index.html on merge.
+ * ═══════════════════════════════════════════════════════════════════ */
+#dp-stats-card.hidden, #dp-table-card.hidden { display: none; }
+
+.dp-assump { display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: flex-start; }
+.dp-field { display: flex; flex-direction: column; gap: 4px; }
+.dp-field label { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.dp-field input {
+  background: var(--bg); color: var(--text); border: 1px solid var(--border);
+  border-radius: 6px; padding: 6px 9px; font-size: 13px; font-family: inherit;
+  font-variant-numeric: tabular-nums; width: 140px;
+}
+.dp-field .dp-suffix { font-size: 11px; color: var(--muted); }
+
+/* Income summary cards */
+.dp-income { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 14px; }
+.dp-inc { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 11px 13px; }
+.dp-inc .dp-inc-label { font-size: 12px; color: var(--muted); }
+.dp-inc .dp-inc-val { font-size: 17px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; margin-top: 2px; }
+.dp-inc .dp-inc-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.dp-inc.total { border-color: rgba(74,222,128,.35); }
+.dp-inc.total .dp-inc-val { color: var(--accent); }
+.dp-inc-chk { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.dp-inc-chk input { accent-color: var(--accent); cursor: pointer; margin: 0; flex: none; }
+.dp-inc-off { opacity: .55; }
+.dp-inc-off .dp-inc-val { color: var(--muted); }
+.dp-cases-in, .dp-moves-in {
+  width: 64px; background: var(--bg); color: var(--text);
+  border: 1px solid var(--border); border-radius: 5px;
+  padding: 2px 6px; font-size: 12px; font-family: inherit;
+  font-variant-numeric: tabular-nums; margin-right: 2px;
+}
+.dp-inc-deduct .dp-inc-val { color: var(--danger); }
+
+/* Throughput trio (Engine / Staff / Total): equal widths, no spinners, and a
+   clean read-only "result" look for the disabled total so they harmonise. */
+#dp-engines, #dp-staff, #dp-tp-total { width: 150px; }
+#dp-tp-total {
+  color: var(--accent); -webkit-text-fill-color: var(--accent);
+  font-weight: 600; opacity: 1; cursor: default; background: var(--panel-2);
+}
+.dp-field input[type=number]::-webkit-outer-spin-button,
+.dp-field input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.dp-field input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+
+/* "How to use" intro: a collapsible details (reuses details.howto), sitting at
+   the very top so it needs no top margin; Adro credit line at the foot. */
+.dp-howto { margin-top: 0; margin-bottom: 16px; }
+.dp-howto strong { color: var(--text); }
+.dp-howto .dp-credit { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 12px; }
+.dp-howto .dp-credit strong { color: var(--accent); }
+
+/* Per-product table */
+.dp-table-wrap { overflow-x: auto; }
+table.dp-table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+table.dp-table th, table.dp-table td { padding: 7px 10px; text-align: right; white-space: nowrap; }
+table.dp-table th { color: var(--muted); font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: .03em; border-bottom: 1px solid var(--border); }
+table.dp-table td.dp-l, table.dp-table th.dp-l { text-align: left; }
+table.dp-table tbody tr { border-bottom: 1px solid var(--border); }
+table.dp-table tbody tr:hover { background: var(--panel-2); }
+table.dp-table tbody tr.dp-owned { background: rgba(74,222,128,.06); }
+table.dp-table tbody tr.dp-owned:hover { background: rgba(74,222,128,.1); }
+.dp-prod { display: inline-flex; align-items: center; gap: 7px; }
+.dp-prod .icon-box { width: 22px; height: 22px; }
+.dp-cat { font-size: 11px; color: var(--muted); }
+.dp-pill { display: inline-block; font-size: 10.5px; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
+.dp-pill.product { border-color: rgba(96,165,250,.4); color: var(--link); }
+.dp-netpp { font-weight: 700; color: var(--text); }
+.dp-netpp.neg { color: var(--danger); }
+.dp-bonus { color: var(--accent); }
+.dp-muted { color: var(--muted); }
+.dp-actual { color: var(--accent); font-weight: 600; }
+.dp-na { color: var(--muted); opacity: .6; }
+.dp-note { font-size: 12px; color: var(--muted); margin: 12px 0 0; line-height: 1.5; }
+.dp-note code { background: var(--panel-2); padding: 1px 5px; border-radius: 3px; font-family: ui-monospace, monospace; font-size: 11px; }

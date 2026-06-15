@@ -32,14 +32,15 @@
 const ToolkitShell = (() => {
   const DEFAULT_TOOL       = 'advisor';   // first tab; used when no name yet
   const DEFAULT_AFTER_LOAD = 'advisor';   // user typed a name, show their data
-  const TOOLS              = ['advisor', 'clockin', 'wealth', 'buddy-finder', 'mu'];
-  const USERNAME_DRIVEN    = new Set(['buddy-finder', 'advisor', 'clockin', 'wealth']);
+  const TOOLS              = ['advisor', 'clockin', 'buddy-finder', 'profit', 'wealth', 'mu'];
+  const USERNAME_DRIVEN    = new Set(['buddy-finder', 'advisor', 'clockin', 'profit', 'wealth']);
 
   const MODULES = {
     mu:             () => MUTool,
     'buddy-finder': () => BuddyFinderTool,
     advisor:        () => AdvisorTool,
     clockin:        () => ClockInTool,
+    profit:         () => DailyProfitTool,
     wealth:         () => WealthMonitorTool,
   };
 
@@ -50,6 +51,7 @@ const ToolkitShell = (() => {
     clockin:        { icon: '⏱',  title: 'Clock-In Monitor',  desc: `See when each of your workers last clocked in, on a 48-hour timeline, plus a payroll projection.` },
     wealth:         { icon: '💰', title: 'Wealth Tracker',    desc: `Track any Irish player's wealth over time — total, or split into companies, items, money, equipment and weapons.` },
     'buddy-finder': { icon: '🤝', title: 'Buddy Finder',      desc: `Find a buddy for the Irish buddy system (you hire each other at minimum wage), or join the waiting list.` },
+    profit:         { icon: '📈', title: 'Daily Profit',      desc: `Your projected daily profit — companies, salary, missions and case sales — plus which products pay best per production point.` },
     mu:             { icon: '🇮🇪', title: 'Irish Military Units', desc: `Military Units owned by Irish citizens, based in Ireland, with a majority-Irish roster.` },
   };
 
@@ -81,7 +83,7 @@ const ToolkitShell = (() => {
     const t = [];
     // Every tool's own header is replaced by the shell's unified info box.
     t.push(v.el.querySelector('.tool-header'));
-    if (tool === 'wealth') {
+    if (tool === 'wealth' || tool === 'profit') {
       // Shell provides the username field, so also hide the tool's own
       // lookup bar (input + recent chips). The shared name drives it.
       t.push(v.el.querySelector('.stg-idbar'));
@@ -171,7 +173,7 @@ const ToolkitShell = (() => {
     nativeReplace = history.replaceState.bind(history);
     history.replaceState = function (s, t, url) {
       if (typeof url === 'string') {
-        const m = url.match(/^#(mu|buddy-finder|advisor|clockin|wealth)\b/);
+        const m = url.match(/^#(mu|buddy-finder|advisor|clockin|profit|wealth)\b/);
         if (m) {
           const q = url.split('?')[1] || '';
           const u = new URLSearchParams(q).get('u');
@@ -350,7 +352,7 @@ const ToolkitShell = (() => {
   // Landing cards, grouped into sections (same style as the Community tab).
   const PREVIEW_CATS = [
     { title: '🏭 Production', tools: ['advisor', 'clockin'] },
-    { title: '💰 Profits',    tools: ['wealth', 'buddy-finder'] },
+    { title: '💰 Profits',    tools: ['buddy-finder', 'profit', 'wealth'] },
     { title: '⚔️ Combat',   tools: ['mu'] },
   ];
   function renderPreview() {

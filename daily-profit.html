@@ -165,7 +165,10 @@ table.dp-table tbody tr.dp-owned:hover { background: rgba(74,222,128,.1); }
  * ═══════════════════════════════════════════════════════════════════ */
 const DailyProfitTool = (() => {
   const WS_BASE = (typeof WARERASTATS_BASE !== 'undefined') ? WARERASTATS_BASE : 'https://warera-proxy.toie.workers.dev/warerastats';
-  const ITEMS_URL = 'https://api.warerastats.io/items';
+  // Prices via the proxy (it adds CORS) — a direct api.warerastats.io fetch
+  // is blocked cross-origin in the browser, even though /countries via the
+  // proxy works.
+  const ITEMS_URL = `${WS_BASE}/items`;
   const ACTIONS_PER_ENERGY = 0.343;   // daily PP per player ≈ production × energy × this
   const RECENT_KEY = 'dp:recent-usernames';
   const RECENT_MAX = 8;

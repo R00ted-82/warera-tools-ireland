@@ -374,6 +374,8 @@ const DailyProfitTool = (() => {
       if (typeof cfgDep === 'number') GAME_DEPOSIT_BONUS = cfgDep;
       const missionMoney = (gameConfig?.mission?.reward?.daily?.money || 0)
         + (gameConfig?.mission?.reward?.weekly?.money || 0) / 7;
+      const missionCases = (gameConfig?.mission?.reward?.daily?.cases || 0)
+        + (gameConfig?.mission?.reward?.weekly?.cases || 0) / 7;
 
       const allCountries = Array.isArray(allCountriesRaw) ? allCountriesRaw : (allCountriesRaw?.items || []);
       steps.setStep(3, 'active', { sub: 'Loading country bonuses', count: `0/${allCountries.length}` });
@@ -439,9 +441,11 @@ const DailyProfitTool = (() => {
       const staffPP   = Math.round(companies.reduce((s, c) => s + c._workersManual, 0));
       const throughputPP = enginesPP + staffPP;
 
-      model = { user, prices, gameItems, bestBonus, companies, missionMoney,
+      model = { user, prices, gameItems, bestBonus, companies,
+                missionMoney, missionCases, casePrice: (prices['case1'] ?? null),
+                selfProd: skill(user, 'production'), selfEnergy: skill(user, 'energy'),
                 enginesPP, staffPP, priceOverrides: {},
-                assumptions: { throughputPP } };
+                assumptions: { throughputPP, netWage: 0, deductions: 0 } };
       renderAll();
     } catch (e) {
       steps.markActiveAsError(e.message);
@@ -495,17 +499,37 @@ const DailyProfitTool = (() => {
         <label>${escapeHtml(META[c].name)} price <span class="dp-suffix">· untraded, set it</span></label>
         <input type="number" class="dp-price-in" data-code="${c}" value="${model.priceOverrides[c] ?? ''}" min="0" step="0.001" placeholder="—">
       </div>`).join('');
+    const salaryPP = Math.round(model.selfProd * model.selfEnergy * WORK_FACTOR);
     $assump.innerHTML = `
       <div class="dp-field">
         <label title="Total production points output per day (you + employees + company engines)">Daily PP throughput</label>
         <input type="number" id="dp-tp" value="${a.throughputPP}" min="0" step="1">
         <span class="dp-suffix">engines ${model.enginesPP} + staff ${model.staffPP} PP/day</span>
       </div>
+      <div class="dp-field">
+        <label title="What you're paid per production point working as an employee, after tax. 0 if you only work your own companies.">Your net wage / PP</label>
+        <input type="number" id="dp-netwage" value="${a.netWage}" min="0" step="0.001" placeholder="0">
+        <span class="dp-suffix">${salaryPP} PP/day if you work for wages</span>
+      </div>
+      <div class="dp-field">
+        <label title="Any daily costs to subtract (taxes, upkeep, etc.)">Deductions / day</label>
+        <input type="number" id="dp-deduct" value="${a.deductions}" min="0" step="0.01" placeholder="0">
+      </div>
       ${priceFields}
     `;
     $assump.querySelector('#dp-tp').addEventListener('input', e => {
       const v = parseFloat(e.target.value);
       model.assumptions.throughputPP = isFinite(v) ? v : 0;
+      renderTableAndIncome();
+    });
+    $assump.querySelector('#dp-netwage').addEventListener('input', e => {
+      const v = parseFloat(e.target.value);
+      model.assumptions.netWage = isFinite(v) ? v : 0;
+      renderTableAndIncome();
+    });
+    $assump.querySelector('#dp-deduct').addEventListener('input', e => {
+      const v = parseFloat(e.target.value);
+      model.assumptions.deductions = isFinite(v) ? v : 0;
       renderTableAndIncome();
     });
     $assump.querySelectorAll('.dp-price-in').forEach(inp => {
@@ -586,9 +610,18 @@ const DailyProfitTool = (() => {
       + `${priced}/${rows.length} products priced.` + (missing.length ? ` No market price for: <code>${missing.join('</code>, <code>')}</code>.` : '');
 
     const companiesIncome = rows.reduce((s, r) => s + (r.actual || 0), 0);
+    const netWage = model.assumptions.netWage || 0;
+    const salaryPP = model.selfProd * model.selfEnergy * WORK_FACTOR;
+    const salary = salaryPP * netWage;
+    const caseSales = (model.casePrice != null) ? model.missionCases * model.casePrice : 0;
+    const deductions = model.assumptions.deductions || 0;
+
     const items = [
-      { label: 'Companies', val: companiesIncome, sub: `${model.companies.length} companies, current output` },
-      { label: 'Daily missions', val: model.missionMoney, sub: 'daily + weekly/7' },
+      { label: 'Companies',  val: companiesIncome, sub: `${model.companies.length} companies, current output` },
+      { label: 'Salary',     val: salary, sub: netWage ? `${Math.round(salaryPP)} PP/day × ${fmt3(netWage)}` : 'set your net wage →' },
+      { label: 'Case sales', val: caseSales, sub: model.casePrice != null ? `${fmt2(model.missionCases)} cases/day × ${fmt2(model.casePrice)}` : 'no case price' },
+      { label: 'Missions',   val: model.missionMoney, sub: 'daily + weekly/7' },
+      { label: 'Deductions', val: -deductions, sub: deductions ? 'subtracted' : 'none' },
     ];
     const total = items.reduce((s, x) => s + (x.val || 0), 0);
     $income.innerHTML = items.map(x =>

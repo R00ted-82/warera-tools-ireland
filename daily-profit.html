@@ -31,6 +31,28 @@
 .dp-inc .dp-inc-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
 .dp-inc.total { border-color: rgba(74,222,128,.35); }
 .dp-inc.total .dp-inc-val { color: var(--accent); }
+.dp-inc-chk { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.dp-inc-chk input { accent-color: var(--accent); cursor: pointer; margin: 0; flex: none; }
+.dp-inc-off { opacity: .55; }
+.dp-inc-off .dp-inc-val { color: var(--muted); }
+.dp-cases-in, .dp-moves-in {
+  width: 64px; background: var(--bg); color: var(--text);
+  border: 1px solid var(--border); border-radius: 5px;
+  padding: 2px 6px; font-size: 12px; font-family: inherit;
+  font-variant-numeric: tabular-nums; margin-right: 2px;
+}
+.dp-inc-deduct .dp-inc-val { color: var(--danger); }
+
+/* Plain-language "how to use" box */
+.dp-howto {
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px 15px; margin: 0 0 16px; font-size: 13px; color: var(--muted); line-height: 1.55;
+}
+.dp-howto strong { color: var(--text); }
+.dp-howto ul { margin: 7px 0 0; padding-left: 18px; }
+.dp-howto li { margin: 2px 0; }
+.dp-credit { margin-top: 9px; padding-top: 9px; border-top: 1px solid var(--border); font-size: 12px; }
+.dp-credit strong { color: var(--accent); }
 
 /* Per-product table */
 .dp-table-wrap { overflow-x: auto; }
@@ -80,6 +102,18 @@ table.dp-table tbody tr.dp-owned:hover { background: rgba(74,222,128,.1); }
       </div>
     </div>
 
+    <div class="dp-howto">
+      <strong>How to use</strong> — type your War Era username and hit <strong>Load</strong>. You'll get your
+      estimated profit per day (companies, salary, missions, case sales) and a table of which products pay best.
+      It all fills in from the game automatically; then you can fine-tune:
+      <ul>
+        <li>Tick only the missions you actually complete.</li>
+        <li>Enter cases sold today, and any company moves / production changes.</li>
+        <li>Adjust the engine / staff boxes to try "what if". Totals update instantly.</li>
+      </ul>
+      <div class="dp-credit">💡 Tool idea, formulas &amp; testing by <strong>Adro</strong>.</div>
+    </div>
+
     <div class="stg-idbar">
       <div class="stg-idbar-row">
         <input type="text" id="dp-username" placeholder="In-game username" autocomplete="off" spellcheck="false" />
@@ -119,7 +153,7 @@ table.dp-table tbody tr.dp-owned:hover { background: rgba(74,222,128,.1); }
     <!-- Per-product profitability table -->
     <div class="bf-card hidden" id="dp-table-card">
       <h3>Profit by product</h3>
-      <p class="bf-card-sub"><strong>Net / PP</strong> = profit per production point at the best region bonus. <strong>Max / day</strong> = Net/PP × your daily throughput (if 100% of it went to that one product). <strong>Actual / day</strong> = what your companies currently make of it.</p>
+      <p class="bf-card-sub"><strong>Net / PP</strong> = profit per production point at the best region bonus. <strong>Ceiling / day</strong> = Net/PP × your <em>total</em> daily throughput − employee wages — a theoretical upper bound if every company's output went to this one product (not a realistic target). <strong>Actual / day</strong> = what your companies currently make of it.</p>
       <div class="dp-table-wrap">
         <table class="dp-table" id="dp-table"></table>
       </div>
@@ -133,9 +167,11 @@ table.dp-table tbody tr.dp-owned:hover { background: rgba(74,222,128,.1); }
           <li><strong>Net / PP</strong> = <code>(salePrice − Σ(recipe × rawPrice)) × (1 + bonus) ÷ productionPoints</code>.
               Recipes &amp; production points from <code>gameConfig</code>; prices from the WarEra market (warerastats);
               the production bonus from the same region/country model the Migration Advisor uses (best region shown).</li>
-          <li><strong>Daily throughput</strong> ≈ your own + your employees' output (<code>production × energy × 0.343</code> PP/day each)
-              plus each company's automated-engine production. It's an estimate — edit the field to match your real numbers.</li>
-          <li><strong>Max / day</strong> assumes 100% of that throughput goes to one product. <strong>Actual / day</strong>
+          <li><strong>Daily throughput</strong> ≈ your employees' output (<code>production × energy × 0.24 × (1 + fidelity)</code> PP/day each),
+              your own self-work (<code>production × entrepreneurship × 0.24</code>, no fidelity/wage), plus each company's
+              automated-engine production. It's an estimate — edit the field to match your real numbers.</li>
+          <li><strong>Ceiling / day</strong> is a theoretical upper bound: 100% of your total throughput on one
+              product, minus your employee wages (a fixed cost) — not a realistic target. <strong>Actual / day</strong>
               sums what your companies currently produce of each item at their own region's bonus.</li>
           <li>Items not on the warerastats feed (e.g. <code>wood</code>, <code>paper</code>) are priced from the live market order book (<code>tradingOrder.getTopOrders</code> — midpoint of best bid/ask).</li>
           <li>Irish-citizens only (<code>?bypass=1</code> lifts it).</li>
@@ -422,12 +458,23 @@ const DailyProfitTool = (() => {
       }
       const aeLevels = gameConfig?.upgradesConfig?.automatedEngine?.levels || {};
       const aeDailyProd = (lvl) => aeLevels[lvl]?.stats?.dailyProd || 0;
+      // Moving a company or changing its production each costs concrete
+      // (company.moveCost / changeItemCost — both 5). Used for the Deductions line.
+      const moveCost = gameConfig?.company?.moveCost ?? gameConfig?.company?.changeItemCost ?? 5;
       const cfgDep = gameConfig?.company?.depositResourceBonus;
       if (typeof cfgDep === 'number') GAME_DEPOSIT_BONUS = cfgDep;
-      // Daily mission reward only (matches the in-game/sheet "Daily Missions").
-      // Weekly missions are a separate, lumpy reward — not prorated here.
-      const missionMoney = (gameConfig?.mission?.reward?.daily?.money || 0);
-      const missionCases = (gameConfig?.mission?.reward?.daily?.cases || 0);
+      // Recurring mission rewards. Daily is counted as-is; weekly and monthly
+      // are prorated to a daily figure (÷7 and ÷30) and shown on their own
+      // income lines, so the Daily line stays the true daily reward. Mission
+      // cases (daily + weekly/7 + monthly/30) all flow into the Case-sales line.
+      // (Starting missions are one-time, so they're excluded.)
+      const mr = gameConfig?.mission?.reward || {};
+      const missionMoney        = (mr.daily?.money   || 0);
+      const missionMoneyWeekly  = (mr.weekly?.money  || 0) / 7;
+      const missionMoneyMonthly = (mr.monthly?.money || 0) / 30;
+      const missionCasesDaily   = (mr.daily?.cases   || 0);
+      const missionCasesWeekly  = (mr.weekly?.cases  || 0) / 7;
+      const missionCasesMonthly = (mr.monthly?.cases || 0) / 30;
 
       const allCountries = Array.isArray(allCountriesRaw) ? allCountriesRaw : (allCountriesRaw?.items || []);
       steps.setStep(3, 'active', { sub: 'Loading country bonuses', count: `0/${allCountries.length}` });
@@ -474,30 +521,69 @@ const DailyProfitTool = (() => {
         c._workersManual = 0;
         c._wageCost = 0;
       });
+      // Hired employees only — worker.getWorkers never includes the owner.
+      // Each produces production × energy × WORK_FACTOR × (1 + fidelity/100),
+      // and is paid a wage on the pre-fidelity base.
       workerEntries.forEach(w => {
         const c = companyById[w.companyId]; if (!c) return;
         const prof = workerProfiles[w.userId]; if (!prof) return;
-        const isSelf = w.userId === user._id;
         const prod = skill(prof, 'production');
-        // Employees draw on their energy; you draw on entrepreneurship.
-        const pool = isSelf ? skill(prof, 'entrepreneurship') : skill(prof, 'energy');
+        const energy = skill(prof, 'energy');
         const fid  = typeof w.fidelity === 'number' ? w.fidelity : 0;
-        const basePP   = prod * pool * WORK_FACTOR;           // pre-fidelity; wages paid on this
+        const basePP   = prod * energy * WORK_FACTOR;         // pre-fidelity; wages paid on this
         const outputPP = basePP * (1 + fid / 100);            // what the company actually produces
         c._workersManual += outputPP;
         c._wageCost += basePP * (typeof w.wage === 'number' ? w.wage : 0);
       });
+
+      // The owner ALSO self-works in their OWN companies via the entrepreneurship
+      // pool — a separate stream from their energy "job" (which may be in someone
+      // else's company). worker.getWorkers never lists the owner, so add it here:
+      //   production × entrepreneurship × WORK_FACTOR   (no fidelity, no wage).
+      // It's one self-work stream; attribute it to the owner's most profitable
+      // company (the rational target) so the profit column reflects it.
+      const selfPP = skill(user, 'production') * skill(user, 'entrepreneurship') * WORK_FACTOR;
+      let selfWorkCompany = null;
+      if (selfPP > 0 && companies.length) {
+        const localNetPP = (c) => {
+          const it = gameItems[c.itemCode]; const pp = it?.productionPoints || 0;
+          const sale = prices[c.itemCode]; if (!pp || sale == null) return -Infinity;
+          let rc = 0; const needs = it.productionNeeds || {};
+          for (const k in needs) { if (prices[k] == null) return -Infinity; rc += needs[k] * prices[k]; }
+          const bonus = c._bonus ? c._bonus.total : 0;
+          return (sale - rc) * (1 + bonus / 100) / pp;
+        };
+        let bestv = -Infinity;
+        for (const c of companies) { const v = localNetPP(c); if (v > bestv) { bestv = v; selfWorkCompany = c; } }
+        if (selfWorkCompany) { selfWorkCompany._workersManual += selfPP; selfWorkCompany._selfWork = true; }
+      }
       companies.forEach(c => { c._dailyPP = c._dailyAE + c._workersManual; });
 
       const enginesPP = Math.round(companies.reduce((s, c) => s + c._dailyAE, 0));
       const staffPP   = Math.round(companies.reduce((s, c) => s + c._workersManual, 0));
-      const throughputPP = enginesPP + staffPP;
+
+      // Salary, modeled over a full 24h rather than the lumpy actual sum:
+      // daily work capacity (energy × WORK_FACTOR works/day) × the average NET
+      // wage per work payment (taken straight from recent wage transactions, so
+      // tax is already baked in and we needn't reconcile the wage rate).
+      const salaryWorksPerDay = skill(user, 'energy') * WORK_FACTOR;
+      const salaryAvgPerWork  = salaryInfo.count ? salaryInfo.total / salaryInfo.count : 0;
+      const salaryModeled     = salaryWorksPerDay * salaryAvgPerWork;
 
       model = { user, prices, gameItems, bestBonus, companies,
-                missionMoney, missionCases, casePrice: (prices['case1'] ?? null),
-                salaryDaily: salaryInfo.total, salaryCount: salaryInfo.count,
+                missionMoney, missionMoneyWeekly, missionMoneyMonthly,
+                missionCasesDaily, missionCasesWeekly, missionCasesMonthly,
+                missionsDone: { daily: true, weekly: true, monthly: true },
+                casesManual: null,   // manual "cases sold today" override; null = use modeled
+                movesManual: null,   // manual count of company moves / production changes
+                moveCost, concretePrice: (prices['concrete'] ?? null),
+                casePrice: (prices['case1'] ?? null),
+                salaryDaily: salaryModeled, salaryActual: salaryInfo.total, salaryCount: salaryInfo.count,
+                salaryWorksPerDay, salaryAvgPerWork,
                 enginesPP, staffPP, priceOverrides: {},
-                assumptions: { throughputPP } };
+                selfPP: Math.round(selfPP),
+                selfWorkItem: selfWorkCompany ? (META[selfWorkCompany.itemCode]?.name || selfWorkCompany.itemCode) : null,
+                assumptions: { enginesPP, staffPP } };   // editable; throughput = sum
       renderAll();
     } catch (e) {
       steps.markActiveAsError(e.message);
@@ -554,17 +640,33 @@ const DailyProfitTool = (() => {
       </div>`).join('');
     $assump.innerHTML = `
       <div class="dp-field">
-        <label title="Total production points output per day (you + employees + company engines)">Daily PP throughput</label>
-        <input type="number" id="dp-tp" value="${a.throughputPP}" min="0" step="1">
-        <span class="dp-suffix">engines ${model.enginesPP} + staff ${model.staffPP} PP/day</span>
+        <label title="Automated-engine output per day, summed across your companies">Engine PP / day</label>
+        <input type="number" id="dp-engines" value="${a.enginesPP}" min="0" step="1">
+        <span class="dp-suffix">automated engines</span>
+      </div>
+      <div class="dp-field">
+        <label title="You + your employees working in your companies">Staff PP / day</label>
+        <input type="number" id="dp-staff" value="${a.staffPP}" min="0" step="1">
+        <span class="dp-suffix">employees${model.selfPP ? ` + your ${model.selfPP} self-work${model.selfWorkItem ? ` → ${escapeHtml(model.selfWorkItem)}` : ''}` : ''}</span>
+      </div>
+      <div class="dp-field">
+        <label title="Engine + staff — drives Ceiling/day">Total throughput</label>
+        <input type="number" id="dp-tp-total" value="${Math.round((a.enginesPP || 0) + (a.staffPP || 0))}" disabled>
+        <span class="dp-suffix">engines + staff</span>
       </div>
       ${priceFields}
     `;
-    $assump.querySelector('#dp-tp').addEventListener('input', e => {
-      const v = parseFloat(e.target.value);
-      model.assumptions.throughputPP = isFinite(v) ? v : 0;
-      renderTableAndIncome();
-    });
+    const $eng = $assump.querySelector('#dp-engines');
+    const $stf = $assump.querySelector('#dp-staff');
+    const $tot = $assump.querySelector('#dp-tp-total');
+    const onThroughput = () => {
+      const e = parseFloat($eng.value); model.assumptions.enginesPP = isFinite(e) ? e : 0;
+      const s = parseFloat($stf.value); model.assumptions.staffPP   = isFinite(s) ? s : 0;
+      if ($tot) $tot.value = Math.round(model.assumptions.enginesPP + model.assumptions.staffPP);
+      renderTableAndIncome();   // re-renders the table only — these inputs keep focus
+    };
+    $eng.addEventListener('input', onThroughput);
+    $stf.addEventListener('input', onThroughput);
     $assump.querySelectorAll('.dp-price-in').forEach(inp => {
       inp.addEventListener('input', e => {
         const code = e.target.dataset.code, v = e.target.value;
@@ -604,7 +706,10 @@ const DailyProfitTool = (() => {
   }
 
   function renderTableAndIncome() {
-    const tp = model.assumptions.throughputPP || 0;
+    const tp = (model.assumptions.enginesPP || 0) + (model.assumptions.staffPP || 0);
+    // Employee wages are a fixed cost — you pay them whatever the workers make.
+    // Actual/day already nets them out, so Ceiling/day must too, or it reads high.
+    const totalWageCost = model.companies.reduce((s, c) => s + (c._wageCost || 0), 0);
     const rows = buildRows();
 
     $table.innerHTML = `
@@ -615,13 +720,13 @@ const DailyProfitTool = (() => {
         <th>Raw cost</th>
         <th>Bonus</th>
         <th>Net / PP</th>
-        <th>Max / day</th>
+        <th title="Theoretical ceiling: total throughput on this one product, minus wages">Ceiling / day</th>
         <th>Actual / day</th>
       </tr></thead>
       <tbody>${rows.map(r => {
         const sale = price(r.code);
         const rc = rawCostOf(r.code);
-        const maxDay = r.netPP != null ? r.netPP * tp : null;
+        const maxDay = r.netPP != null ? r.netPP * tp - totalWageCost : null;
         const regionTip = r.region ? `${escapeHtml(r.region.name)}${r.country ? ' · ' + escapeHtml(r.country.name) : ''}` : 'no bonus region';
         return `<tr class="${r.makesIt ? 'dp-owned' : ''}">
           <td class="dp-l"><span class="dp-prod">${iconHtml(r.code)}<span>${escapeHtml(r.name)}</span><span class="dp-cat">· ${r.cat}</span></span></td>
@@ -642,19 +747,92 @@ const DailyProfitTool = (() => {
     $tableNote.innerHTML = `Best Net/PP: <strong>${top && top.netPP != null ? top.name + ' (' + fmt3(top.netPP) + '/PP)' : '–'}</strong>. `
       + `${priced}/${rows.length} products priced.` + (missing.length ? ` No market price for: <code>${missing.join('</code>, <code>')}</code>.` : '');
 
-    const companiesIncome = rows.reduce((s, r) => s + (r.actual || 0), 0);
-    const caseSales = (model.casePrice != null) ? model.missionCases * model.casePrice : 0;
+    model._companiesIncome = rows.reduce((s, r) => s + (r.actual || 0), 0);
+    renderIncome();
+  }
+
+  // Income summary. Mission cadences each have a "done?" checkbox; Case sales and
+  // Deductions each have a manual input. The fixed income lines are summed once,
+  // and the two manual fields recompute Case sales / Deductions / Total in place
+  // (no full re-render, so typing keeps focus). Checkbox toggles do re-render.
+  function renderIncome() {
+    const done = model.missionsDone;
+    const modeledCases = (done.daily   ? model.missionCasesDaily   : 0)
+                       + (done.weekly  ? model.missionCasesWeekly  : 0)
+                       + (done.monthly ? model.missionCasesMonthly : 0);
+    const casePriced     = model.casePrice != null;
+    const concretePriced = model.concretePrice != null;
+
+    // Income that doesn't change with the two manual fields.
+    const fixedIncome =
+        (model._companiesIncome || 0)
+      + (model.salaryDaily || 0)
+      + (done.daily   ? model.missionMoney        : 0)
+      + (done.weekly  ? model.missionMoneyWeekly  : 0)
+      + (done.monthly ? model.missionMoneyMonthly : 0);
+
+    const caseVal   = () => casePriced ? ((model.casesManual != null ? model.casesManual : modeledCases) * model.casePrice) : 0;
+    // Each move / production change costs `moveCost` concrete (5), valued live.
+    const deductVal = () => concretePriced ? ((model.movesManual || 0) * model.moveCost * model.concretePrice) : 0;
+    const grandTotal = () => fixedIncome + caseVal() - deductVal();
 
     const items = [
-      { label: 'Companies',  val: companiesIncome, sub: `${model.companies.length} companies, current output` },
-      { label: 'Salary',     val: model.salaryDaily, sub: model.salaryCount ? `${model.salaryCount} wage payments · last 24h` : 'no wages in last 24h' },
-      { label: 'Case sales', val: caseSales, sub: model.casePrice != null ? `${fmt2(model.missionCases)} cases/day × ${fmt2(model.casePrice)}` : 'no case price' },
-      { label: 'Daily missions', val: model.missionMoney, sub: 'daily reward' },
+      { label: 'Companies',  val: model._companiesIncome, sub: `${model.companies.length} companies, current output` },
+      { label: 'Salary',     val: model.salaryDaily, sub: model.salaryCount
+          ? `~${model.salaryWorksPerDay.toFixed(1)} works/day × ${fmt2(model.salaryAvgPerWork)} net · modeled (24h actual: ${fmtK(model.salaryActual)})`
+          : 'no recent wages to model from' },
+      { label: 'Daily missions',   val: model.missionMoney,        sub: 'daily reward',  toggle: 'daily',   done: done.daily },
+      { label: 'Weekly missions',  val: model.missionMoneyWeekly,  sub: '30/week ÷ 7',   toggle: 'weekly',  done: done.weekly },
+      { label: 'Monthly missions', val: model.missionMoneyMonthly, sub: '50/month ÷ 30', toggle: 'monthly', done: done.monthly },
     ];
-    const total = items.reduce((s, x) => s + (x.val || 0), 0);
-    $income.innerHTML = items.map(x =>
-      `<div class="dp-inc"><div class="dp-inc-label">${x.label}</div><div class="dp-inc-val">${fmtK(x.val)}</div><div class="dp-inc-sub">${x.sub}</div></div>`
-    ).join('') + `<div class="dp-inc total"><div class="dp-inc-label">Total / day</div><div class="dp-inc-val">${fmtK(total)}</div><div class="dp-inc-sub">≈ ${fmtK(total * 7)} / week</div></div>`;
+
+    // Case sales: manual "cases sold today" (empty → modeled count via placeholder).
+    const caseSub = casePriced
+      ? `<input type="number" class="dp-cases-in" value="${model.casesManual ?? ''}" placeholder="${fmt2(modeledCases)}" min="0" step="0.01"> cases × ${fmt2(model.casePrice)}`
+      : 'no case price';
+    const caseCard = `<div class="dp-inc"><div class="dp-inc-label">Case sales</div>`
+      + `<div class="dp-inc-val" id="dp-case-val">${fmtK(caseVal())}</div><div class="dp-inc-sub">${caseSub}</div></div>`;
+
+    // Deductions: company moves / production changes today × moveCost concrete × price.
+    const deductSub = concretePriced
+      ? `<input type="number" class="dp-moves-in" value="${model.movesManual ?? ''}" placeholder="0" min="0" step="1"> moves/changes × ${model.moveCost} concrete × ${fmt2(model.concretePrice)}`
+      : 'no concrete price';
+    const deductCard = `<div class="dp-inc dp-inc-deduct"><div class="dp-inc-label">Deductions</div>`
+      + `<div class="dp-inc-val" id="dp-deduct-val">−${fmtK(deductVal())}</div><div class="dp-inc-sub">${deductSub}</div></div>`;
+
+    $income.innerHTML = items.map(x => {
+      const off = x.toggle && !x.done;
+      const label = x.toggle
+        ? `<label class="dp-inc-chk"><input type="checkbox" data-mission="${x.toggle}" ${x.done ? 'checked' : ''}>${x.label}</label>`
+        : x.label;
+      return `<div class="dp-inc${off ? ' dp-inc-off' : ''}"><div class="dp-inc-label">${label}</div>`
+        + `<div class="dp-inc-val">${off ? '0.00' : fmtK(x.val)}</div><div class="dp-inc-sub">${x.sub}</div></div>`;
+    }).join('') + caseCard + deductCard
+      + `<div class="dp-inc total"><div class="dp-inc-label">Total / day</div><div class="dp-inc-val" id="dp-total-val">${fmtK(grandTotal())}</div><div class="dp-inc-sub" id="dp-total-sub">≈ ${fmtK(grandTotal() * 7)} / week</div></div>`;
+
+    const recalc = () => {
+      $income.querySelector('#dp-case-val').textContent = fmtK(caseVal());
+      $income.querySelector('#dp-deduct-val').textContent = '−' + fmtK(deductVal());
+      const t = grandTotal();
+      $income.querySelector('#dp-total-val').textContent = fmtK(t);
+      $income.querySelector('#dp-total-sub').textContent = `≈ ${fmtK(t * 7)} / week`;
+    };
+
+    $income.querySelectorAll('input[data-mission]').forEach(cb =>
+      cb.addEventListener('change', () => { model.missionsDone[cb.dataset.mission] = cb.checked; renderIncome(); }));
+
+    const casesIn = $income.querySelector('.dp-cases-in');
+    if (casesIn) casesIn.addEventListener('input', e => {
+      const raw = e.target.value.trim();
+      model.casesManual = (raw === '' || !isFinite(+raw)) ? null : +raw;
+      recalc();
+    });
+    const movesIn = $income.querySelector('.dp-moves-in');
+    if (movesIn) movesIn.addEventListener('input', e => {
+      const raw = e.target.value.trim();
+      model.movesManual = (raw === '' || !isFinite(+raw)) ? null : +raw;
+      recalc();
+    });
   }
 
   // ── Wiring ──────────────────────────────────────────────────────

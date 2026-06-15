@@ -59,7 +59,7 @@ const WealthMonitorTool = (() => {
   let history   = { users: {} };      // wealth-history.json
   let current   = null;               // { user, wealth, avatarUrl } for the resolved player
   let dataLoaded = false;             // monitored list + history fetched once
-  const chart   = { user: null, metric: 'total', bucket: 'day' };
+  const chart   = { user: null, metric: 'total', bucket: 'day', hiddenKeys: new Set() };
 
   // Helpers
   const wm_trpc = (endpoint, input) => trpc(endpoint, input, { retry: true });
@@ -369,22 +369,21 @@ const WealthMonitorTool = (() => {
 
   function buildSeries() {
     const snaps = history.users[chart.user]?.snapshots || [];
-    if (!snaps.length) return { labels: [], series: [], stacked: false, dataCount: 0 };
+    if (!snaps.length) return { labels: [], series: [], dataCount: 0 };
     const times = snaps.map(s => s.t).filter(Boolean).sort();
     const labels = allBuckets(times[0], times[times.length - 1], chart.bucket);
 
-    if (chart.metric === 'breakdown') {
-      const series = COMPONENTS.map(c => ({
-        key: c.key, label: c.label, color: c.color,
-        values: bucketedValues(snaps, c.key, chart.bucket),
-      }));
-      return { labels, series, stacked: true, dataCount: series[0].values.size };
-    }
-    const values = bucketedValues(snaps, 'total', chart.bucket);
-    return {
-      labels, stacked: false, dataCount: values.size,
-      series: [{ key: 'total', label: 'Total', color: TOTAL_COLOR, values }],
-    };
+    // Breakdown is now multi-line (one line per category) rather than a
+    // stacked area, so Companies no longer swamps the smaller categories.
+    const series = (chart.metric === 'breakdown')
+      ? COMPONENTS.map(c => ({
+          key: c.key, label: c.label, color: c.color,
+          values: bucketedValues(snaps, c.key, chart.bucket),
+        }))
+      : [{ key: 'total', label: 'Total', color: TOTAL_COLOR, values: bucketedValues(snaps, 'total', chart.bucket) }];
+
+    const dataCount = series.reduce((m, s) => Math.max(m, s.values.size), 0);
+    return { labels, series, dataCount };
   }
 
   // ── SVG chart ───────────────────────────────────────────────────
@@ -392,7 +391,7 @@ const WealthMonitorTool = (() => {
   const PW = W - M.left - M.right, PH = H - M.top - M.bottom;
 
   function renderChart() {
-    const { labels, series, stacked, dataCount } = buildSeries();
+    const { labels, series, dataCount } = buildSeries();
     const monitoredNow = monitored.some(e => e.userId === chart.user);
 
     if (dataCount === 0) {
@@ -402,76 +401,54 @@ const WealthMonitorTool = (() => {
       $legend.innerHTML = '';
       return;
     }
+
+    // Legend (with toggles) renders even in the edge states below.
+    renderLegend(series);
+
+    const visible = series.filter(s => !chart.hiddenKeys.has(s.key));
+    if (!visible.length) {
+      $chartBox.innerHTML = `<div class="wm-chart-empty">All categories hidden — tap a label below to show one.</div>`;
+      return;
+    }
     if (dataCount === 1) {
       $chartBox.innerHTML = `<div class="wm-chart-empty">Only one snapshot so far. A line appears once there are at least two data points in this bucket.</div>`;
-      renderLegend(series);
       return;
     }
 
     const n = labels.length;
     const x = i => M.left + (n === 1 ? PW / 2 : (i / (n - 1)) * PW);
 
-    let yMax = 0;
-    if (stacked) {
-      for (const lab of labels) { let sum = 0; for (const s of series) sum += s.values.get(lab) || 0; if (sum > yMax) yMax = sum; }
-    } else {
-      for (const s of series) for (const v of s.values.values()) if (v > yMax) yMax = v;
-    }
-    yMax = niceMax(yMax);
-    const y = v => M.top + PH - (yMax ? (v / yMax) * PH : 0);
+    // Data-driven y-range over the VISIBLE series — does not pin to zero, so
+    // small day-to-day moves are visible, and hiding a big category (e.g.
+    // Companies) rescales the axis to fit the rest.
+    const { min: yMin, max: yMax, step } = yDomain(visible);
+    const y = v => M.top + PH - ((v - yMin) / (yMax - yMin || 1)) * PH;
 
     let svg = '';
-    const TICKS = 5;
-    for (let i = 0; i <= TICKS; i++) {
-      const val = (yMax / TICKS) * i, yy = y(val);
+    const ticks = Math.max(1, Math.round((yMax - yMin) / step));
+    for (let i = 0; i <= ticks; i++) {
+      const val = yMin + step * i, yy = y(val);
       svg += `<line class="wm-grid-line" x1="${M.left}" y1="${yy.toFixed(1)}" x2="${M.left + PW}" y2="${yy.toFixed(1)}"/>`;
       svg += `<text class="wm-axis-text" x="${M.left - 8}" y="${(yy + 3).toFixed(1)}" text-anchor="end">${fmtK(val, 1)}</text>`;
     }
-    const step = Math.max(1, Math.ceil(n / 8));
-    for (let i = 0; i < n; i += step) {
+    const xstep = Math.max(1, Math.ceil(n / 8));
+    for (let i = 0; i < n; i += xstep) {
       svg += `<text class="wm-axis-text" x="${x(i).toFixed(1)}" y="${H - 10}" text-anchor="middle">${escapeHtml(shortLabel(labels[i]))}</text>`;
     }
 
-    if (stacked) {
-      // Draw stacked areas per contiguous run of present buckets, so gaps
-      // are real blanks (not a drop to zero).
-      const present = labels.map(lab => series.some(s => s.values.has(lab)));
-      const runs = [];
-      let runStart = -1;
+    // One line per visible series; gaps (missing buckets) break the line.
+    for (const s of visible) {
+      let d = '', pen = false;
       for (let i = 0; i < n; i++) {
-        if (present[i] && runStart < 0) runStart = i;
-        if (!present[i] && runStart >= 0) { runs.push([runStart, i - 1]); runStart = -1; }
+        if (s.values.has(labels[i])) {
+          d += `${pen ? 'L' : 'M'}${x(i).toFixed(1)} ${y(s.values.get(labels[i])).toFixed(1)}`;
+          pen = true;
+        } else pen = false;
       }
-      if (runStart >= 0) runs.push([runStart, n - 1]);
-
-      for (const [a, b] of runs) {
-        const cum = new Array(b - a + 1).fill(0);
-        for (const s of series) {
-          const top = [], bottomRev = [];
-          for (let i = a; i <= b; i++) {
-            const v = s.values.get(labels[i]) || 0;
-            const base = cum[i - a];
-            cum[i - a] = base + v;
-            top.push(`${x(i).toFixed(1)},${y(cum[i - a]).toFixed(1)}`);
-            bottomRev.unshift(`${x(i).toFixed(1)},${y(base).toFixed(1)}`);
-          }
-          svg += `<polygon points="${top.join(' ')} ${bottomRev.join(' ')}" fill="${s.color}" fill-opacity="0.55" stroke="${s.color}" stroke-width="1"/>`;
-        }
-      }
-    } else {
-      for (const s of series) {
-        let d = '', pen = false;
-        for (let i = 0; i < n; i++) {
-          if (s.values.has(labels[i])) {
-            d += `${pen ? 'L' : 'M'}${x(i).toFixed(1)} ${y(s.values.get(labels[i])).toFixed(1)}`;
-            pen = true;
-          } else pen = false;
-        }
-        svg += `<path class="wm-series-line" d="${d}" stroke="${s.color}"/>`;
-        for (let i = 0; i < n; i++) {
-          if (s.values.has(labels[i]))
-            svg += `<circle class="wm-series-dot" cx="${x(i).toFixed(1)}" cy="${y(s.values.get(labels[i])).toFixed(1)}" r="2.6" fill="${s.color}"/>`;
-        }
+      svg += `<path class="wm-series-line" d="${d}" stroke="${s.color}"/>`;
+      for (let i = 0; i < n; i++) {
+        if (s.values.has(labels[i]))
+          svg += `<circle class="wm-series-dot" cx="${x(i).toFixed(1)}" cy="${y(s.values.get(labels[i])).toFixed(1)}" r="2.6" fill="${s.color}"/>`;
       }
     }
 
@@ -479,22 +456,44 @@ const WealthMonitorTool = (() => {
     $chartBox.innerHTML =
       `<svg class="wm-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${svg}</svg>` +
       `<div class="wm-tooltip" id="wm-tooltip"></div>`;
-    renderLegend(series);
-    wireHover(labels, series, stacked, x, n);
+    wireHover(labels, visible, x, n);
   }
 
+  // Legend doubles as the category toggle when there's more than one series.
   function renderLegend(series) {
-    $legend.innerHTML = series.map(s =>
-      `<span class="wm-legend-item"><span class="wm-dot" style="background:${s.color}"></span>${escapeHtml(s.label)}</span>`
-    ).join('');
+    const toggleable = series.length > 1;
+    $legend.innerHTML = series.map(s => {
+      const off = chart.hiddenKeys.has(s.key);
+      return `<span class="wm-legend-item${toggleable ? ' wm-toggle' : ''}${off ? ' off' : ''}"${toggleable ? ` data-wm-key="${s.key}"` : ''}>` +
+        `<span class="wm-dot" style="background:${s.color}"></span>${escapeHtml(s.label)}</span>`;
+    }).join('') + (toggleable ? `<span class="wm-legend-hint">tap to show / hide</span>` : '');
   }
 
-  function niceMax(v) {
-    if (v <= 0) return 1;
-    const pow = Math.pow(10, Math.floor(Math.log10(v)));
-    const nn = v / pow;
-    const stepN = nn <= 1 ? 1 : nn <= 2 ? 2 : nn <= 5 ? 5 : 10;
-    return stepN * pow;
+  function niceNum(range, round) {
+    if (range <= 0 || !isFinite(range)) return 1;
+    const exp = Math.floor(Math.log10(range));
+    const f = range / Math.pow(10, exp);
+    const nf = round
+      ? (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10)
+      : (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10);
+    return nf * Math.pow(10, exp);
+  }
+
+  // Bracket the visible data with ~8% padding and round to nice ticks. The
+  // floor is clamped at 0 (wealth can't be negative) but is otherwise NOT
+  // pinned to zero, which is what makes small movements legible.
+  function yDomain(visible) {
+    let min = Infinity, max = -Infinity;
+    for (const s of visible) for (const v of s.values.values()) { if (v < min) min = v; if (v > max) max = v; }
+    if (!isFinite(min)) return { min: 0, max: 1, step: 1 };
+    if (max === min) { const p = Math.abs(max) * 0.1 || 1; min -= p; max += p; }
+    else { const p = (max - min) * 0.08; min -= p; max += p; }
+    min = Math.max(0, min);
+    const step = niceNum((max - min) / 4, true);
+    const niceMin = Math.floor(min / step) * step;
+    let niceMax = Math.ceil(max / step) * step;
+    if (niceMax <= niceMin) niceMax = niceMin + step;
+    return { min: niceMin, max: niceMax, step };
   }
 
   function shortLabel(label) {
@@ -504,7 +503,7 @@ const WealthMonitorTool = (() => {
     return label;
   }
 
-  function wireHover(labels, series, stacked, x, n) {
+  function wireHover(labels, series, x, n) {
     const svg = $chartBox.querySelector('svg');
     const $tt = document.getElementById('wm-tooltip');
     const $hl = document.getElementById('wm-hover-line');
@@ -520,14 +519,12 @@ const WealthMonitorTool = (() => {
     function show(clientX) {
       const i = locate(clientX), lab = labels[i];
       $hl.setAttribute('x1', x(i)); $hl.setAttribute('x2', x(i)); $hl.style.display = '';
-      let rows = '', total = 0;
+      let rows = '';
       for (const s of series) {
         if (!s.values.has(lab)) continue;
-        const v = s.values.get(lab); if (stacked) total += v;
+        const v = s.values.get(lab);
         rows += `<div class="wm-tt-row"><span class="wm-dot" style="background:${s.color}"></span>${escapeHtml(s.label)}<span class="wm-tt-val">${fmtK(v)}</span></div>`;
       }
-      if (stacked && rows)
-        rows += `<div class="wm-tt-row" style="border-top:1px solid var(--border);margin-top:4px;padding-top:4px"><span class="wm-dot" style="background:${TOTAL_COLOR}"></span>Total<span class="wm-tt-val">${fmtK(total)}</span></div>`;
       if (!rows) { $tt.innerHTML = `<div class="wm-tt-date">${escapeHtml(shortLabel(lab))} · no data</div>`; positionTip(i); return; }
       $tt.innerHTML = `<div class="wm-tt-date">${escapeHtml(shortLabel(lab))}</div>${rows}`;
       positionTip(i);
@@ -562,6 +559,14 @@ const WealthMonitorTool = (() => {
     const b = e.target.closest('button'); if (!b) return;
     chart.bucket = b.dataset.bucket;
     $bucketSeg.querySelectorAll('button').forEach(x => x.classList.toggle('active', x === b));
+    renderChart();
+  });
+  // Click a legend entry to hide/show that category; the y-axis rescales.
+  $legend.addEventListener('click', e => {
+    const item = e.target.closest('[data-wm-key]'); if (!item) return;
+    const key = item.dataset.wmKey;
+    if (chart.hiddenKeys.has(key)) chart.hiddenKeys.delete(key);
+    else chart.hiddenKeys.add(key);
     renderChart();
   });
 

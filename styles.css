@@ -1837,9 +1837,13 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
 .wm-tooltip .wm-tt-row .wm-dot { width: 8px; height: 8px; border-radius: 2px; flex: none; }
 .wm-tooltip .wm-tt-row .wm-tt-val { margin-left: auto; font-weight: 600; padding-left: 10px; }
 
-.wm-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 12px; }
+.wm-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 12px; }
 .wm-legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
 .wm-legend-item .wm-dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.wm-legend-item.wm-toggle { cursor: pointer; user-select: none; }
+.wm-legend-item.wm-toggle:hover { color: var(--text); }
+.wm-legend-item.off { opacity: .4; text-decoration: line-through; }
+.wm-legend-hint { font-size: 11px; color: var(--muted); opacity: .65; font-style: italic; }
 
 .wm-chart-box .wm-chart-empty { color: var(--muted); font-size: 13px; padding: 28px 4px; text-align: center; }
 #wm-chart-card h4 { margin: 0 0 14px; font-size: 13.5px; font-weight: 600; color: var(--text); }

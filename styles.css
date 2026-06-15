@@ -51,6 +51,12 @@ body { transition: background-color .2s ease, color .2s ease; }
 html[data-theme="light"] .theme-toggle .ic-sun { display: none; }
 html[data-theme="light"] .theme-toggle .ic-moon { display: inline-block; }
 
+/* Light-mode contrast fixes: the step check/X are near-black for the bright
+   dark-mode accent; on light the accent darkens, so flip them to white. */
+html[data-theme="light"] .step[data-state="done"] .step-icon::after { border-color: #fff; }
+html[data-theme="light"] .step[data-state="error"] .step-icon::before,
+html[data-theme="light"] .step[data-state="error"] .step-icon::after { background: #fff; }
+
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
 body {
@@ -413,7 +419,7 @@ details.howto code {
 .adv-grid { display: flex; flex-direction: column; gap: 12px; }
 
 .adv-card {
-  background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
   overflow: hidden;
 }
 .adv-card .card-head {

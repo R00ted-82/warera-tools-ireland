@@ -43,7 +43,18 @@ const ToolkitShell = (() => {
     wealth:         () => WealthMonitorTool,
   };
 
+  // One-line explainer shown in the info box for each tool. Replaces every
+  // tool's own header (hidden in the shell) so the framing is consistent.
+  const TOOL_INFO = {
+    advisor:        { icon: '🏭', title: 'Migration Advisor', desc: `For each of your companies, find whether a different country or region would produce more — and by how much.` },
+    clockin:        { icon: '⏱',  title: 'Clock-In Monitor',  desc: `See when each of your workers last clocked in, on a 48-hour timeline, plus a payroll projection.` },
+    wealth:         { icon: '💰', title: 'Wealth Tracker',    desc: `Track any Irish player's wealth over time — total, or split into companies, items, money, equipment and weapons.` },
+    'buddy-finder': { icon: '🤝', title: 'Buddy Finder',      desc: `Find a buddy for the Irish buddy system (you hire each other at minimum wage), or join the waiting list.` },
+    mu:             { icon: '🇮🇪', title: 'Irish Military Units', desc: `Military Units owned by Irish citizens, based in Ireland, with a majority-Irish roster.` },
+  };
+
   const $mount    = document.getElementById('stg-mount');
+  const $toolInfo = document.getElementById('stg-tool-info');
   const $nav      = document.getElementById('stg-nav');
   const $navWrap  = document.getElementById('stg-nav-wrap');
   const $username = document.getElementById('stg-username');
@@ -67,13 +78,11 @@ const ToolkitShell = (() => {
   function hideTargets(tool) {
     const v = VIEW[tool]; if (!v) return [];
     const t = [];
-    if (tool === 'advisor' || tool === 'clockin') {
-      t.push(v.el.querySelector('.tool-header'));
-    }
+    // Every tool's own header is replaced by the shell's unified info box.
+    t.push(v.el.querySelector('.tool-header'));
     if (tool === 'wealth') {
-      // Shell provides the username field, so hide the tool's own header
-      // and its lookup bar (input + recent chips). The shared name drives it.
-      t.push(v.el.querySelector('.tool-header'));
+      // Shell provides the username field, so also hide the tool's own
+      // lookup bar (input + recent chips). The shared name drives it.
       t.push(v.el.querySelector('.stg-idbar'));
     }
     if (tool === 'buddy-finder') {
@@ -292,6 +301,7 @@ const ToolkitShell = (() => {
   function revealTools() {
     $nav.classList.remove('hidden');
     $toolsHead.classList.remove('hidden');
+    $toolInfo.classList.remove('hidden');
     $mount.classList.remove('hidden');
     $empty.classList.add('hidden');
     updateNavFade();
@@ -299,6 +309,7 @@ const ToolkitShell = (() => {
   function gateTools() {
     $nav.classList.add('hidden');
     $toolsHead.classList.add('hidden');
+    $toolInfo.classList.add('hidden');
     $mount.classList.add('hidden');
     $empty.classList.remove('hidden');
   }
@@ -315,6 +326,13 @@ const ToolkitShell = (() => {
     catch (e) { console.error(`[home] activate ${state.active} failed`, e); }
   }
 
+  function renderToolInfo(tool) {
+    const info = TOOL_INFO[tool];
+    $toolInfo.innerHTML = info
+      ? `<span class="stg-ti-icon">${info.icon}</span><div class="stg-ti-body"><h3>${info.title}</h3><p>${info.desc}</p></div>`
+      : '';
+  }
+
   function selectTool(tool, { run = true } = {}) {
     if (!TOOLS.includes(tool)) tool = DEFAULT_TOOL;
     if (state.active === tool) { if (run) driveActive(); writeStagingHash(); return; }
@@ -324,6 +342,7 @@ const ToolkitShell = (() => {
     $nav.querySelectorAll('.stg-tab').forEach(b =>
       b.classList.toggle('active', b.dataset.stgTab === tool));
     $mount.dataset.active = tool;
+    renderToolInfo(tool);
     if (run) driveActive();
     writeStagingHash();
   }

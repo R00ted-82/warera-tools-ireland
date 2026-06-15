@@ -1850,8 +1850,13 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
 
 /* Breakdown: small multiples (one mini-chart per category, own scale) */
 .wm-mini-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
-.wm-mini { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px 4px; }
+.wm-mini { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px 4px; cursor: pointer; transition: border-color .15s; }
+.wm-mini:hover { border-color: var(--link); }
+.wm-mini.expanded { grid-column: 1 / -1; cursor: default; }
+.wm-mini.expanded:hover { border-color: var(--border); }
 .wm-mini-head { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); margin-bottom: 2px; }
 .wm-mini-head .wm-dot { width: 9px; height: 9px; border-radius: 2px; flex: none; }
 .wm-mini-val { margin-left: auto; color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.wm-mini-expand { display: inline-flex; color: var(--muted); opacity: .6; }
+.wm-mini:hover .wm-mini-expand { opacity: 1; color: var(--link); }
 .wm-mini-chart { width: 100%; height: auto; display: block; touch-action: none; }

@@ -489,7 +489,14 @@ const WealthMonitorTool = (() => {
   }
 
   // ── Small multiples (breakdown) ─────────────────────────────────
-  const MINI = { W: 320, H: 150, m: { top: 12, right: 12, bottom: 22, left: 48 } };
+  // Collapsed = compact card; click a card to expand it to full width with a
+  // detailed (full-axis) chart. expandedKey holds the expanded category key.
+  const MINI     = { W: 320, H: 150, m: { top: 12, right: 12, bottom: 22, left: 48 } };
+  const MINI_BIG = { W: 900, H: 300, m: { top: 16, right: 16, bottom: 30, left: 56 } };
+  let expandedKey = null;
+
+  const EXPAND_ICON = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3H5a2 2 0 0 0-2 2v4M15 3h4a2 2 0 0 1 2 2v4M9 21H5a2 2 0 0 1-2-2v-4M15 21h4a2 2 0 0 0 2-2v-4"/></svg>`;
+  const SHRINK_ICON = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h4V5M19 9h-4V5M5 15h4v4M19 15h-4v4"/></svg>`;
 
   function lastValue(values, labels) {
     for (let i = labels.length - 1; i >= 0; i--) if (values.has(labels[i])) return values.get(labels[i]);
@@ -499,19 +506,21 @@ const WealthMonitorTool = (() => {
   function renderSmallMultiples(labels, series) {
     $chartBox.innerHTML = `<div class="wm-mini-grid">${series.map((s, idx) => {
       const last = lastValue(s.values, labels);
-      return `<div class="wm-mini">
+      const ex = expandedKey === s.key;
+      return `<div class="wm-mini${ex ? ' expanded' : ''}" data-mini-key="${s.key}" title="${ex ? 'Click to shrink' : 'Click to enlarge'}">
         <div class="wm-mini-head">
           <span class="wm-dot" style="background:${s.color}"></span>${escapeHtml(s.label)}
           <span class="wm-mini-val" data-mini-val="${idx}">${last == null ? '–' : fmtK(last)}</span>
+          <span class="wm-mini-expand">${ex ? SHRINK_ICON : EXPAND_ICON}</span>
         </div>
-        ${miniSvg(s, labels, idx)}
+        ${miniSvg(s, labels, idx, ex)}
       </div>`;
     }).join('')}</div>`;
-    series.forEach((s, idx) => wireMiniHover(idx, labels, s));
+    series.forEach((s, idx) => wireMiniHover(idx, labels, s, expandedKey === s.key));
   }
 
-  function miniSvg(s, labels, idx) {
-    const { W, H, m } = MINI;
+  function miniSvg(s, labels, idx, expanded) {
+    const { W, H, m } = expanded ? MINI_BIG : MINI;
     const pw = W - m.left - m.right, ph = H - m.top - m.bottom;
     const n = labels.length;
     const x = i => m.left + (n === 1 ? pw / 2 : (i / (n - 1)) * pw);
@@ -519,24 +528,39 @@ const WealthMonitorTool = (() => {
     const y = v => m.top + ph - ((v - dom.min) / (dom.max - dom.min || 1)) * ph;
 
     let svg = '';
-    for (const val of [dom.max, dom.min]) {            // just the bounds
-      const yy = y(val);
-      svg += `<line class="wm-grid-line" x1="${m.left}" y1="${yy.toFixed(1)}" x2="${m.left + pw}" y2="${yy.toFixed(1)}"/>`;
-      svg += `<text class="wm-axis-text" x="${m.left - 6}" y="${(yy + 3).toFixed(1)}" text-anchor="end">${fmtTick(val, (dom.max - dom.min) || 1)}</text>`;
+    if (expanded) {
+      // Full axes: stepped y-ticks + thinned x-date labels.
+      const ticks = Math.max(1, Math.round((dom.max - dom.min) / dom.step));
+      for (let i = 0; i <= ticks; i++) {
+        const val = dom.min + dom.step * i, yy = y(val);
+        svg += `<line class="wm-grid-line" x1="${m.left}" y1="${yy.toFixed(1)}" x2="${m.left + pw}" y2="${yy.toFixed(1)}"/>`;
+        svg += `<text class="wm-axis-text" x="${m.left - 8}" y="${(yy + 3).toFixed(1)}" text-anchor="end">${fmtTick(val, dom.step)}</text>`;
+      }
+      const xstep = Math.max(1, Math.ceil(n / 8));
+      for (let i = 0; i < n; i += xstep) {
+        svg += `<text class="wm-axis-text" x="${x(i).toFixed(1)}" y="${H - 10}" text-anchor="middle">${escapeHtml(shortLabel(labels[i]))}</text>`;
+      }
+    } else {
+      // Compact: just the min/max bounds + first/last dates.
+      for (const val of [dom.max, dom.min]) {
+        const yy = y(val);
+        svg += `<line class="wm-grid-line" x1="${m.left}" y1="${yy.toFixed(1)}" x2="${m.left + pw}" y2="${yy.toFixed(1)}"/>`;
+        svg += `<text class="wm-axis-text" x="${m.left - 6}" y="${(yy + 3).toFixed(1)}" text-anchor="end">${fmtTick(val, (dom.max - dom.min) || 1)}</text>`;
+      }
+      svg += `<text class="wm-axis-text" x="${x(0).toFixed(1)}" y="${H - 7}" text-anchor="start">${escapeHtml(shortLabel(labels[0]))}</text>`;
+      svg += `<text class="wm-axis-text" x="${x(n - 1).toFixed(1)}" y="${H - 7}" text-anchor="end">${escapeHtml(shortLabel(labels[n - 1]))}</text>`;
     }
-    svg += `<text class="wm-axis-text" x="${x(0).toFixed(1)}" y="${H - 7}" text-anchor="start">${escapeHtml(shortLabel(labels[0]))}</text>`;
-    svg += `<text class="wm-axis-text" x="${x(n - 1).toFixed(1)}" y="${H - 7}" text-anchor="end">${escapeHtml(shortLabel(labels[n - 1]))}</text>`;
-    svg += linePath(s, labels, x, y, n, 2);
+    svg += linePath(s, labels, x, y, n, expanded ? 2.6 : 2);
     svg += `<line id="wm-mhl-${idx}" class="wm-hover-line" x1="0" y1="${m.top}" x2="0" y2="${m.top + ph}" style="display:none"/>`;
     return `<svg class="wm-mini-chart" id="wm-msvg-${idx}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${svg}</svg>`;
   }
 
-  function wireMiniHover(idx, labels, s) {
+  function wireMiniHover(idx, labels, s, expanded) {
     const svg = document.getElementById(`wm-msvg-${idx}`);
     const hl = document.getElementById(`wm-mhl-${idx}`);
     const valEl = $chartBox.querySelector(`[data-mini-val="${idx}"]`);
     if (!svg || !hl || !valEl) return;
-    const { W, m } = MINI;
+    const { W, m } = expanded ? MINI_BIG : MINI;
     const pw = W - m.left - m.right, n = labels.length;
     const x = i => m.left + (n === 1 ? pw / 2 : (i / (n - 1)) * pw);
     const last = lastValue(s.values, labels);
@@ -637,7 +661,15 @@ const WealthMonitorTool = (() => {
   $metricSeg.addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
     chart.metric = b.dataset.metric;
+    expandedKey = null;   // reset any expanded mini when switching views
     $metricSeg.querySelectorAll('button').forEach(x => x.classList.toggle('active', x === b));
+    renderChart();
+  });
+  // Click a breakdown mini-chart to expand it to full width (and again to shrink).
+  $chartBox.addEventListener('click', e => {
+    const card = e.target.closest('.wm-mini'); if (!card) return;
+    const key = card.dataset.miniKey;
+    expandedKey = (expandedKey === key) ? null : key;
     renderChart();
   });
   $bucketSeg.addEventListener('click', e => {

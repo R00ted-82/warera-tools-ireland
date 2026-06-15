@@ -365,6 +365,8 @@ const DailyProfitTool = (() => {
       const prices = {};
       (Array.isArray(itemsArr) ? itemsArr : []).forEach(it => { if (it?.itemCode != null && typeof it.avg === 'number') prices[it.itemCode] = it.avg; });
       const gameItems = gameConfig?.items || {};
+      const aeLevels = gameConfig?.upgradesConfig?.automatedEngine?.levels || {};
+      const aeDailyProd = (lvl) => aeLevels[lvl]?.stats?.dailyProd || 0;
       const cfgDep = gameConfig?.company?.depositResourceBonus;
       if (typeof cfgDep === 'number') GAME_DEPOSIT_BONUS = cfgDep;
       const missionMoney = (gameConfig?.mission?.reward?.daily?.money || 0)
@@ -401,21 +403,34 @@ const DailyProfitTool = (() => {
         bestBonus[code] = best;
       }
 
-      // Per-company current-region bonus + automated-engine PP/day.
+      // Per-company: region bonus, automated-engine PP/day (from upgrade
+      // config — NOT the `production` field, which is the uncollected
+      // buffer), plus workers' manual production and wage cost.
+      workerProfiles[user._id] = user;   // self counts as a worker where they work
+      const companyById = {};
       companies.forEach(c => {
+        companyById[c._id] = c;
         const region = regionsObj[c.region];
         const country = region ? countryById[region.country] : null;
         c._bonus = computeBonus(country, region, c.itemCode);
-        c._dailyPP = (typeof c.production === 'number' ? c.production : 0);
+        c._dailyAE = aeDailyProd(c.activeUpgradeLevels?.automatedEngine);
+        c._workersManual = 0;
+        c._wageCost = 0;
       });
+      workerEntries.forEach(w => {
+        const c = companyById[w.companyId]; if (!c) return;
+        const pp = workerProfiles[w.userId] ? dailyPPof(workerProfiles[w.userId]) : 0;
+        c._workersManual += pp;
+        c._wageCost += pp * (typeof w.wage === 'number' ? w.wage : 0);
+      });
+      companies.forEach(c => { c._dailyPP = c._dailyAE + c._workersManual; });
 
-      const selfPP = dailyPPof(user);
-      const employeePP = workerEntries.reduce((s, w) => s + (workerProfiles[w.userId] ? dailyPPof(workerProfiles[w.userId]) : 0), 0);
-      const companyAEPP = companies.reduce((s, c) => s + (c._dailyPP || 0), 0);
-      const throughputPP = Math.round(selfPP + employeePP + companyAEPP);
+      const enginesPP = Math.round(companies.reduce((s, c) => s + c._dailyAE, 0));
+      const staffPP   = Math.round(companies.reduce((s, c) => s + c._workersManual, 0));
+      const throughputPP = enginesPP + staffPP;
 
       model = { user, prices, gameItems, bestBonus, companies, missionMoney,
-                selfPP, employeePP, companyAEPP, priceOverrides: {},
+                enginesPP, staffPP, priceOverrides: {},
                 assumptions: { throughputPP } };
       renderAll();
     } catch (e) {
@@ -466,7 +481,7 @@ const DailyProfitTool = (() => {
       <div class="dp-field">
         <label title="Total production points output per day (you + employees + company engines)">Daily PP throughput</label>
         <input type="number" id="dp-tp" value="${a.throughputPP}" min="0" step="1">
-        <span class="dp-suffix">self ${model.selfPP} + staff ${model.employeePP} + engines ${Math.round(model.companyAEPP)}</span>
+        <span class="dp-suffix">engines ${model.enginesPP} + staff ${model.staffPP} PP/day</span>
       </div>
     `;
     $assump.querySelector('#dp-tp').addEventListener('input', e => {
@@ -488,7 +503,7 @@ const DailyProfitTool = (() => {
         if (c.itemCode !== code) continue;
         makesIt = true;
         const cnpp = netPerPP(code, c._bonus ? c._bonus.total : 0);
-        if (cnpp != null) actual += cnpp * (c._dailyPP || 0);
+        if (cnpp != null) actual += cnpp * (c._dailyPP || 0) - (c._wageCost || 0);
       }
       rows.push({ code, name: META[code].name, cat: META[code].cat, type: it.type,
                   netPP: npp, bonus: bb.total, region: bb.region, country: bb.country,

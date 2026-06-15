@@ -1559,19 +1559,13 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
 
 /* Landing preview of the tools (shown before a username is entered) */
 .stg-preview {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 12px; max-width: 760px; margin: 28px auto 0; text-align: left;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 14px; max-width: 940px; margin: 28px auto 0; text-align: left;
 }
-.stg-preview-card {
-  display: flex; gap: 11px; align-items: flex-start;
-  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
-  padding: 13px 15px; cursor: pointer; font: inherit; text-align: left;
-  transition: border-color .15s, background .15s;
+/* Home preview reuses the .tool-card look; reset <button> defaults */
+.stg-preview button.tool-card {
+  width: 100%; font: inherit; text-align: left; cursor: pointer;
 }
-.stg-preview-card:hover { border-color: var(--accent); background: var(--panel-2); }
-.stg-preview-card .ic { font-size: 20px; line-height: 1.1; flex: none; }
-.stg-preview-card h4 { margin: 0 0 3px; font-size: 13.5px; color: var(--text); font-weight: 600; }
-.stg-preview-card p { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.45; }
 
 /* Recent-username quick-pick chips */
 .stg-recent { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 10px; }

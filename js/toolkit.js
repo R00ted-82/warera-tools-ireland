@@ -333,9 +333,13 @@ const ToolkitShell = (() => {
     if (!$preview || $preview.dataset.done) return;
     $preview.innerHTML = TOOLS.map(t => {
       const i = TOOL_INFO[t]; if (!i) return '';
-      return `<button class="stg-preview-card" data-prev="${t}">
-        <span class="ic">${i.icon}</span>
-        <span class="stg-prev-body"><h4>${escapeHtml(i.title)}</h4><p>${escapeHtml(i.desc)}</p></span>
+      return `<button class="tool-card" data-prev="${t}">
+        <div class="tool-card-icon">${i.icon}</div>
+        <div class="tool-card-body">
+          <h3>${escapeHtml(i.title)}</h3>
+          <p>${escapeHtml(i.desc)}</p>
+          <span class="tool-link">Open ${escapeHtml(i.title)} →</span>
+        </div>
       </button>`;
     }).join('');
     $preview.dataset.done = '1';

@@ -398,10 +398,10 @@ const DailyProfitTool = (() => {
       const aeDailyProd = (lvl) => aeLevels[lvl]?.stats?.dailyProd || 0;
       const cfgDep = gameConfig?.company?.depositResourceBonus;
       if (typeof cfgDep === 'number') GAME_DEPOSIT_BONUS = cfgDep;
-      const missionMoney = (gameConfig?.mission?.reward?.daily?.money || 0)
-        + (gameConfig?.mission?.reward?.weekly?.money || 0) / 7;
-      const missionCases = (gameConfig?.mission?.reward?.daily?.cases || 0)
-        + (gameConfig?.mission?.reward?.weekly?.cases || 0) / 7;
+      // Daily mission reward only (matches the in-game/sheet "Daily Missions").
+      // Weekly missions are a separate, lumpy reward — not prorated here.
+      const missionMoney = (gameConfig?.mission?.reward?.daily?.money || 0);
+      const missionCases = (gameConfig?.mission?.reward?.daily?.cases || 0);
 
       const allCountries = Array.isArray(allCountriesRaw) ? allCountriesRaw : (allCountriesRaw?.items || []);
       steps.setStep(3, 'active', { sub: 'Loading country bonuses', count: `0/${allCountries.length}` });
@@ -648,7 +648,7 @@ const DailyProfitTool = (() => {
       { label: 'Companies',  val: companiesIncome, sub: `${model.companies.length} companies, current output` },
       { label: 'Salary',     val: salary, sub: netWage ? `${Math.round(salaryPP)} PP/day × ${fmt3(netWage)}` : 'set your net wage →' },
       { label: 'Case sales', val: caseSales, sub: model.casePrice != null ? `${fmt2(model.missionCases)} cases/day × ${fmt2(model.casePrice)}` : 'no case price' },
-      { label: 'Missions',   val: model.missionMoney, sub: 'daily + weekly/7' },
+      { label: 'Daily missions', val: model.missionMoney, sub: 'daily reward' },
       { label: 'Deductions', val: -deductions, sub: deductions ? 'subtracted' : 'none' },
     ];
     const total = items.reduce((s, x) => s + (x.val || 0), 0);

@@ -72,7 +72,10 @@ const DailyProfitTool = (() => {
     const depositCountry = hasDep && lean === 'agrarian' ? GAME_DEPOSIT_BONUS : 0;
     const total = strategic + specialisation + deposit + depositCountry;
     const tax = country.taxes?.income ?? 0;
-    return { total, tax, region, country };
+    // Surface whether the bonus leans on a temporary regional deposit (these
+    // expire — region.deposit has startsAt/endsAt), so the table can flag it.
+    const dep = hasDep ? { bonus: deposit + depositCountry, endsAt: region.deposit.endsAt, type: region.deposit.type } : null;
+    return { total, tax, region, country, deposit: dep };
   }
 
   // ── DOM ─────────────────────────────────────────────────────────
@@ -87,6 +90,9 @@ const DailyProfitTool = (() => {
   const $income   = document.getElementById('dp-income');
   const $table    = document.getElementById('dp-table');
   const $tableNote= document.getElementById('dp-table-note');
+  const $empCard  = document.getElementById('dp-emp-card');
+  const $empSub   = document.getElementById('dp-emp-sub');
+  const $employees= document.getElementById('dp-employees');
   const steps     = makeSteps(document.getElementById('dp-steps'));
 
   // ── State ───────────────────────────────────────────────────────
@@ -97,6 +103,7 @@ const DailyProfitTool = (() => {
   const fmt2 = (v) => (v == null || !isFinite(v)) ? '–' : v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fmt3 = (v) => (v == null || !isFinite(v)) ? '–' : v.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
   const fmtK = (v) => (v == null || !isFinite(v)) ? '–' : (Math.abs(v) >= 1000 ? (v/1000).toFixed(2) + 'K' : v.toFixed(2));
+  const fmtDate = (iso) => { try { return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }); } catch { return '?'; } };
 
   function showStatus(level, html) { $status.className = `bf-inline-status ${level}`; $status.innerHTML = html; $status.classList.remove('hidden'); }
   function hideStatus() { $status.classList.add('hidden'); $status.innerHTML = ''; }
@@ -226,11 +233,15 @@ const DailyProfitTool = (() => {
       const companyIds = companyList?.items || [];
       steps.setStep(2, 'active', { sub: 'Loading company details', count: `0/${companyIds.length}` });
       let loaded = 0;
-      const companies = (await mapConcurrent(companyIds, async (id) => {
+      const allCompanies = (await mapConcurrent(companyIds, async (id) => {
         const c = await dp_trpc('company.getById', { companyId: id }).catch(() => null);
         steps.setStep(2, 'active', { count: `${++loaded}/${companyIds.length}` });
         return c;
       })).filter(Boolean);
+      // Disabled companies (those with a `disabledAt` timestamp) produce nothing
+      // and aren't worked — exclude them from every calculation.
+      const companies   = allCompanies.filter(c => !c.disabledAt);
+      const disabledCount = allCompanies.length - companies.length;
 
       const workerEntries = [];
       (workersData?.workersPerCompany || []).forEach(({ company, workers }) => {
@@ -242,7 +253,7 @@ const DailyProfitTool = (() => {
         const lite = await dp_trpc('user.getUserLite', { userId: id }).catch(() => null);
         if (lite) workerProfiles[id] = lite;
       });
-      steps.setStep(2, 'done', { count: `${companies.length} companies` });
+      steps.setStep(2, 'done', { count: `${companies.length} active${disabledCount ? ` · ${disabledCount} disabled` : ''}` });
 
       // Step 3: market + bonuses
       steps.setStep(3, 'active', { sub: 'Loading market, regions & countries' });
@@ -324,29 +335,47 @@ const DailyProfitTool = (() => {
       // config — NOT the `production` field, which is the uncollected
       // buffer), plus workers' manual production and wage cost.
       workerProfiles[user._id] = user;   // self counts as a worker where they work
+      // Profit per production point for a company's item (after raw materials &
+      // region bonus, before wages). Used for self-work targeting and for each
+      // employee's profitability. null when the item/recipe isn't priced.
+      const companyNetPP = (c) => {
+        const it = gameItems[c.itemCode]; const pp = it?.productionPoints || 0;
+        const sale = prices[c.itemCode]; if (!pp || sale == null) return null;
+        let rc = 0; const needs = it.productionNeeds || {};
+        for (const k in needs) { if (prices[k] == null) return null; rc += needs[k] * prices[k]; }
+        const bonus = c._bonus ? c._bonus.total : 0;
+        return (sale - rc) * (1 + bonus / 100) / pp;
+      };
       const companyById = {};
       companies.forEach(c => {
         companyById[c._id] = c;
         const region = regionsObj[c.region];
         const country = region ? countryById[region.country] : null;
         c._bonus = computeBonus(country, region, c.itemCode);
+        c._netPP = companyNetPP(c);
         c._dailyAE = aeDailyProd(c.activeUpgradeLevels?.automatedEngine);
         c._workersManual = 0;
         c._wageCost = 0;
       });
       // Hired employees only — worker.getWorkers never includes the owner.
       // Each produces production × energy × WORK_FACTOR × (1 + fidelity/100),
-      // and is paid a wage on the pre-fidelity base.
+      // and is paid a wage on the pre-fidelity base. Collected for the
+      // profitability panel: an employee makes you money when their output's
+      // value (netPP × outputPP) beats their wage (wage × basePP).
+      const employees = [];
       workerEntries.forEach(w => {
         const c = companyById[w.companyId]; if (!c) return;
         const prof = workerProfiles[w.userId]; if (!prof) return;
         const prod = skill(prof, 'production');
         const energy = skill(prof, 'energy');
         const fid  = typeof w.fidelity === 'number' ? w.fidelity : 0;
+        const wage = typeof w.wage === 'number' ? w.wage : 0;
         const basePP   = prod * energy * WORK_FACTOR;         // pre-fidelity; wages paid on this
         const outputPP = basePP * (1 + fid / 100);            // what the company actually produces
         c._workersManual += outputPP;
-        c._wageCost += basePP * (typeof w.wage === 'number' ? w.wage : 0);
+        c._wageCost += basePP * wage;
+        employees.push({ name: prof.username || '—', company: c.name || META[c.itemCode]?.name || c.itemCode,
+                         item: c.itemCode, basePP, netPP: c._netPP, wage, fidelity: fid });
       });
 
       // The owner ALSO self-works in their OWN companies via the entrepreneurship
@@ -358,16 +387,8 @@ const DailyProfitTool = (() => {
       const selfPP = skill(user, 'production') * skill(user, 'entrepreneurship') * WORK_FACTOR;
       let selfWorkCompany = null;
       if (selfPP > 0 && companies.length) {
-        const localNetPP = (c) => {
-          const it = gameItems[c.itemCode]; const pp = it?.productionPoints || 0;
-          const sale = prices[c.itemCode]; if (!pp || sale == null) return -Infinity;
-          let rc = 0; const needs = it.productionNeeds || {};
-          for (const k in needs) { if (prices[k] == null) return -Infinity; rc += needs[k] * prices[k]; }
-          const bonus = c._bonus ? c._bonus.total : 0;
-          return (sale - rc) * (1 + bonus / 100) / pp;
-        };
         let bestv = -Infinity;
-        for (const c of companies) { const v = localNetPP(c); if (v > bestv) { bestv = v; selfWorkCompany = c; } }
+        for (const c of companies) { const v = (c._netPP == null ? -Infinity : c._netPP); if (v > bestv) { bestv = v; selfWorkCompany = c; } }
         if (selfWorkCompany) { selfWorkCompany._workersManual += selfPP; selfWorkCompany._selfWork = true; }
       }
       companies.forEach(c => { c._dailyPP = c._dailyAE + c._workersManual; });
@@ -383,7 +404,7 @@ const DailyProfitTool = (() => {
       const salaryAvgPerWork  = salaryInfo.count ? salaryInfo.total / salaryInfo.count : 0;
       const salaryModeled     = salaryWorksPerDay * salaryAvgPerWork;
 
-      model = { user, prices, gameItems, bestBonus, companies,
+      model = { user, prices, gameItems, bestBonus, companies, disabledCount, employees,
                 missionMoney, missionMoneyWeekly,
                 missionCasesDaily, missionCasesWeekly,
                 missionsDone: { daily: true, weekly: true },
@@ -435,8 +456,96 @@ const DailyProfitTool = (() => {
   function renderAll() {
     renderAssumptions();
     renderTableAndIncome();
+    renderEmployees();
     $statsCard.classList.remove('hidden');
     $tableCard.classList.remove('hidden');
+  }
+
+  // An employee's daily profit to you, at a given fidelity:
+  //   value − wage = basePP × (netPP × (1 + fid/100) − wage).
+  // (Wage is paid on the pre-fidelity base, so only the output side scales.)
+  function empNet(e, fid) {
+    if (e.netPP == null) return null;
+    return e.basePP * (e.netPP * (1 + fid / 100) - e.wage);
+  }
+  function empNetHtml(net) {
+    if (net == null) return '<span class="dp-na">—</span>';
+    return `<span class="${net < 0 ? 'dp-emp-loss' : 'dp-emp-gain'}">${net >= 0 ? '+' : ''}${fmtK(net)}/day</span>`;
+  }
+  function empSubHtml(emps) {
+    const bad = emps.filter(e => { const n = empNet(e, e.fidelity); return n != null && n < 0; }).length;
+    return bad
+      ? `<strong class="dp-emp-badcount">${bad} of ${emps.length}</strong> employee${bad > 1 ? 's' : ''} not making you a profit at current fidelity — bump the fidelity field (max 10) to see if they'd turn a profit.`
+      : `All ${emps.length} employees are profitable at their current fidelity.`;
+  }
+  // Employees panel: name, company, editable fidelity (0–10), and live net/day.
+  // Unprofitable ones are flagged; raising fidelity shows if they'd turn around.
+  function renderEmployees() {
+    const emps = model.employees || [];
+    if (!emps.length) { $empCard.classList.add('hidden'); return; }
+    $empCard.classList.remove('hidden');
+    $empSub.innerHTML = empSubHtml(emps);
+    // Unprofitable first, then most-negative first.
+    const order = emps.map((e, i) => ({ e, i })).sort((a, b) => {
+      const na = empNet(a.e, a.e.fidelity), nb = empNet(b.e, b.e.fidelity);
+      const ba = na != null && na < 0, bb = nb != null && nb < 0;
+      return ba === bb ? ((na ?? 0) - (nb ?? 0)) : (ba ? -1 : 1);
+    });
+    $employees.innerHTML = order.map(({ e, i }) => empRowHtml(e, i)).join('');
+    // Wage and fidelity are both editable per row; either recomputes the row.
+    $employees.querySelectorAll('.dp-fid-in').forEach(inp => inp.addEventListener('input', ev => {
+      const i = +ev.target.dataset.idx;
+      let v = parseInt(ev.target.value, 10);
+      if (!isFinite(v)) v = 0;
+      model.employees[i].fidelity = Math.max(0, Math.min(10, v));
+      updateEmpRow(i);
+    }));
+    $employees.querySelectorAll('.dp-wage-in').forEach(inp => inp.addEventListener('input', ev => {
+      const i = +ev.target.dataset.idx;
+      let v = parseFloat(ev.target.value);
+      if (!isFinite(v) || v < 0) v = 0;
+      model.employees[i].wage = v;
+      updateEmpRow(i);
+    }));
+  }
+
+  // Break-even wage at full fidelity (10): wage where net = 0 → netPP × 1.10.
+  // Pay more than this and they can't be profitable at ANY fidelity.
+  function empBreakeven(e) { return e.netPP == null ? null : e.netPP * 1.10; }
+  function empRowHtml(e, i) {
+    const net = empNet(e, e.fidelity);
+    const be  = empBreakeven(e);
+    const beHtml = be == null ? '' :
+      `<span class="dp-emp-be">break-even wage @ full fidelity: <strong>${fmt3(be)}</strong> · you pay `
+      + `<span id="dp-emp-pay-${i}" class="${e.wage > be ? 'dp-emp-loss' : 'dp-emp-gain'}">${fmt3(e.wage)}</span>`
+      + `<span id="dp-emp-warn-${i}">${e.wage > be ? ' — unprofitable at any fidelity' : ''}</span></span>`;
+    return `<div class="dp-emp${net != null && net < 0 ? ' dp-emp-bad' : ''}" id="dp-emp-row-${i}">
+      <div class="dp-emp-main">
+        <span class="dp-emp-name">${escapeHtml(e.name)}</span>
+        <span class="dp-emp-co">${escapeHtml(e.company)} · ${escapeHtml(META[e.item]?.name || e.item)}</span>
+        ${beHtml}
+      </div>
+      <label class="dp-emp-fld">wage <input type="number" class="dp-wage-in" data-idx="${i}" value="${e.wage}" min="0" step="0.001"></label>
+      <label class="dp-emp-fld">fidelity <input type="number" class="dp-fid-in" data-idx="${i}" value="${e.fidelity}" min="0" max="10" step="1"></label>
+      <div class="dp-emp-net" id="dp-emp-net-${i}">${empNetHtml(net)}</div>
+    </div>`;
+  }
+  // Recompute a single row in place (keeps input focus while typing).
+  function updateEmpRow(i) {
+    const e = model.employees[i];
+    const net = empNet(e, e.fidelity);
+    const cell = $employees.querySelector(`#dp-emp-net-${i}`);
+    if (cell) cell.innerHTML = empNetHtml(net);
+    const row = $employees.querySelector(`#dp-emp-row-${i}`);
+    if (row) row.classList.toggle('dp-emp-bad', net != null && net < 0);
+    const be = empBreakeven(e), pay = $employees.querySelector(`#dp-emp-pay-${i}`);
+    if (pay && be != null) {
+      pay.textContent = fmt3(e.wage);
+      pay.className = e.wage > be ? 'dp-emp-loss' : 'dp-emp-gain';
+      const warn = $employees.querySelector(`#dp-emp-warn-${i}`);
+      if (warn) warn.textContent = e.wage > be ? ' — unprofitable at any fidelity' : '';
+    }
+    $empSub.innerHTML = empSubHtml(model.employees);
   }
 
   function renderAssumptions() {
@@ -506,6 +615,7 @@ const DailyProfitTool = (() => {
       }
       rows.push({ code, name: META[code].name, cat: META[code].cat, type: it.type,
                   netPP: npp, bonus: bb.total, region: bb.region, country: bb.country,
+                  tax: bb.tax, deposit: bb.deposit,
                   makesIt, actual: makesIt ? actual : null });
     }
     rows.sort((a, b) => (b.netPP ?? -Infinity) - (a.netPP ?? -Infinity));
@@ -532,6 +642,8 @@ const DailyProfitTool = (() => {
         <th>Sale</th>
         <th>Raw cost</th>
         <th>Bonus</th>
+        <th class="dp-l" title="Country giving the best production bonus, and its income tax (Country › Account)">Country · tax</th>
+        <th title="Temporary regional deposit driving the bonus, and when it expires">Deposit</th>
         <th>Net / PP</th>
         <th title="Theoretical ceiling: total throughput on this one product, minus wages">Ceiling / day</th>
         <th>Actual / day</th>
@@ -547,6 +659,8 @@ const DailyProfitTool = (() => {
           <td>${sale == null ? '<span class="dp-na">–</span>' : fmt3(sale)}</td>
           <td>${rc == null ? '<span class="dp-na">–</span>' : (rc ? fmt3(rc) : '<span class="dp-muted">0</span>')}</td>
           <td class="dp-bonus" title="${regionTip}">${r.bonus ? '+' + fmt2(r.bonus) + '%' : '<span class="dp-muted">0%</span>'}</td>
+          <td class="dp-l">${r.country ? `${escapeHtml(r.country.name)} <span class="dp-tax">· ${r.tax != null ? r.tax + '%' : '–'}</span>` : '<span class="dp-na">—</span>'}</td>
+          <td>${r.deposit ? `<span class="dp-dep" title="Temporary deposit (+${r.deposit.bonus}% ${escapeHtml(META[r.deposit.type]?.name || r.deposit.type)}) — expires ${fmtDate(r.deposit.endsAt)}">⏳ ${fmtDate(r.deposit.endsAt)}</span>` : '<span class="dp-muted">—</span>'}</td>
           <td class="dp-netpp ${r.netPP != null && r.netPP < 0 ? 'neg' : ''}">${r.netPP == null ? '<span class="dp-na">–</span>' : fmt3(r.netPP)}</td>
           <td>${maxDay == null ? '<span class="dp-na">–</span>' : fmtK(maxDay)}</td>
           <td>${r.actual == null ? '<span class="dp-na">—</span>' : `<span class="dp-actual">${fmtK(r.actual)}</span>`}</td>
@@ -588,7 +702,7 @@ const DailyProfitTool = (() => {
     const grandTotal = () => fixedIncome + caseVal() - deductVal();
 
     const items = [
-      { label: 'Companies',  val: model._companiesIncome, sub: `${model.companies.length} companies, current output` },
+      { label: 'Companies',  val: model._companiesIncome, sub: `${model.companies.length} active${model.disabledCount ? ` · ${model.disabledCount} disabled excluded` : ''}, current output` },
       { label: 'Salary',     val: model.salaryDaily, sub: model.salaryCount
           ? `~${model.salaryWorksPerDay.toFixed(1)} works/day × ${fmt2(model.salaryAvgPerWork)} net · modeled (24h actual: ${fmtK(model.salaryActual)})`
           : 'no recent wages to model from' },

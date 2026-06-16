@@ -2014,8 +2014,40 @@ table.dp-table tbody tr.dp-owned:hover { background: rgba(74,222,128,.1); }
 .dp-netpp { font-weight: 700; color: var(--text); }
 .dp-netpp.neg { color: var(--danger); }
 .dp-bonus { color: var(--accent); }
+.dp-tax { color: var(--muted); font-weight: 400; }
+.dp-dep { color: var(--warn); white-space: nowrap; font-size: 12px; }
 .dp-muted { color: var(--muted); }
 .dp-actual { color: var(--accent); font-weight: 600; }
 .dp-na { color: var(--muted); opacity: .6; }
 .dp-note { font-size: 12px; color: var(--muted); margin: 12px 0 0; line-height: 1.5; }
 .dp-note code { background: var(--panel-2); padding: 1px 5px; border-radius: 3px; font-family: ui-monospace, monospace; font-size: 11px; }
+
+/* Daily Profit — employee profitability panel */
+.dp-emp-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.dp-emp {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 9px 13px;
+}
+.dp-emp-bad { border-color: rgba(248,113,113,.45); background: rgba(248,113,113,.07); }
+.dp-emp-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.dp-emp-name { font-weight: 600; color: var(--text); }
+.dp-emp-co { font-size: 11.5px; color: var(--muted); }
+.dp-emp-be { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.dp-emp-be strong { color: var(--text); font-variant-numeric: tabular-nums; }
+.dp-emp-fld { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); white-space: nowrap; }
+.dp-fid-in, .dp-wage-in {
+  background: var(--bg); color: var(--text);
+  border: 1px solid var(--border); border-radius: 5px;
+  padding: 3px 6px; font-size: 13px; font-family: inherit; font-variant-numeric: tabular-nums;
+}
+.dp-fid-in { width: 52px; }
+.dp-wage-in { width: 74px; }
+.dp-emp-net { min-width: 92px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+.dp-emp-gain { color: var(--accent); }
+.dp-emp-loss { color: var(--danger); }
+.dp-emp-badcount { color: var(--danger); }
+@media (max-width: 560px) {
+  .dp-emp { flex-wrap: wrap; gap: 8px 12px; }
+  .dp-emp-main { flex: 1 1 100%; }
+}

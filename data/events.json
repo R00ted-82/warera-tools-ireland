@@ -16634,5 +16634,349 @@
     "occ": "bw",
     "val": 179,
     "max": 179
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "came_online",
+    "rid": "6813b7099403bc4170a5d954",
+    "code": "ma-northern-morocco",
+    "name": "Northern Morocco",
+    "cc": "ma",
+    "occ": "ma",
+    "to": 3
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "bunker_activating",
+    "rid": "6813b7069403bc4170a5d7e0",
+    "code": "se-uppland",
+    "name": "Uppland",
+    "cc": "nl",
+    "occ": "se",
+    "active_at": "2026-06-17T09:59:59.999Z",
+    "level": 4
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "came_online",
+    "rid": "687eab418fc7f0dfa1d2b98e",
+    "code": "pt-azores",
+    "name": "Azores",
+    "cc": "ma",
+    "occ": "pt",
+    "to": 1
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "battle_started",
+    "rid": "683ddd3f36dbc90b78047592",
+    "code": "ye-aden",
+    "name": "Aden",
+    "cc": "om",
+    "occ": "ye"
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b70a9403bc4170a5da2f",
+    "code": "ke-center",
+    "name": "Central Kenya",
+    "cc": "za",
+    "occ": "ke",
+    "from": "ke",
+    "to": "za"
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "battle_ended",
+    "rid": "6813b70a9403bc4170a5da2f",
+    "code": "ke-center",
+    "name": "Central Kenya",
+    "cc": "za",
+    "occ": "ke"
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "ownership_changed",
+    "rid": "683ddd3d36dbc90b78047470",
+    "code": "bd-north",
+    "name": "Northern Bangladesh",
+    "cc": "in",
+    "occ": "bd",
+    "from": "bd",
+    "to": "in"
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "battle_ended",
+    "rid": "683ddd3d36dbc90b78047470",
+    "code": "bd-north",
+    "name": "Northern Bangladesh",
+    "cc": "in",
+    "occ": "bd"
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "battle_started",
+    "rid": "6813b7059403bc4170a5d77d",
+    "code": "bg-sofia-plovdiv",
+    "name": "Sofia & Plovdiv",
+    "cc": "tr",
+    "occ": "bg"
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "went_offline",
+    "rid": "6813b70a9403bc4170a5d9ed",
+    "code": "in-jaladhi",
+    "name": "Jaladhi",
+    "cc": "in",
+    "occ": "in",
+    "from": 4
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b70a9403bc4170a5d9d8",
+    "code": "in-north",
+    "name": "Kashmir",
+    "cc": "in",
+    "occ": "in",
+    "from": "af",
+    "to": "in"
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "battle_ended",
+    "rid": "6813b70a9403bc4170a5d9d8",
+    "code": "in-north",
+    "name": "Kashmir",
+    "cc": "in",
+    "occ": "in"
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "came_online",
+    "rid": "6813b7049403bc4170a5d6fc",
+    "code": "pt-algarve",
+    "name": "Algarve",
+    "cc": "ma",
+    "occ": "pt",
+    "to": 2
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "ownership_changed",
+    "rid": "683ddd3f36dbc90b78047598",
+    "code": "ye-hadramwt",
+    "name": "Hadramwt",
+    "cc": "ye",
+    "occ": "ye",
+    "from": "om",
+    "to": "ye"
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "battle_ended",
+    "rid": "683ddd3f36dbc90b78047598",
+    "code": "ye-hadramwt",
+    "name": "Hadramwt",
+    "cc": "ye",
+    "occ": "ye"
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "battle_ended",
+    "rid": "6813b70b9403bc4170a5dac2",
+    "code": "ir-caspian-sea",
+    "name": "Caspian Sea Coast",
+    "cc": "ir",
+    "occ": "ir"
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "battle_started",
+    "rid": "6813b7059403bc4170a5d7bf",
+    "code": "gr-macedonia",
+    "name": "Macedonia",
+    "cc": "gr",
+    "occ": "gr"
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "came_online",
+    "rid": "6873d11594e6b3b7989a4c65",
+    "code": "bf-center",
+    "name": "Central Burkina Faso",
+    "cc": "eg",
+    "occ": "bf",
+    "to": 3
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "resistance_full",
+    "rid": "6813b70b9403bc4170a5da5f",
+    "code": "by-brest",
+    "name": "Brest",
+    "cc": "pl",
+    "occ": "by",
+    "val": 252,
+    "max": 252
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "went_offline",
+    "rid": "6813b70a9403bc4170a5d9db",
+    "code": "in-yamuna",
+    "name": "Uttar Pradesh",
+    "cc": "in",
+    "occ": "in",
+    "from": 4
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "bunker_activating",
+    "rid": "6813b70a9403bc4170a5d9db",
+    "code": "in-yamuna",
+    "name": "Uttar Pradesh",
+    "cc": "in",
+    "occ": "in",
+    "active_at": "2026-06-17T08:59:59.999Z",
+    "level": 4
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b70a9403bc4170a5d9f3",
+    "code": "ua-south-east",
+    "name": "South-Eastern Ukraine",
+    "cc": "ua",
+    "occ": "ua",
+    "from": "tr",
+    "to": "ua"
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "battle_ended",
+    "rid": "6813b70a9403bc4170a5d9f3",
+    "code": "ua-south-east",
+    "name": "South-Eastern Ukraine",
+    "cc": "ua",
+    "occ": "ua"
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "battle_started",
+    "rid": "6813b70a9403bc4170a5da35",
+    "code": "ke-coast",
+    "name": "Kenyan Coast",
+    "cc": "ke",
+    "occ": "ke"
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "battle_started",
+    "rid": "6813b7059403bc4170a5d79b",
+    "code": "rs-vojvodina",
+    "name": "Vojvodina",
+    "cc": "rs",
+    "occ": "rs"
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "went_offline",
+    "rid": "6813b7049403bc4170a5d702",
+    "code": "pt-center",
+    "name": "Central Portugal",
+    "cc": "pt",
+    "occ": "pt",
+    "from": 1
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "battle_ended",
+    "rid": "6813b7059403bc4170a5d753",
+    "code": "ro-banat-crisana",
+    "name": "Banat & Cri\u0219ana",
+    "cc": "hu",
+    "occ": "ro"
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "battle_started",
+    "rid": "6813b7049403bc4170a5d705",
+    "code": "pt-north",
+    "name": "Northern Portugal",
+    "cc": "ma",
+    "occ": "pt"
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "ownership_changed",
+    "rid": "6873d11594e6b3b7989a4c35",
+    "code": "cf-south-west",
+    "name": "Southwestern Central Africa",
+    "cc": "gq",
+    "occ": "cf",
+    "from": "cf",
+    "to": "gq"
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "battle_ended",
+    "rid": "6873d11594e6b3b7989a4c35",
+    "code": "cf-south-west",
+    "name": "Southwestern Central Africa",
+    "cc": "gq",
+    "occ": "cf"
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "battle_started",
+    "rid": "6813b70a9403bc4170a5da11",
+    "code": "ru-southern-russian-steppe",
+    "name": "Southern Russian Steppe",
+    "cc": "tr",
+    "occ": "ru"
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b70b9403bc4170a5dacb",
+    "code": "ir-west",
+    "name": "Western Iran",
+    "cc": "ir",
+    "occ": "ir",
+    "from": "tr",
+    "to": "ir"
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "battle_ended",
+    "rid": "6813b70b9403bc4170a5dacb",
+    "code": "ir-west",
+    "name": "Western Iran",
+    "cc": "ir",
+    "occ": "ir"
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "went_offline",
+    "rid": "683ddd3f36dbc90b780475a4",
+    "code": "za-south-cape",
+    "name": "Southern Cape",
+    "cc": "za",
+    "occ": "za",
+    "from": 3
+  },
+  {
+    "at": "2026-06-16T22:22:41.929387+00:00",
+    "type": "came_online",
+    "rid": "6813b70d9403bc4170a5db7f",
+    "code": "az-shirvan",
+    "name": "Shirvan",
+    "cc": "az",
+    "occ": "az",
+    "to": 1
   }
 ]

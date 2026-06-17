@@ -2043,6 +2043,8 @@ table.dp-table tbody tr.dp-owned:hover { background: rgba(74,222,128,.1); }
 }
 .dp-fid-in { width: 52px; }
 .dp-wage-in { width: 74px; }
+.dp-emp-adj { font-size: 11px; color: var(--muted); white-space: nowrap; min-width: 70px; text-align: right; }
+.dp-emp-adj strong { color: var(--text); font-variant-numeric: tabular-nums; }
 .dp-emp-net { min-width: 92px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
 .dp-emp-gain { color: var(--accent); }
 .dp-emp-loss { color: var(--danger); }
@@ -2051,3 +2053,6 @@ table.dp-table tbody tr.dp-owned:hover { background: rgba(74,222,128,.1); }
   .dp-emp { flex-wrap: wrap; gap: 8px 12px; }
   .dp-emp-main { flex: 1 1 100%; }
 }
+
+/* Daily Profit — companies table totals row */
+table.dp-table tr.dp-comp-total td { border-top: 2px solid var(--border); font-weight: 600; }

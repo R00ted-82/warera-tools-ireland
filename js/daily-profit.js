@@ -90,6 +90,8 @@ const DailyProfitTool = (() => {
   const $income   = document.getElementById('dp-income');
   const $table    = document.getElementById('dp-table');
   const $tableNote= document.getElementById('dp-table-note');
+  const $compCard = document.getElementById('dp-comp-card');
+  const $companies= document.getElementById('dp-companies');
   const $empCard  = document.getElementById('dp-emp-card');
   const $empSub   = document.getElementById('dp-emp-sub');
   const $employees= document.getElementById('dp-employees');
@@ -104,6 +106,7 @@ const DailyProfitTool = (() => {
   const fmt3 = (v) => (v == null || !isFinite(v)) ? '–' : v.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
   const fmtK = (v) => (v == null || !isFinite(v)) ? '–' : (Math.abs(v) >= 1000 ? (v/1000).toFixed(2) + 'K' : v.toFixed(2));
   const fmtDate = (iso) => { try { return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }); } catch { return '?'; } };
+  const fmtPP = (v) => (v == null || !isFinite(v)) ? '–' : v.toLocaleString(undefined, { maximumFractionDigits: 1 });
 
   function showStatus(level, html) { $status.className = `bf-inline-status ${level}`; $status.innerHTML = html; $status.classList.remove('hidden'); }
   function hideStatus() { $status.classList.add('hidden'); $status.innerHTML = ''; }
@@ -352,8 +355,9 @@ const DailyProfitTool = (() => {
         const region = regionsObj[c.region];
         const country = region ? countryById[region.country] : null;
         c._bonus = computeBonus(country, region, c.itemCode);
-        c._netPP = companyNetPP(c);
-        c._dailyAE = aeDailyProd(c.activeUpgradeLevels?.automatedEngine);
+        c._netPP = companyNetPP(c);                 // bonus-applied (self-work target + employee panel)
+        c._dailyAE = aeDailyProd(c.activeUpgradeLevels?.automatedEngine);   // raw AE (shown in Companies table)
+        c._aeBonus = c._dailyAE * (1 + (c._bonus ? c._bonus.total : 0) / 100); // AE with bonus (#3) — throughput
         c._workersManual = 0;
         c._wageCost = 0;
       });
@@ -370,12 +374,14 @@ const DailyProfitTool = (() => {
         const energy = skill(prof, 'energy');
         const fid  = typeof w.fidelity === 'number' ? w.fidelity : 0;
         const wage = typeof w.wage === 'number' ? w.wage : 0;
-        const basePP   = prod * energy * WORK_FACTOR;         // pre-fidelity; wages paid on this
-        const outputPP = basePP * (1 + fid / 100);            // what the company actually produces
-        c._workersManual += outputPP;
+        const bonus = c._bonus ? c._bonus.total : 0;
+        const basePP   = prod * energy * WORK_FACTOR;         // pre-fidelity/bonus; wages paid on this
+        // Output PP carries fidelity + region bonus ADDITIVELY (sheet model).
+        c._workersManual += basePP * (1 + (fid + bonus) / 100);
         c._wageCost += basePP * wage;
         employees.push({ name: prof.username || '—', company: c.name || META[c.itemCode]?.name || c.itemCode,
-                         item: c.itemCode, basePP, netPP: c._netPP, wage, fidelity: fid });
+                         item: c.itemCode, prod, bonus: c._bonus ? c._bonus.total : 0,
+                         basePP, netPP: c._netPP, wage, fidelity: fid });
       });
 
       // The owner ALSO self-works in their OWN companies via the entrepreneurship
@@ -385,15 +391,21 @@ const DailyProfitTool = (() => {
       // It's one self-work stream; attribute it to the owner's most profitable
       // company (the rational target) so the profit column reflects it.
       const selfPP = skill(user, 'production') * skill(user, 'entrepreneurship') * WORK_FACTOR;
-      let selfWorkCompany = null;
+      let selfWorkCompany = null, selfContribution = 0;
       if (selfPP > 0 && companies.length) {
         let bestv = -Infinity;
         for (const c of companies) { const v = (c._netPP == null ? -Infinity : c._netPP); if (v > bestv) { bestv = v; selfWorkCompany = c; } }
-        if (selfWorkCompany) { selfWorkCompany._workersManual += selfPP; selfWorkCompany._selfWork = true; }
+        if (selfWorkCompany) {
+          const b = selfWorkCompany._bonus ? selfWorkCompany._bonus.total : 0;
+          selfContribution = selfPP * (1 + b / 100);   // self: no fidelity, + region bonus
+          selfWorkCompany._workersManual += selfContribution;
+          selfWorkCompany._selfWork = true;
+        }
       }
-      companies.forEach(c => { c._dailyPP = c._dailyAE + c._workersManual; });
+      // Daily throughput per company carries the bonus: AE-with-bonus + bonused staff.
+      companies.forEach(c => { c._dailyPP = c._aeBonus + c._workersManual; });
 
-      const enginesPP = Math.round(companies.reduce((s, c) => s + c._dailyAE, 0));
+      const enginesPP = Math.round(companies.reduce((s, c) => s + c._aeBonus, 0));
       const staffPP   = Math.round(companies.reduce((s, c) => s + c._workersManual, 0));
 
       // Salary, modeled over a full 24h rather than the lumpy actual sum:
@@ -415,7 +427,7 @@ const DailyProfitTool = (() => {
                 salaryDaily: salaryModeled, salaryActual: salaryInfo.total, salaryCount: salaryInfo.count,
                 salaryWorksPerDay, salaryAvgPerWork,
                 enginesPP, staffPP, priceOverrides: {},
-                selfPP: Math.round(selfPP),
+                selfPP: Math.round(selfContribution),
                 selfWorkItem: selfWorkCompany ? (META[selfWorkCompany.itemCode]?.name || selfWorkCompany.itemCode) : null,
                 assumptions: { enginesPP, staffPP } };   // editable; throughput = sum
       renderAll();
@@ -456,9 +468,45 @@ const DailyProfitTool = (() => {
   function renderAll() {
     renderAssumptions();
     renderTableAndIncome();
+    renderCompanies();
     renderEmployees();
     $statsCard.classList.remove('hidden');
     $tableCard.classList.remove('hidden');
+  }
+
+  // Companies panel: automated-engine output per company, and AE with its region
+  // production bonus applied — AE with bonus = AE × (1 + bonus%).
+  function renderCompanies() {
+    const cs = model.companies || [];
+    if (!cs.length) { $compCard.classList.add('hidden'); return; }
+    $compCard.classList.remove('hidden');
+    const rows = cs.map(c => {
+      const bonus = c._bonus ? c._bonus.total : 0;
+      const ae = c._dailyAE || 0;
+      return { name: c.name || '—', item: c.itemCode, bonus, ae, aeBonus: ae * (1 + bonus / 100) };
+    }).sort((a, b) => b.aeBonus - a.aeBonus);
+    const totAE  = rows.reduce((s, r) => s + r.ae, 0);
+    const totAEB = rows.reduce((s, r) => s + r.aeBonus, 0);
+    $companies.innerHTML = `
+      <thead><tr>
+        <th class="dp-l">Company</th>
+        <th class="dp-l">Product</th>
+        <th>Bonus</th>
+        <th>AE / day</th>
+        <th title="Automated-engine output with the region production bonus applied">AE with bonus</th>
+      </tr></thead>
+      <tbody>${rows.map(r => `<tr>
+        <td class="dp-l">${escapeHtml(r.name)}</td>
+        <td class="dp-l"><span class="dp-prod">${iconHtml(r.item)}<span>${escapeHtml(META[r.item]?.name || r.item)}</span></span></td>
+        <td class="dp-bonus">${r.bonus ? '+' + fmt2(r.bonus) + '%' : '<span class="dp-muted">0%</span>'}</td>
+        <td>${fmtPP(r.ae)}</td>
+        <td><strong>${fmtPP(r.aeBonus)}</strong></td>
+      </tr>`).join('')}
+      <tr class="dp-comp-total">
+        <td class="dp-l" colspan="3">Total</td>
+        <td>${fmtPP(totAE)}</td>
+        <td><strong>${fmtPP(totAEB)}</strong></td>
+      </tr></tbody>`;
   }
 
   // An employee's daily profit to you, at a given fidelity:
@@ -472,6 +520,9 @@ const DailyProfitTool = (() => {
     if (net == null) return '<span class="dp-na">—</span>';
     return `<span class="${net < 0 ? 'dp-emp-loss' : 'dp-emp-gain'}">${net >= 0 ? '+' : ''}${fmtK(net)}/day</span>`;
   }
+  // Adjusted PP = production PP lifted by fidelity + region bonus, ADDITIVELY:
+  //   EmpPP × (1 + (fidelity% + bonus%)).  Matches the sheet's "Adj PP".
+  function empAdjPP(e, fid) { return e.prod * (1 + (fid + (e.bonus || 0)) / 100); }
   function empSubHtml(emps) {
     const bad = emps.filter(e => { const n = empNet(e, e.fidelity); return n != null && n < 0; }).length;
     return bad
@@ -527,6 +578,7 @@ const DailyProfitTool = (() => {
       </div>
       <label class="dp-emp-fld">wage <input type="number" class="dp-wage-in" data-idx="${i}" value="${e.wage}" min="0" step="0.001"></label>
       <label class="dp-emp-fld">fidelity <input type="number" class="dp-fid-in" data-idx="${i}" value="${e.fidelity}" min="0" max="10" step="1"></label>
+      <div class="dp-emp-adj" title="Adjusted PP = ${fmtPP(e.prod)} PP × (1 + fidelity% + ${fmt2(e.bonus || 0)}% bonus)">Adj PP <strong id="dp-emp-adj-${i}">${fmtPP(empAdjPP(e, e.fidelity))}</strong></div>
       <div class="dp-emp-net" id="dp-emp-net-${i}">${empNetHtml(net)}</div>
     </div>`;
   }
@@ -536,6 +588,8 @@ const DailyProfitTool = (() => {
     const net = empNet(e, e.fidelity);
     const cell = $employees.querySelector(`#dp-emp-net-${i}`);
     if (cell) cell.innerHTML = empNetHtml(net);
+    const adj = $employees.querySelector(`#dp-emp-adj-${i}`);
+    if (adj) adj.textContent = fmtPP(empAdjPP(e, e.fidelity));
     const row = $employees.querySelector(`#dp-emp-row-${i}`);
     if (row) row.classList.toggle('dp-emp-bad', net != null && net < 0);
     const be = empBreakeven(e), pay = $employees.querySelector(`#dp-emp-pay-${i}`);
@@ -605,13 +659,14 @@ const DailyProfitTool = (() => {
       const it = model.gameItems[code];
       if (!it) continue;
       const bb = model.bestBonus[code] || { total: 0 };
-      const npp = netPerPP(code, bb.total);
+      const npp = netPerPP(code, 0);            // Net/PP = net profit ÷ PP (bonus-free)
+      // Actual = bonus-free Net/PP × the company's bonused throughput (AE-with-bonus
+      // + bonused staff) − wages. The bonus now lives in the throughput, not Net/PP.
       let actual = 0, makesIt = false;
       for (const c of model.companies) {
         if (c.itemCode !== code) continue;
         makesIt = true;
-        const cnpp = netPerPP(code, c._bonus ? c._bonus.total : 0);
-        if (cnpp != null) actual += cnpp * (c._dailyPP || 0) - (c._wageCost || 0);
+        if (npp != null) actual += npp * (c._dailyPP || 0) - (c._wageCost || 0);
       }
       rows.push({ code, name: META[code].name, cat: META[code].cat, type: it.type,
                   netPP: npp, bonus: bb.total, region: bb.region, country: bb.country,

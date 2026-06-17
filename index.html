@@ -24,8 +24,8 @@
 })();
 </script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'%3E%3Crect width='1' height='2' fill='%23009A49'/%3E%3Crect x='1' width='1' height='2' fill='white'/%3E%3Crect x='2' width='1' height='2' fill='%23FF7900'/%3E%3C/svg%3E" />
-<link rel="stylesheet" href="styles.css?v=20260616d" />
-<link rel="stylesheet" href="community.css?v=20260616d" />
+<link rel="stylesheet" href="styles.css?v=20260617d" />
+<link rel="stylesheet" href="community.css?v=20260617d" />
 </head>
 <body>
 
@@ -818,6 +818,13 @@
       <p class="dp-note" id="dp-table-note"></p>
     </div>
 
+    <!-- Companies: automated-engine output -->
+    <div class="bf-card hidden" id="dp-comp-card">
+      <h3>Companies</h3>
+      <p class="bf-card-sub">Automated-engine output per company, and the same with its region production bonus applied.</p>
+      <div class="dp-table-wrap"><table class="dp-table" id="dp-companies"></table></div>
+    </div>
+
     <!-- Employee profitability -->
     <div class="bf-card hidden" id="dp-emp-card">
       <h3>Employees</h3>
@@ -829,7 +836,8 @@
       <summary>How this works · methodology</summary>
       <div class="howto-body">
         <ul>
-          <li><strong>Net / PP</strong> = <code>(salePrice − Σ(recipe × rawPrice)) × (1 + bonus) ÷ productionPoints</code>.
+          <li><strong>Net / PP</strong> = <code>(salePrice − Σ(recipe × rawPrice)) ÷ productionPoints</code> — the raw profit per
+              production point, <em>before</em> the region bonus (the bonus is applied to the PP throughput instead).
               Recipes &amp; production points from <code>gameConfig</code>; prices are the live market <strong>lowest offer</strong>
               (best ask, what the game shows) via <code>tradingOrder.getTopOrders</code>;
               the production bonus from the same region/country model the Migration Advisor uses (best region shown).</li>
@@ -931,17 +939,17 @@
 </footer>
 
 <!-- Load order matters: shared first, tools next, router last. -->
-<script src="js/shared.js?v=20260616d"></script>
-<script src="js/mu.js?v=20260616d"></script>
-<script src="js/buddy-finder.js?v=20260616d"></script>
-<script src="js/advisor.js?v=20260616d"></script>
-<script src="js/clockin.js?v=20260616d"></script>
-<script src="js/wealth.js?v=20260616d"></script>
-<script src="js/daily-profit.js?v=20260616d"></script>
-<script src="js/buddy.js?v=20260616d"></script>
-<script src="js/battle-orders.js?v=20260616d"></script>
-<script src="js/beer.js?v=20260616d"></script>
-<script src="js/toolkit.js?v=20260616d"></script>
-<script src="js/router.js?v=20260616d"></script>
+<script src="js/shared.js?v=20260617d"></script>
+<script src="js/mu.js?v=20260617d"></script>
+<script src="js/buddy-finder.js?v=20260617d"></script>
+<script src="js/advisor.js?v=20260617d"></script>
+<script src="js/clockin.js?v=20260617d"></script>
+<script src="js/wealth.js?v=20260617d"></script>
+<script src="js/daily-profit.js?v=20260617d"></script>
+<script src="js/buddy.js?v=20260617d"></script>
+<script src="js/battle-orders.js?v=20260617d"></script>
+<script src="js/beer.js?v=20260617d"></script>
+<script src="js/toolkit.js?v=20260617d"></script>
+<script src="js/router.js?v=20260617d"></script>
 </body>
 </html>

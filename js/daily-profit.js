@@ -429,6 +429,7 @@ const DailyProfitTool = (() => {
                 enginesPP, staffPP, priceOverrides: {},
                 selfPP: Math.round(selfContribution),
                 selfWorkItem: selfWorkCompany ? (META[selfWorkCompany.itemCode]?.name || selfWorkCompany.itemCode) : null,
+                realEnginesPP: enginesPP, realStaffPP: staffPP,   // baseline for the what-if scale
                 assumptions: { enginesPP, staffPP } };   // editable; throughput = sum
       renderAll();
     } catch (e) {
@@ -653,20 +654,31 @@ const DailyProfitTool = (() => {
     });
   }
 
+  // Live what-if scales: editing Engine PP / Staff PP scales each company's
+  // engine and staff output (and staff wages) by edited ÷ real baseline.
+  function throughputScales() {
+    const eng = model.realEnginesPP > 0 ? (model.assumptions.enginesPP || 0) / model.realEnginesPP : 0;
+    const stf = model.realStaffPP   > 0 ? (model.assumptions.staffPP   || 0) / model.realStaffPP   : 0;
+    return { eng, stf };
+  }
+
   function buildRows() {
     const rows = [];
+    const { eng: engScale, stf: stfScale } = throughputScales();
     for (const code in META) {
       const it = model.gameItems[code];
       if (!it) continue;
       const bb = model.bestBonus[code] || { total: 0 };
       const npp = netPerPP(code, 0);            // Net/PP = net profit ÷ PP (bonus-free)
       // Actual = bonus-free Net/PP × the company's bonused throughput (AE-with-bonus
-      // + bonused staff) − wages. The bonus now lives in the throughput, not Net/PP.
+      // + bonused staff) − wages. Engine & staff parts scale with the what-if fields.
       let actual = 0, makesIt = false;
       for (const c of model.companies) {
         if (c.itemCode !== code) continue;
         makesIt = true;
-        if (npp != null) actual += npp * (c._dailyPP || 0) - (c._wageCost || 0);
+        const effPP   = (c._aeBonus || 0) * engScale + (c._workersManual || 0) * stfScale;
+        const effWage = (c._wageCost || 0) * stfScale;
+        if (npp != null) actual += npp * effPP - effWage;
       }
       rows.push({ code, name: META[code].name, cat: META[code].cat, type: it.type,
                   netPP: npp, bonus: bb.total, region: bb.region, country: bb.country,
@@ -686,8 +698,9 @@ const DailyProfitTool = (() => {
   function renderTableAndIncome() {
     const tp = (model.assumptions.enginesPP || 0) + (model.assumptions.staffPP || 0);
     // Employee wages are a fixed cost — you pay them whatever the workers make.
-    // Actual/day already nets them out, so Ceiling/day must too, or it reads high.
-    const totalWageCost = model.companies.reduce((s, c) => s + (c._wageCost || 0), 0);
+    // Actual/day already nets them out, so Ceiling/day must too. Wages scale with
+    // the staff what-if (zero staff → no wages).
+    const totalWageCost = model.companies.reduce((s, c) => s + (c._wageCost || 0), 0) * throughputScales().stf;
     const rows = buildRows();
 
     $table.innerHTML = `

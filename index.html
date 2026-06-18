@@ -24,8 +24,10 @@
 })();
 </script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'%3E%3Crect width='1' height='2' fill='%23009A49'/%3E%3Crect x='1' width='1' height='2' fill='white'/%3E%3Crect x='2' width='1' height='2' fill='%23FF7900'/%3E%3C/svg%3E" />
-<link rel="stylesheet" href="styles.css?v=20260617e" />
-<link rel="stylesheet" href="community.css?v=20260617e" />
+<link rel="stylesheet" href="styles.css?v=20260617h" />
+<link rel="stylesheet" href="community.css?v=20260617h" />
+<!-- Privacy-friendly analytics (Umami) -->
+<script defer src="https://cloud.umami.is/script.js" data-website-id="40195631-b234-4802-af28-962b97e63e58"></script>
 </head>
 <body>
 
@@ -811,7 +813,7 @@
     <!-- Per-product profitability table -->
     <div class="bf-card hidden" id="dp-table-card">
       <h3>Profit by product</h3>
-      <p class="bf-card-sub"><strong>Net / PP</strong> = profit per production point at the best region bonus. <strong>Ceiling / day</strong> = Net/PP × your <em>total</em> daily throughput − employee wages — a theoretical upper bound if every company's output went to this one product (not a realistic target). <strong>Actual / day</strong> = what your companies currently make of it.</p>
+      <p class="bf-card-sub"><strong>Net / PP</strong> = profit per production point (bonus-free). <strong>Max company</strong> / <strong>Max employee</strong> = profit if 100% of your company AE / your employees went to that product at its best bonus (<strong>Total max</strong> = both). <strong>Actual / day</strong> = what your companies currently make of it. <strong>Lowest wage</strong> = the least you'd post to land a worker after that country's income tax.</p>
       <div class="dp-table-wrap">
         <table class="dp-table" id="dp-table"></table>
       </div>
@@ -844,9 +846,9 @@
           <li><strong>Daily throughput</strong> ≈ your employees' output (<code>production × energy × 0.24 × (1 + fidelity)</code> PP/day each),
               your own self-work (<code>production × entrepreneurship × 0.24</code>, no fidelity/wage), plus each company's
               automated-engine production. It's an estimate — edit the field to match your real numbers.</li>
-          <li><strong>Ceiling / day</strong> is a theoretical upper bound: 100% of your total throughput on one
-              product, minus your employee wages (a fixed cost) — not a realistic target. <strong>Actual / day</strong>
-              sums what your companies currently produce of each item at their own region's bonus.</li>
+          <li><strong>Max company / Max employee</strong> are theoretical upper bounds: 100% of your company AE (or
+              all your employees, incl. you, minus their wages) producing that one product at its best bonus.
+              <strong>Total max</strong> adds them. <strong>Actual / day</strong> sums what your companies currently make of each item.</li>
           <li>Prices come live from the market (lowest sell offer). The <a href="https://warerastats.io/" target="_blank" rel="noopener">warerastats</a> average is only a fallback for any item whose order book is empty.</li>
           <li>Irish-citizens only (<code>?bypass=1</code> lifts it).</li>
         </ul>
@@ -939,17 +941,17 @@
 </footer>
 
 <!-- Load order matters: shared first, tools next, router last. -->
-<script src="js/shared.js?v=20260617e"></script>
-<script src="js/mu.js?v=20260617e"></script>
-<script src="js/buddy-finder.js?v=20260617e"></script>
-<script src="js/advisor.js?v=20260617e"></script>
-<script src="js/clockin.js?v=20260617e"></script>
-<script src="js/wealth.js?v=20260617e"></script>
-<script src="js/daily-profit.js?v=20260617e"></script>
-<script src="js/buddy.js?v=20260617e"></script>
-<script src="js/battle-orders.js?v=20260617e"></script>
-<script src="js/beer.js?v=20260617e"></script>
-<script src="js/toolkit.js?v=20260617e"></script>
-<script src="js/router.js?v=20260617e"></script>
+<script src="js/shared.js?v=20260617h"></script>
+<script src="js/mu.js?v=20260617h"></script>
+<script src="js/buddy-finder.js?v=20260617h"></script>
+<script src="js/advisor.js?v=20260617h"></script>
+<script src="js/clockin.js?v=20260617h"></script>
+<script src="js/wealth.js?v=20260617h"></script>
+<script src="js/daily-profit.js?v=20260617h"></script>
+<script src="js/buddy.js?v=20260617h"></script>
+<script src="js/battle-orders.js?v=20260617h"></script>
+<script src="js/beer.js?v=20260617h"></script>
+<script src="js/toolkit.js?v=20260617h"></script>
+<script src="js/router.js?v=20260617h"></script>
 </body>
 </html>

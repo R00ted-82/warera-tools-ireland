@@ -256,6 +256,19 @@ const DailyProfitTool = (() => {
         const lite = await dp_trpc('user.getUserLite', { userId: id }).catch(() => null);
         if (lite) workerProfiles[id] = lite;
       });
+
+      // Buddy detection: the owner's energy "job" is user.company. If that
+      // company belongs to one of the owner's own employees, they're a buddy
+      // (reciprocal hire). Buddies' wages are floored at 0.106 in Max Employee.
+      let buddyId = null;
+      try {
+        const full = await dp_trpc('user.getUserById', { userId: user._id }).catch(() => null);
+        const jobCompanyId = full?.company;
+        if (jobCompanyId && !companyIds.includes(jobCompanyId)) {
+          const jobCo = await dp_trpc('company.getById', { companyId: jobCompanyId }).catch(() => null);
+          buddyId = jobCo?.user || jobCo?.owner || null;
+        }
+      } catch {}
       steps.setStep(2, 'done', { count: `${companies.length} active${disabledCount ? ` · ${disabledCount} disabled` : ''}` });
 
       // Step 3: market + bonuses
@@ -293,15 +306,15 @@ const DailyProfitTool = (() => {
       const cfgDep = gameConfig?.company?.depositResourceBonus;
       if (typeof cfgDep === 'number') GAME_DEPOSIT_BONUS = cfgDep;
       // Recurring mission rewards. Daily is counted as-is; weekly and monthly
-      // are prorated to a daily figure (÷7 and ÷30) and shown on their own
-      // income lines, so the Daily line stays the true daily reward. Mission
-      // cases (daily + weekly/7 + monthly/30) all flow into the Case-sales line.
-      // (Starting missions are one-time, so they're excluded.)
+      // Daily is counted per day; Weekly's full reward is counted in the daily
+      // total too (once-a-week reward you bank that day) — the weekly projection
+      // then counts it ×1 rather than ×7. Both are tickable. Mission cases
+      // (daily + weekly, full) flow into the Case-sales line.
       const mr = gameConfig?.mission?.reward || {};
       const missionMoney       = (mr.daily?.money  || 0);
-      const missionMoneyWeekly = (mr.weekly?.money || 0) / 7;
+      const missionMoneyWeekly = (mr.weekly?.money || 0);   // full weekly reward (once/week)
       const missionCasesDaily  = (mr.daily?.cases  || 0);
-      const missionCasesWeekly = (mr.weekly?.cases || 0) / 7;
+      const missionCasesWeekly = (mr.weekly?.cases || 0);   // full weekly cases
 
       const allCountries = Array.isArray(allCountriesRaw) ? allCountriesRaw : (allCountriesRaw?.items || []);
       steps.setStep(3, 'active', { sub: 'Loading country bonuses', count: `0/${allCountries.length}` });
@@ -381,7 +394,8 @@ const DailyProfitTool = (() => {
         c._wageCost += basePP * wage;
         employees.push({ name: prof.username || '—', company: c.name || META[c.itemCode]?.name || c.itemCode,
                          item: c.itemCode, prod, bonus: c._bonus ? c._bonus.total : 0,
-                         basePP, netPP: c._netPP, wage, fidelity: fid });
+                         basePP, netPP: c._netPP, wage, fidelity: fid,
+                         buddy: (w.userId === buddyId) });
       });
 
       // The owner ALSO self-works in their OWN companies via the entrepreneurship
@@ -390,17 +404,19 @@ const DailyProfitTool = (() => {
       //   production × entrepreneurship × WORK_FACTOR   (no fidelity, no wage).
       // It's one self-work stream; attribute it to the owner's most profitable
       // company (the rational target) so the profit column reflects it.
+      // Snapshot hired-only staff so self-work can be re-assigned later (picker).
+      companies.forEach(c => { c._workersHired = c._workersManual; });
       const selfPP = skill(user, 'production') * skill(user, 'entrepreneurship') * WORK_FACTOR;
-      let selfWorkCompany = null, selfContribution = 0;
-      if (selfPP > 0 && companies.length) {
-        let bestv = -Infinity;
-        for (const c of companies) { const v = (c._netPP == null ? -Infinity : c._netPP); if (v > bestv) { bestv = v; selfWorkCompany = c; } }
-        if (selfWorkCompany) {
-          const b = selfWorkCompany._bonus ? selfWorkCompany._bonus.total : 0;
-          selfContribution = selfPP * (1 + b / 100);   // self: no fidelity, + region bonus
-          selfWorkCompany._workersManual += selfContribution;
-          selfWorkCompany._selfWork = true;
-        }
+      // Default self-work target: the owner's most profitable company.
+      let selfWorkCompany = null;
+      { let bestv = -Infinity;
+        for (const c of companies) { const v = (c._netPP == null ? -Infinity : c._netPP); if (v > bestv) { bestv = v; selfWorkCompany = c; } } }
+      let selfContribution = 0;
+      if (selfWorkCompany && selfPP > 0) {
+        const b = selfWorkCompany._bonus ? selfWorkCompany._bonus.total : 0;
+        selfContribution = selfPP * (1 + b / 100);   // self: no fidelity, + region bonus
+        selfWorkCompany._workersManual += selfContribution;
+        selfWorkCompany._selfWork = true;
       }
       // Daily throughput per company carries the bonus: AE-with-bonus + bonused staff.
       companies.forEach(c => { c._dailyPP = c._aeBonus + c._workersManual; });
@@ -429,7 +445,10 @@ const DailyProfitTool = (() => {
                 enginesPP, staffPP, priceOverrides: {},
                 selfPP: Math.round(selfContribution),
                 selfWorkItem: selfWorkCompany ? (META[selfWorkCompany.itemCode]?.name || selfWorkCompany.itemCode) : null,
+                selfPPbase: selfPP, selfWorkCompanyId: selfWorkCompany ? selfWorkCompany._id : null,
                 realEnginesPP: enginesPP, realStaffPP: staffPP,   // baseline for the what-if scale
+                totalCompanyAE: companies.reduce((s, c) => s + (c._dailyAE || 0), 0),  // raw AE (Max Company)
+                selfBasePP: selfPP,   // self base PP (no fidelity/bonus), for Max Employee
                 assumptions: { enginesPP, staffPP } };   // editable; throughput = sum
       renderAll();
     } catch (e) {
@@ -438,6 +457,30 @@ const DailyProfitTool = (() => {
     } finally {
       $submit.disabled = false;
     }
+  }
+
+  // Re-assign the owner's self-work to a chosen company (picker). Self-work PP
+  // = selfPPbase × (1 + that company's bonus); it lands in that company's staff
+  // output, shifting which product's Actual/throughput it feeds.
+  function assignSelfWork(companyId) {
+    model.selfWorkCompanyId = companyId;
+    let selfContribution = 0, target = null;
+    model.companies.forEach(c => { c._workersManual = c._workersHired; c._selfWork = false; });
+    target = model.companies.find(c => c._id === companyId);
+    if (target && model.selfPPbase > 0) {
+      const b = target._bonus ? target._bonus.total : 0;
+      selfContribution = model.selfPPbase * (1 + b / 100);
+      target._workersManual += selfContribution;
+      target._selfWork = true;
+    }
+    model.companies.forEach(c => { c._dailyPP = c._aeBonus + c._workersManual; });
+    model.selfPP = Math.round(selfContribution);
+    model.selfWorkItem = target ? (META[target.itemCode]?.name || target.itemCode) : null;
+    // Self-work is part of staff; moving it changes the staff baseline → reset
+    // the what-if staff field to the new real total.
+    const staffPP = Math.round(model.companies.reduce((s, c) => s + c._workersManual, 0));
+    model.realStaffPP = staffPP;
+    model.assumptions.staffPP = staffPP;
   }
 
   // ── Economics ───────────────────────────────────────────────────
@@ -573,7 +616,7 @@ const DailyProfitTool = (() => {
       + `<span id="dp-emp-warn-${i}">${e.wage > be ? ' — unprofitable at any fidelity' : ''}</span></span>`;
     return `<div class="dp-emp${net != null && net < 0 ? ' dp-emp-bad' : ''}" id="dp-emp-row-${i}">
       <div class="dp-emp-main">
-        <span class="dp-emp-name">${escapeHtml(e.name)}</span>
+        <span class="dp-emp-name">${escapeHtml(e.name)}${e.buddy ? ' <span class="dp-emp-buddy" title="Buddy — reciprocal hire; charged at 0.106 in Max employee">🤝 buddy</span>' : ''}</span>
         <span class="dp-emp-co">${escapeHtml(e.company)} · ${escapeHtml(META[e.item]?.name || e.item)}</span>
         ${beHtml}
       </div>
@@ -627,10 +670,18 @@ const DailyProfitTool = (() => {
         <span class="dp-suffix">employees${model.selfPP ? ` + your ${model.selfPP} self-work${model.selfWorkItem ? ` → ${escapeHtml(model.selfWorkItem)}` : ''}` : ''}</span>
       </div>
       <div class="dp-field">
-        <label title="Engine + staff — drives Ceiling/day">Total throughput</label>
+        <label title="Engine + staff total">Total throughput</label>
         <input type="number" id="dp-tp-total" value="${Math.round((a.enginesPP || 0) + (a.staffPP || 0))}" disabled>
         <span class="dp-suffix">engines + staff</span>
       </div>
+      ${(model.selfPPbase > 0 && model.companies.length) ? `
+      <div class="dp-field">
+        <label title="Which of your own companies you self-work in (entrepreneurship)">Self-work in</label>
+        <select id="dp-selfwork" class="dp-select">
+          ${model.companies.map(c => `<option value="${c._id}" ${c._id === model.selfWorkCompanyId ? 'selected' : ''}>${escapeHtml(META[c.itemCode]?.name || c.itemCode)}${c.name ? ' · ' + escapeHtml(c.name) : ''}</option>`).join('')}
+        </select>
+        <span class="dp-suffix">${Math.round(model.selfPPbase)} base PP</span>
+      </div>` : ''}
       ${priceFields}
     `;
     const $eng = $assump.querySelector('#dp-engines');
@@ -644,6 +695,8 @@ const DailyProfitTool = (() => {
     };
     $eng.addEventListener('input', onThroughput);
     $stf.addEventListener('input', onThroughput);
+    const $self = $assump.querySelector('#dp-selfwork');
+    if ($self) $self.addEventListener('change', e => { assignSelfWork(e.target.value); renderAll(); });
     $assump.querySelectorAll('.dp-price-in').forEach(inp => {
       inp.addEventListener('input', e => {
         const code = e.target.dataset.code, v = e.target.value;
@@ -670,6 +723,11 @@ const DailyProfitTool = (() => {
       if (!it) continue;
       const bb = model.bestBonus[code] || { total: 0 };
       const npp = netPerPP(code, 0);            // Net/PP = net profit ÷ PP (bonus-free)
+      const bonusMult = 1 + (bb.total || 0) / 100;
+      const tax = bb.tax ?? 0;
+      // Lowest viable wage: gross the going net rate (0.121) up for income tax.
+      const lowWage = 0.121 / (1 - tax / 100);
+
       // Actual = bonus-free Net/PP × the company's bonused throughput (AE-with-bonus
       // + bonused staff) − wages. Engine & staff parts scale with the what-if fields.
       let actual = 0, makesIt = false;
@@ -680,9 +738,32 @@ const DailyProfitTool = (() => {
         const effWage = (c._wageCost || 0) * stfScale;
         if (npp != null) actual += npp * effPP - effWage;
       }
+
+      // Max Company: all company AE → this product at its bonus.
+      const maxCompany = (npp != null) ? npp * model.totalCompanyAE * bonusMult * engScale : null;
+
+      // Max Employee (per the sheet): gross = Σ(basePP×(1+fid)) × (1+bonus) × Net/PP;
+      // wage cost = Σ(basePP × effWage), effWage = 0 for self, 0.106 for a buddy,
+      // else max(their wage, lowest viable wage). Scales with the staff what-if.
+      let maxEmployee = null;
+      if (npp != null) {
+        let grossPP = model.selfBasePP || 0;   // self (Me): fidelity 0
+        let wageCost = 0;                       // self pays no wage
+        for (const e of model.employees) {
+          grossPP += e.basePP * (1 + e.fidelity / 100);
+          wageCost += e.basePP * (e.buddy ? 0.106 : Math.max(e.wage, lowWage));
+        }
+        maxEmployee = (grossPP * bonusMult * npp - wageCost) * stfScale;
+      }
+      // Total Max = company + employee, but a negative employee contribution is
+      // floored at 0 (don't let unprofitable employees drag the company ceiling).
+      const totalMax = (maxCompany != null && maxEmployee != null) ? maxCompany + Math.max(maxEmployee, 0) : null;
+      const empAssigned = model.employees.filter(e => e.item === code).length;
+
       rows.push({ code, name: META[code].name, cat: META[code].cat, type: it.type,
                   netPP: npp, bonus: bb.total, region: bb.region, country: bb.country,
                   tax: bb.tax, deposit: bb.deposit,
+                  maxCompany, maxEmployee, totalMax, empAssigned, lowWage,
                   makesIt, actual: makesIt ? actual : null });
     }
     rows.sort((a, b) => (b.netPP ?? -Infinity) - (a.netPP ?? -Infinity));
@@ -696,11 +777,6 @@ const DailyProfitTool = (() => {
   }
 
   function renderTableAndIncome() {
-    const tp = (model.assumptions.enginesPP || 0) + (model.assumptions.staffPP || 0);
-    // Employee wages are a fixed cost — you pay them whatever the workers make.
-    // Actual/day already nets them out, so Ceiling/day must too. Wages scale with
-    // the staff what-if (zero staff → no wages).
-    const totalWageCost = model.companies.reduce((s, c) => s + (c._wageCost || 0), 0) * throughputScales().stf;
     const rows = buildRows();
 
     $table.innerHTML = `
@@ -710,28 +786,36 @@ const DailyProfitTool = (() => {
         <th>Sale</th>
         <th>Raw cost</th>
         <th>Bonus</th>
+        <th>Net / PP</th>
+        <th title="If 100% of your company AE went to this product, at its bonus">Max company</th>
+        <th title="If 100% of your employees (incl. you) went to this product, minus wages">Max employee</th>
+        <th title="Max company + max employee">Total max</th>
+        <th title="Your employees currently producing this product">Emp.</th>
+        <th>Actual / day</th>
+        <th title="Lowest wage to post so the worker nets 0.121 after this country's income tax">Lowest wage</th>
         <th class="dp-l" title="Country giving the best production bonus, and its income tax (Country › Account)">Country · tax</th>
         <th title="Temporary regional deposit driving the bonus, and when it expires">Deposit</th>
-        <th>Net / PP</th>
-        <th title="Theoretical ceiling: total throughput on this one product, minus wages">Ceiling / day</th>
-        <th>Actual / day</th>
       </tr></thead>
       <tbody>${rows.map(r => {
         const sale = price(r.code);
         const rc = rawCostOf(r.code);
-        const maxDay = r.netPP != null ? r.netPP * tp - totalWageCost : null;
         const regionTip = r.region ? `${escapeHtml(r.region.name)}${r.country ? ' · ' + escapeHtml(r.country.name) : ''}` : 'no bonus region';
+        const money = (v) => v == null ? '<span class="dp-na">–</span>' : fmtK(v);
         return `<tr class="${r.makesIt ? 'dp-owned' : ''}">
           <td class="dp-l"><span class="dp-prod">${iconHtml(r.code)}<span>${escapeHtml(r.name)}</span><span class="dp-cat">· ${r.cat}</span></span></td>
           <td class="dp-l"><span class="dp-pill ${r.type}">${r.type === 'product' ? 'Finished' : 'Raw'}</span></td>
           <td>${sale == null ? '<span class="dp-na">–</span>' : fmt3(sale)}</td>
           <td>${rc == null ? '<span class="dp-na">–</span>' : (rc ? fmt3(rc) : '<span class="dp-muted">0</span>')}</td>
           <td class="dp-bonus" title="${regionTip}">${r.bonus ? '+' + fmt2(r.bonus) + '%' : '<span class="dp-muted">0%</span>'}</td>
+          <td class="dp-netpp ${r.netPP != null && r.netPP < 0 ? 'neg' : ''}">${r.netPP == null ? '<span class="dp-na">–</span>' : fmt3(r.netPP)}</td>
+          <td>${money(r.maxCompany)}</td>
+          <td>${money(r.maxEmployee)}</td>
+          <td><strong>${money(r.totalMax)}</strong></td>
+          <td>${r.empAssigned ? r.empAssigned : '<span class="dp-muted">0</span>'}</td>
+          <td>${r.actual == null ? '<span class="dp-na">—</span>' : `<span class="dp-actual">${fmtK(r.actual)}</span>`}</td>
+          <td>${r.lowWage != null && isFinite(r.lowWage) ? fmt3(r.lowWage) : '<span class="dp-na">–</span>'}</td>
           <td class="dp-l">${r.country ? `${escapeHtml(r.country.name)} <span class="dp-tax">· ${r.tax != null ? r.tax + '%' : '–'}</span>` : '<span class="dp-na">—</span>'}</td>
           <td>${r.deposit ? `<span class="dp-dep" title="Temporary deposit (+${r.deposit.bonus}% ${escapeHtml(META[r.deposit.type]?.name || r.deposit.type)}) — expires ${fmtDate(r.deposit.endsAt)}">⏳ ${fmtDate(r.deposit.endsAt)}</span>` : '<span class="dp-muted">—</span>'}</td>
-          <td class="dp-netpp ${r.netPP != null && r.netPP < 0 ? 'neg' : ''}">${r.netPP == null ? '<span class="dp-na">–</span>' : fmt3(r.netPP)}</td>
-          <td>${maxDay == null ? '<span class="dp-na">–</span>' : fmtK(maxDay)}</td>
-          <td>${r.actual == null ? '<span class="dp-na">—</span>' : `<span class="dp-actual">${fmtK(r.actual)}</span>`}</td>
         </tr>`;
       }).join('')}</tbody>
     `;
@@ -775,8 +859,17 @@ const DailyProfitTool = (() => {
           ? `~${model.salaryWorksPerDay.toFixed(1)} works/day × ${fmt2(model.salaryAvgPerWork)} net · modeled (24h actual: ${fmtK(model.salaryActual)})`
           : 'no recent wages to model from' },
       { label: 'Daily missions',  val: model.missionMoney,       sub: 'daily reward',          toggle: 'daily',  done: done.daily },
-      { label: 'Weekly missions', val: model.missionMoneyWeekly, sub: '30 / week (spread over 7 days)', toggle: 'weekly', done: done.weekly },
+      { label: 'Weekly missions', val: model.missionMoneyWeekly, sub: 'full weekly reward · counted ×1 per week', toggle: 'weekly', done: done.weekly },
     ];
+
+    // Weekly-cadence items (weekly mission money + its cases) bank once a week,
+    // so the weekly projection counts them ×1, everything else ×7.
+    const weeklyOnce = () => {
+      let o = done.weekly ? (model.missionMoneyWeekly || 0) : 0;
+      if (done.weekly && casePriced && model.casesManual == null) o += (model.missionCasesWeekly || 0) * model.casePrice;
+      return o;
+    };
+    const weeklyTotal = () => { const once = weeklyOnce(); return (grandTotal() - once) * 7 + once; };
 
     // Case sales: manual "cases sold today" (empty → modeled count via placeholder).
     const caseSub = casePriced
@@ -800,14 +893,13 @@ const DailyProfitTool = (() => {
       return `<div class="dp-inc${off ? ' dp-inc-off' : ''}"><div class="dp-inc-label">${label}</div>`
         + `<div class="dp-inc-val">${off ? '0.00' : fmtK(x.val)}</div><div class="dp-inc-sub">${x.sub}</div></div>`;
     }).join('') + caseCard + deductCard
-      + `<div class="dp-inc total"><div class="dp-inc-label">Total / day</div><div class="dp-inc-val" id="dp-total-val">${fmtK(grandTotal())}</div><div class="dp-inc-sub" id="dp-total-sub">≈ ${fmtK(grandTotal() * 7)} / week</div></div>`;
+      + `<div class="dp-inc total"><div class="dp-inc-label">Total / day</div><div class="dp-inc-val" id="dp-total-val">${fmtK(grandTotal())}</div><div class="dp-inc-sub" id="dp-total-sub">≈ ${fmtK(weeklyTotal())} / week</div></div>`;
 
     const recalc = () => {
       $income.querySelector('#dp-case-val').textContent = fmtK(caseVal());
       $income.querySelector('#dp-deduct-val').textContent = '−' + fmtK(deductVal());
-      const t = grandTotal();
-      $income.querySelector('#dp-total-val').textContent = fmtK(t);
-      $income.querySelector('#dp-total-sub').textContent = `≈ ${fmtK(t * 7)} / week`;
+      $income.querySelector('#dp-total-val').textContent = fmtK(grandTotal());
+      $income.querySelector('#dp-total-sub').textContent = `≈ ${fmtK(weeklyTotal())} / week`;
     };
 
     $income.querySelectorAll('input[data-mission]').forEach(cb =>

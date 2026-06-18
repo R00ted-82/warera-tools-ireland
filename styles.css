@@ -1957,6 +1957,7 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
   font-variant-numeric: tabular-nums; width: 140px;
 }
 .dp-field .dp-suffix { font-size: 11px; color: var(--muted); }
+.dp-select { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 6px 9px; font-size: 13px; font-family: inherit; }
 
 /* Income summary cards */
 .dp-income { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 14px; }
@@ -2056,3 +2057,6 @@ table.dp-table tbody tr.dp-owned:hover { background: rgba(74,222,128,.1); }
 
 /* Daily Profit — companies table totals row */
 table.dp-table tr.dp-comp-total td { border-top: 2px solid var(--border); font-weight: 600; }
+
+/* Daily Profit — buddy chip in the employee panel */
+.dp-emp-buddy { font-size: 10.5px; color: var(--accent); border: 1px solid rgba(74,222,128,.4); border-radius: 999px; padding: 0 6px; margin-left: 6px; white-space: nowrap; }

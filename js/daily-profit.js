@@ -445,10 +445,10 @@ const DailyProfitTool = (() => {
                 enginesPP, staffPP, priceOverrides: {},
                 selfPP: Math.round(selfContribution),
                 selfWorkItem: selfWorkCompany ? (META[selfWorkCompany.itemCode]?.name || selfWorkCompany.itemCode) : null,
-                selfPPbase: selfPP, selfWorkCompanyId: selfWorkCompany ? selfWorkCompany._id : null,
+                selfPPbase: selfPP,   // self base PP (no fidelity/bonus); for Max Employee + picker
+                selfWorkCompanyId: selfWorkCompany ? selfWorkCompany._id : null,
                 realEnginesPP: enginesPP, realStaffPP: staffPP,   // baseline for the what-if scale
                 totalCompanyAE: companies.reduce((s, c) => s + (c._dailyAE || 0), 0),  // raw AE (Max Company)
-                selfBasePP: selfPP,   // self base PP (no fidelity/bonus), for Max Employee
                 assumptions: { enginesPP, staffPP } };   // editable; throughput = sum
       renderAll();
     } catch (e) {
@@ -747,7 +747,7 @@ const DailyProfitTool = (() => {
       // else max(their wage, lowest viable wage). Scales with the staff what-if.
       let maxEmployee = null;
       if (npp != null) {
-        let grossPP = model.selfBasePP || 0;   // self (Me): fidelity 0
+        let grossPP = model.selfPPbase || 0;   // self (Me): fidelity 0
         let wageCost = 0;                       // self pays no wage
         for (const e of model.employees) {
           grossPP += e.basePP * (1 + e.fidelity / 100);

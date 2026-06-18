@@ -19868,5 +19868,366 @@
     "cc": "ba",
     "occ": "ba",
     "from": 3
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "ownership_changed",
+    "rid": "6873d11394e6b3b7989a4bd2",
+    "code": "ml-tombouctou",
+    "name": "Tombouctou",
+    "cc": "eg",
+    "occ": "ml",
+    "from": "ml",
+    "to": "eg"
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "battle_ended",
+    "rid": "6873d11394e6b3b7989a4bd2",
+    "code": "ml-tombouctou",
+    "name": "Tombouctou",
+    "cc": "eg",
+    "occ": "ml"
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "battle_started",
+    "rid": "6873d11394e6b3b7989a4bde",
+    "code": "ml-menaka-and-gao",
+    "name": "M\u00e9naka & Gao",
+    "cc": "ml",
+    "occ": "ml"
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "came_online",
+    "rid": "6813b7059403bc4170a5d792",
+    "code": "hr-continental-croatia",
+    "name": "Continental Croatia",
+    "cc": "hr",
+    "occ": "hr",
+    "to": 4
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "came_online",
+    "rid": "6813b7069403bc4170a5d82b",
+    "code": "ie-munster",
+    "name": "Munster",
+    "cc": "be",
+    "occ": "ie",
+    "to": 2
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "went_offline",
+    "rid": "6813b7089403bc4170a5d8d3",
+    "code": "id-java",
+    "name": "Java",
+    "cc": "in",
+    "occ": "id",
+    "from": 1
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "went_offline",
+    "rid": "6813b7079403bc4170a5d85b",
+    "code": "fi-south",
+    "name": "Southern Finland",
+    "cc": "lt",
+    "occ": "fi",
+    "from": 4
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "bunker_activating",
+    "rid": "6813b7079403bc4170a5d85b",
+    "code": "fi-south",
+    "name": "Southern Finland",
+    "cc": "lt",
+    "occ": "fi",
+    "active_at": "2026-06-19T03:59:59.999Z",
+    "level": 4
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "battle_started",
+    "rid": "6813b70b9403bc4170a5dac2",
+    "code": "ir-caspian-sea",
+    "name": "Caspian Sea Coast",
+    "cc": "ir",
+    "occ": "ir"
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "bunker_activating",
+    "rid": "683ddd3e36dbc90b780474d9",
+    "code": "la-xekong",
+    "name": "Sekong",
+    "cc": "vn",
+    "occ": "la",
+    "active_at": "2026-06-19T03:59:59.999Z",
+    "level": 1
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "came_online",
+    "rid": "6813b7059403bc4170a5d78f",
+    "code": "hr-slavonia",
+    "name": "Slavonia",
+    "cc": "hr",
+    "occ": "hr",
+    "to": 3
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "resistance_full",
+    "rid": "6873d11594e6b3b7989a4c65",
+    "code": "bf-center",
+    "name": "Central Burkina Faso",
+    "cc": "eg",
+    "occ": "bf",
+    "val": 257,
+    "max": 257
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "resistance_full",
+    "rid": "6873d11594e6b3b7989a4c4a",
+    "code": "cv-center",
+    "name": "Cape Verde",
+    "cc": "ma",
+    "occ": "cv",
+    "val": 1310,
+    "max": 1310
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "came_online",
+    "rid": "6873d11594e6b3b7989a4c5f",
+    "code": "vu-vanuatu",
+    "name": "Vanuatu",
+    "cc": "vu",
+    "occ": "vu",
+    "to": 1
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "came_online",
+    "rid": "6813b70d9403bc4170a5db79",
+    "code": "az-siyazen",
+    "name": "Siyazen",
+    "cc": "az",
+    "occ": "az",
+    "to": 1
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "came_online",
+    "rid": "6813b70d9403bc4170a5db7c",
+    "code": "az-baku",
+    "name": "Baku",
+    "cc": "az",
+    "occ": "az",
+    "to": 3
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "battle_started",
+    "rid": "683ddd3f36dbc90b7804758f",
+    "code": "vn-ho-chi-minh-city",
+    "name": "Ho Chi Minh City",
+    "cc": "vn",
+    "occ": "vn"
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "battle_started",
+    "rid": "6873d11494e6b3b7989a4c05",
+    "code": "ne-capital-region",
+    "name": "Tillab\u00e9ri and Tahoua",
+    "cc": "eg",
+    "occ": "ne"
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "came_online",
+    "rid": "6813b7039403bc4170a5d6a2",
+    "code": "uk-scotland",
+    "name": "Scotland",
+    "cc": "be",
+    "occ": "uk",
+    "to": 3
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "came_online",
+    "rid": "6813b70c9403bc4170a5daf2",
+    "code": "gt-south",
+    "name": "Southern Guatemala",
+    "cc": "gt",
+    "occ": "gt",
+    "to": 2
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "came_online",
+    "rid": "6813b7069403bc4170a5d828",
+    "code": "ie-leinster",
+    "name": "Leinster",
+    "cc": "be",
+    "occ": "ie",
+    "to": 3
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "came_online",
+    "rid": "6813b7039403bc4170a5d6ab",
+    "code": "uk-northern-ireland",
+    "name": "Northern Ireland",
+    "cc": "be",
+    "occ": "uk",
+    "to": 3
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "went_offline",
+    "rid": "6813b7059403bc4170a5d74a",
+    "code": "ro-moldavia",
+    "name": "Romanian Moldavia",
+    "cc": "hu",
+    "occ": "ro",
+    "from": 1
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "came_online",
+    "rid": "6813b7039403bc4170a5d6ae",
+    "code": "uk-center",
+    "name": "Central England",
+    "cc": "be",
+    "occ": "uk",
+    "to": 3
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "came_online",
+    "rid": "6813b70d9403bc4170a5db76",
+    "code": "az-karabax",
+    "name": "Karabakh",
+    "cc": "az",
+    "occ": "az",
+    "to": 1
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "came_online",
+    "rid": "6813b7069403bc4170a5d7dd",
+    "code": "se-lappland",
+    "name": "Lappland",
+    "cc": "nl",
+    "occ": "se",
+    "to": 1
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "came_online",
+    "rid": "6813b7069403bc4170a5d7da",
+    "code": "se-jamtland",
+    "name": "J\u00e4mtland",
+    "cc": "nl",
+    "occ": "se",
+    "to": 2
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "came_online",
+    "rid": "6813b70d9403bc4170a5db70",
+    "code": "az-genca",
+    "name": "Genca",
+    "cc": "az",
+    "occ": "az",
+    "to": 1
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "went_offline",
+    "rid": "6873d11494e6b3b7989a4c08",
+    "code": "ne-south-niger",
+    "name": "Zinder and Diffa",
+    "cc": "eg",
+    "occ": "ne",
+    "from": 2
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "came_online",
+    "rid": "6813b7069403bc4170a5d7e0",
+    "code": "se-uppland",
+    "name": "Uppland",
+    "cc": "nl",
+    "occ": "se",
+    "to": 4
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "ownership_changed",
+    "rid": "683ddd3e36dbc90b780474c4",
+    "code": "kh-stung-treng",
+    "name": "Stung Treng",
+    "cc": "kh",
+    "occ": "kh",
+    "from": "ph",
+    "to": "kh"
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "battle_ended",
+    "rid": "683ddd3e36dbc90b780474c4",
+    "code": "kh-stung-treng",
+    "name": "Stung Treng",
+    "cc": "kh",
+    "occ": "kh"
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "resistance_full",
+    "rid": "6813b70b9403bc4170a5dab0",
+    "code": "sr-south",
+    "name": "South Suriname",
+    "cc": "br",
+    "occ": "sr",
+    "val": 3200,
+    "max": 3200
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "came_online",
+    "rid": "6813b7069403bc4170a5d7d1",
+    "code": "se-skane-halland",
+    "name": "Sk\u00e5ne & Halland",
+    "cc": "nl",
+    "occ": "se",
+    "to": 1
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "came_online",
+    "rid": "6813b7069403bc4170a5d7d7",
+    "code": "se-dalarna-varmland",
+    "name": "Dalarna & V\u00e4rmland",
+    "cc": "nl",
+    "occ": "se",
+    "to": 4
+  },
+  {
+    "at": "2026-06-18T15:53:28.762158+00:00",
+    "type": "came_online",
+    "rid": "6813b7069403bc4170a5d7d4",
+    "code": "se-smaland",
+    "name": "Sm\u00e5land",
+    "cc": "nl",
+    "occ": "se",
+    "to": 1
   }
 ]

@@ -448,7 +448,7 @@ const DailyProfitTool = (() => {
                 selfPPbase: selfPP,   // self base PP (no fidelity/bonus); for Max Employee + picker
                 selfWorkCompanyId: selfWorkCompany ? selfWorkCompany._id : null,
                 realEnginesPP: enginesPP, realStaffPP: staffPP,   // baseline for the what-if scale
-                totalCompanyAE: companies.reduce((s, c) => s + (c._dailyAE || 0), 0),  // raw AE (Max Company)
+                totalCompanyAE: companies.reduce(                                                           (s, c) => s + (c._dailyAE || 0), 0),  // raw AE (Max Company)
                 assumptions: { enginesPP, staffPP } };   // editable; throughput = sum
       renderAll();
     } catch (e) {

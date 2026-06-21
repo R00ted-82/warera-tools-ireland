@@ -29,12 +29,16 @@ styles.css        Main stylesheet (theme variables + every tool's styles)
 community.css     Styles specific to the Community tools directory
 js/
   shared.js       Loaded first. Data layer + helpers. Tools depend on this.
-  mu.js           Irish Military Units
-  buddy-finder.js Buddy Finder (public)
+  toolkit.js      Home/landing shell + tab navigation
   advisor.js      Company Migration Advisor
   clockin.js      Employee Clock-In Monitor
+  buddy-finder.js Buddy Finder (public)
+  daily-profit.js Daily Profit calculator
+  wealth.js       Wealth tracker
+  mu.js           Irish Military Units
   buddy.js        Buddy System Monitor (encrypted, MoE password)
   battle-orders.js Battle Orders (encrypted, MoD password)
+  beer.js         Bunker monitor (encrypted, BEER password)
   router.js       Loaded last. Hash routing + view switching.
 images/           Item icons used by the advisor and clock-in tools
 ```
@@ -172,15 +176,29 @@ That Action introduces roughly a one-minute lag between a submit and the name ap
 
 ### Buddy System Monitor (`buddy.js`) and Battle Orders (`battle-orders.js`)
 
-Both are password-encrypted (see Access control). Buddy System Monitor is the MoE-facing oversight version of Buddy Finder: it tracks every reciprocal employment pair across the Irish economy and flags strays and mismatches. Battle Orders is an MoD-facing live battle tracker with MU order compliance and a Discord push for commanders. Their gate code is public; the tool logic and any webhook URLs live inside the encrypted payload.
+Both are password-encrypted (see Access control). Buddy System Monitor is the MoE-facing oversight version of Buddy Finder: it tracks every reciprocal employment pair across the Irish economy and flags strays and mismatches. Battle Orders is an MoD-facing live battle tracker with MU order compliance and a Discord push for commanders. Their gate code is public; the tool logic lives inside the encrypted payload.
+
+### Daily Profit (`daily-profit.js`)
+
+Estimates a player's daily profit across their companies and employees: engine vs staff throughput, wages, fidelity, daily/weekly missions, case sales, and per-product net margins (with country tax and production-bonus lookups). The economic model was validated formula-by-formula against Adro's spreadsheet — direct questions about the model go to Adro.
+
+### Wealth tracker (`wealth.js`)
+
+Charts any Irish citizen's wealth over time. A scheduled GitHub Action (`wealth_log.py`) snapshots every citizen's public wealth once a day into `data/wealth/<userId>.json`; the page fetches only the one file for the player being viewed, so it scales to hundreds of citizens. The wealth breakdown (companies, items, money, equipment, weapons) is the same public figure shown on an in-game profile.
+
+### Bunker monitor (`beer.js`)
+
+A searchable, timezone-aware log of region bunker activity for the BEER alliance block. A scheduled GitHub Action (`bunker_log.py`) snapshots every region every few hours, diffs it, and records came-online / went-offline / level-changed / built events into `data/events.json` (rolling 30-day window), with `data/state.json` as the previous-snapshot baseline. Password-encrypted like the other two gated tools (BEER password).
 
 ## Data layer
 
-All game data comes through one Cloudflare Worker at `warera-proxy.toie.workers.dev`. It exposes three routes:
+All game data comes through one Cloudflare Worker at `warera-proxy.toie.workers.dev`. It exposes these routes:
 
 - `/trpc/*` proxies the War Era Gateway (tRPC).
 - `/warerastats` proxies Hattorius's warerastats data (used for country industrialism in the advisor).
 - `/waitlist-update` mutates the Buddy Finder waiting list (see below).
+- `/notify-discord` forwards a message to the Battle Orders Discord webhook (held as a Worker secret).
+- `/monitored-update` is wired for a wealth-monitor watch-list but is currently unused — nothing calls it and there is no receiving workflow.
 
 The Worker holds the secrets (the GitHub PAT for the waitlist). The browser never sees them. The whole site otherwise runs client-side and stores nothing about users, except the username and user ID of people who opt into the waiting list.
 
@@ -205,18 +223,18 @@ There are two separate mechanisms. Don't confuse them.
 
 **Irish-only gate.** Personal tools (advisor, clock-in, buddy-finder) call `enforceIrishOnly` to block non-Irish users. Append `?bypass=1` to the hash for admin or debugging. The MU tool doesn't gate; it filters MUs down to Irish ones instead.
 
-**Password-encrypted tools.** Buddy System Monitor (`#buddy`, MoE) and Battle Orders (`#battle-orders`, MoD) ship their entire tool (CSS, HTML, JS, webhook URLs) as an AES-encrypted blob in the source. The page is useless without the password, so the sensitive logic never reaches an unauthorised browser in readable form.
+**Password-encrypted tools.** Buddy System Monitor (`#buddy`, MoE), Battle Orders (`#battle-orders`, MoD), and the Bunker monitor (`#beer`, BEER) ship their entire tool (CSS, HTML, JS) as an AES-encrypted blob in the source. The page is useless without the password, so the sensitive logic never reaches an unauthorised browser in readable form. (Caveat: the plaintext payload sources — `bo-payload.js`, `buddy-payload.js`, `beer-payload.js` — are also committed, so this only holds if the repo is private; see `.gitignore`.)
 
 ### How the encrypted tools work
 
 - Blob format: base64 of `salt(16) || iv(12) || AES-GCM-256 ciphertext`.
 - Key derivation: PBKDF2-SHA-256, 200000 iterations.
 - On correct password, the gate decrypts the blob and injects it as a `<script>` tag, which mounts the real tool.
-- The blob lives in the `BO_ENCRYPTED_PAYLOAD` / `BUDDY_ENCRYPTED_PAYLOAD` constant at the top of the respective gate file.
+- The blob lives in the `BO_ENCRYPTED_PAYLOAD` / `BUDDY_ENCRYPTED_PAYLOAD` / `BEER_ENCRYPTED_PAYLOAD` constant at the top of the respective gate file.
 
-To set up or rotate a password: encrypt the tool's payload file with the standalone `encrypt-bo.html` generator (it is payload-agnostic and works for both tools), then paste the resulting base64 string as the constant value. Until the constant is filled in, the gate shows "payload not configured yet" and does nothing.
+To set up or rotate a password: encrypt the tool's payload file with the standalone `encrypt.html` generator (it is payload-agnostic and works for all three tools), then paste the resulting base64 string as the constant value. Until the constant is filled in, the gate shows "payload not configured yet" and does nothing.
 
-The gate code itself (`buddy.js`, `battle-orders.js`) is plain and public. Only the payload is secret.
+The gate code itself (`buddy.js`, `battle-orders.js`, `beer.js`) is plain and public. Only the payload is secret.
 
 ## Styling conventions
 

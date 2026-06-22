@@ -80,7 +80,7 @@ jobs:
           # same pattern as the cleanup job below.
           def trpc(method, payload, timeout=20):
               inp = urllib.parse.quote(json.dumps(payload))
-              url = f'https://warera-proxy.toie.workers.dev/trpc/{method}?input={inp}'
+              url = f'https://warera-proxy.r00ted82.workers.dev/trpc/{method}?input={inp}'
               req = urllib.request.Request(url, headers={
                   'Origin': ORIGIN,
                   'Accept': 'application/json',
@@ -203,7 +203,7 @@ jobs:
 
           def trpc(method, payload, timeout=20):
               inp = urllib.parse.quote(json.dumps(payload))
-              url = f'https://warera-proxy.toie.workers.dev/trpc/{method}?input={inp}'
+              url = f'https://warera-proxy.r00ted82.workers.dev/trpc/{method}?input={inp}'
               req = urllib.request.Request(url, headers={
                   'Origin': ORIGIN,
                   'Accept': 'application/json',

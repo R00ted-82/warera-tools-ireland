@@ -4,8 +4,8 @@
  *  formatting helpers, and the step/status panel constructors used by
  *  MU and the Advisor.
  * ═══════════════════════════════════════════════════════════════════ */
-const API_BASE         = 'https://warera-proxy.toie.workers.dev/trpc';
-const WARERASTATS_BASE = 'https://warera-proxy.toie.workers.dev/warerastats';
+const API_BASE         = 'https://warera-proxy.r00ted82.workers.dev/trpc';
+const WARERASTATS_BASE = 'https://warera-proxy.r00ted82.workers.dev/warerastats';
 const GAME_BASE        = 'https://app.warera.io';
 
 // Canonical Ireland country ID. Shared by the MU tool's citizenship

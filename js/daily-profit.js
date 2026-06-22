@@ -4,7 +4,7 @@
  *  contained IIFE; the shell drives it via DailyProfitTool.activate({u}).
  * ═══════════════════════════════════════════════════════════════════ */
 const DailyProfitTool = (() => {
-  const WS_BASE = (typeof WARERASTATS_BASE !== 'undefined') ? WARERASTATS_BASE : 'https://warera-proxy.toie.workers.dev/warerastats';
+  const WS_BASE = (typeof WARERASTATS_BASE !== 'undefined') ? WARERASTATS_BASE : 'https://warera-proxy.r00ted82.workers.dev/warerastats';
   // Prices via the proxy (it adds CORS) — a direct api.warerastats.io fetch
   // is blocked cross-origin in the browser, even though /countries via the
   // proxy works.

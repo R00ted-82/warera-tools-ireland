@@ -41,11 +41,11 @@ const BuddyFinderTool = (() => {
   // endpoint — updates wouldn't surface for hours. The API endpoint
   // refreshes within seconds of a commit.
   const WAITLIST_READ_URL =
-    'https://api.github.com/repos/to-ie/warera-tools-ireland/contents/waitlist.json?ref=main';
+    'https://api.github.com/repos/R00ted-82/warera-tools-ireland/contents/waitlist.json?ref=main';
   // Worker route that fires repository_dispatch with the PAT attached
   // server-side. Same Worker handles the tRPC proxy.
   const WAITLIST_UPDATE_URL =
-    'https://warera-proxy.toie.workers.dev/waitlist-update';
+    'https://warera-proxy.r00ted82.workers.dev/waitlist-update';
 
   // DOM
   const $wlInput   = document.getElementById('bf-waitlist-username');

@@ -141,7 +141,7 @@ const AdvisorTool = (() => {
   // the existing tRPC base so we don't need a second config knob.
   const WARERASTATS_BASE = (typeof CFG !== 'undefined' && CFG.API_BASE)
     ? CFG.API_BASE.replace(/\/trpc\/?$/, '') + '/warerastats'
-    : 'https://warera-proxy.toie.workers.dev/warerastats';
+    : 'https://warera-proxy.r00ted82.workers.dev/warerastats';
 
   // Flat country-level deposit bonus, used when an active matching deposit
   // exists AND the country is agrarian-leaning. Defaults to 30 (observed

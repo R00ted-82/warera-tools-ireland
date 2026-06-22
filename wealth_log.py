@@ -39,7 +39,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 # Config
-PROXY_BASE         = "https://warera-proxy.toie.workers.dev/trpc"
+PROXY_BASE         = "https://warera-proxy.r00ted82.workers.dev/trpc"
 ORIGIN             = "https://tools.we-ie.com"
 IRELAND_COUNTRY_ID = "6813b6d446e731854c7ac7fe"
 ROOT               = Path(__file__).parent

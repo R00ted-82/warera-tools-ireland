@@ -19,7 +19,7 @@
   const PAGE_LIMIT = 100;
   const CFG = {
     IRELAND_COUNTRY_ID:      '6813b6d446e731854c7ac7fe',
-    DISCORD_WORKER_URL:      'https://warera-proxy.toie.workers.dev/notify-discord',
+    DISCORD_WORKER_URL:      'https://warera-proxy.r00ted82.workers.dev/notify-discord',
     EXTRA_ALLY_COUNTRY_IDS:  [],
     MU_COUNTRY_FIELDS:       ['countryId', 'country', 'nationalityId', 'nationality'],
     EXCLUDED_MU_IDS:         ['6955c186b1fc6d0b7b00fadc'],

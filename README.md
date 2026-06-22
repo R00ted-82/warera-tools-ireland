@@ -95,8 +95,8 @@ Tools never touch each other. They share state only through the URL and through 
 **Constants**
 
 ```js
-API_BASE         = 'https://warera-proxy.toie.workers.dev/trpc'
-WARERASTATS_BASE = 'https://warera-proxy.toie.workers.dev/warerastats'
+API_BASE         = 'https://warera-proxy.r00ted82.workers.dev/trpc'
+WARERASTATS_BASE = 'https://warera-proxy.r00ted82.workers.dev/warerastats'
 GAME_BASE        = 'https://app.warera.io'
 IRELAND_COUNTRY_ID = '6813b6d446e731854c7ac7fe'
 ```
@@ -168,7 +168,7 @@ A player's max daily output is estimated as `production * energy * 0.343`, where
 
 #### The waiting list
 
-The waiting list is backed by a `waitlist.json` file in the [`to-ie/warera-tools-ireland`](https://github.com/to-ie/warera-tools-ireland) GitHub repo.
+The waiting list is backed by a `waitlist.json` file in the [`R00ted-82/warera-tools-ireland`](https://github.com/R00ted-82/warera-tools-ireland) GitHub repo.
 
 Reads hit the GitHub contents API with a cache-buster. This endpoint refreshes within seconds of a commit, unlike the raw or jsDelivr endpoints which cache for hours. Writes POST to the Worker's `/waitlist-update` route, which fires a `repository_dispatch` with the PAT attached server-side, and a GitHub Action then edits the file.
 
@@ -192,7 +192,7 @@ A searchable, timezone-aware log of region bunker activity for the BEER alliance
 
 ## Data layer
 
-All game data comes through one Cloudflare Worker at `warera-proxy.toie.workers.dev`. It exposes these routes:
+All game data comes through one Cloudflare Worker at `warera-proxy.r00ted82.workers.dev`. It exposes these routes:
 
 - `/trpc/*` proxies the War Era Gateway (tRPC).
 - `/warerastats` proxies Hattorius's warerastats data (used for country industrialism in the advisor).

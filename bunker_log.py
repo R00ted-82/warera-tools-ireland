@@ -70,7 +70,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 # Config
-PROXY_BASE     = "https://warera-proxy.toie.workers.dev/trpc"
+PROXY_BASE     = "https://warera-proxy.r00ted82.workers.dev/trpc"
 DATA_DIR       = Path(__file__).parent / "data"
 STATE_FILE     = DATA_DIR / "state.json"
 EVENTS_FILE    = DATA_DIR / "events.json"

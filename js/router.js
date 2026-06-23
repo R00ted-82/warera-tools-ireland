@@ -34,6 +34,7 @@
   const VALID = new Set([
     'home', 'community', 'gov', 'mu', 'buddy-finder',
     'advisor', 'clockin', 'profit', 'wealth', 'buddy', 'battle-orders',  'beer',
+    'dashboard',
   ]);
   const LANDING = new Set(['home', 'community', 'gov', 'beer']);
   const DEFAULT_VIEW = 'home';
@@ -55,6 +56,7 @@
     buddy: BuddySystemGate,
     'battle-orders': BattleOrdersGate,
     beer: BeerGate,
+    dashboard: DashboardTool,
   };
 
   function parseRoute() {

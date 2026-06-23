@@ -572,6 +572,60 @@ const BuddyFinderTool = (() => {
     }
   }
 
+  /* ── Dynamic button label ───────────────────────────────── */
+  // The button toggles: it adds you if you're not on the waitlist,
+  // removes you if you are. Re-label to match the action so the user
+  // doesn't have to read the help text.
+  const WL_BTN_LABEL_DEFAULT = 'Submit';
+  const WL_BTN_LABEL_REMOVE  = 'Leave waitlist';
+  const WL_BTN_LABEL_ADD     = 'Join waitlist';
+
+  // 30s cache so debounced keystrokes don't hammer the GitHub API.
+  let waitlistCache = { entries: null, ts: 0 };
+  async function getWaitlistCached() {
+    const now = Date.now();
+    if (waitlistCache.entries && (now - waitlistCache.ts) < 30000) {
+      return waitlistCache.entries;
+    }
+    const wl = await fetchWaitlist();
+    waitlistCache = { entries: wl.entries || [], ts: now };
+    return waitlistCache.entries;
+  }
+  // Invalidate the cache after a successful add/remove, so the next
+  // keystroke reflects reality instead of the pre-action snapshot.
+  function invalidateWaitlistCache() {
+    waitlistCache = { entries: null, ts: 0 };
+  }
+
+  async function updateWaitlistButtonLabel() {
+    const raw = $wlInput.value.trim();
+    if (!raw) {
+      $wlBtn.textContent = WL_BTN_LABEL_DEFAULT;
+      return;
+    }
+    try {
+      const user = await resolveUsername(raw);
+      if (!user) {
+        $wlBtn.textContent = WL_BTN_LABEL_DEFAULT;
+        return;
+      }
+      const entries = await getWaitlistCached();
+      const onList = entries.some(e => e.userId === user._id);
+      $wlBtn.textContent = onList ? WL_BTN_LABEL_REMOVE : WL_BTN_LABEL_ADD;
+    } catch {
+      // Silently fall back to the default — the submit handler still
+      // works correctly without the label being right.
+      $wlBtn.textContent = WL_BTN_LABEL_DEFAULT;
+    }
+  }
+
+  // Debounce so we don't fire a lookup on every keystroke.
+  let labelDebounceTimer = null;
+  function scheduleLabelUpdate() {
+    clearTimeout(labelDebounceTimer);
+    labelDebounceTimer = setTimeout(updateWaitlistButtonLabel, 400);
+  }
+
   /* ── Waitlist UI ────────────────────────────────────────── */
 
   /**
@@ -728,14 +782,18 @@ const BuddyFinderTool = (() => {
 
     $wlInput.value = '';
     $wlBtn.disabled = false;
+    $wlBtn.textContent = WL_BTN_LABEL_DEFAULT;  // reset label since input is now blank
+    invalidateWaitlistCache();                  // next keystroke sees the new reality
     setTimeout(updateWaitlistStats, 60000);
   }
+
 
   /* ── Wire-up ────────────────────────────────────────────── */
   $mBtn.addEventListener('click', handleMatchSubmit);
   $mInput.addEventListener('keydown', e => { if (e.key === 'Enter') handleMatchSubmit(); });
   $wlBtn.addEventListener('click', handleWaitlistSubmit);
   $wlInput.addEventListener('keydown', e => { if (e.key === 'Enter') handleWaitlistSubmit(); });
+  $wlInput.addEventListener('input', scheduleLabelUpdate);
 
   return {
     /**
@@ -755,6 +813,9 @@ const BuddyFinderTool = (() => {
       } else if (!$mInput.value) {
         $mInput.focus();
       }
+      // If the waitlist input has a prefilled value (from URL or auto-fill),
+      // get the button label right immediately rather than waiting for typing.
+      if ($wlInput.value) updateWaitlistButtonLabel();
     }
   };
 })();

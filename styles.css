@@ -2177,7 +2177,7 @@ table.dp-table tr.dp-comp-total td { border-top: 2px solid var(--border); font-w
 .dash-seg { display: inline-flex; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 2px; }
 .dash-seg-btn { background: none; border: none; color: var(--muted); font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 6px; cursor: pointer; }
 .dash-seg-btn:hover { color: var(--text); }
-.dash-seg-btn.active { background: var(--accent); color: var(--accent);; }
+.dash-seg-btn.active { background: var(--accent-dim); color: var(--accent);; }
 .dash-seg.wrap { flex-wrap: wrap; }
 
 /* Dashboard — wealth breakdown small-multiples. */

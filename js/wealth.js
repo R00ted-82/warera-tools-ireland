@@ -363,7 +363,7 @@ const WealthMonitorTool = (() => {
     for (let i = 0; i < n; i += xstep) {
       svg += `<text class="wm-axis-text" x="${x(i).toFixed(1)}" y="${H - 10}" text-anchor="middle">${escapeHtml(shortLabel(labels[i]))}</text>`;
     }
-    svg += linePath(s, labels, x, y, n);
+    svg += linePath(s, labels, x, y, n, M.top + PH);
     svg += `<line id="wm-hover-line" class="wm-hover-line" x1="0" y1="${M.top}" x2="0" y2="${M.top + PH}" style="display:none"/>`;
     $chartBox.innerHTML =
       `<svg class="wm-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${svg}</svg>` +
@@ -371,18 +371,27 @@ const WealthMonitorTool = (() => {
     wireHover(labels, series, x, n);
   }
 
-  // The <path> + dots for one series, gap-aware (missing buckets break it).
-  function linePath(s, labels, x, y, n, dotR = 2.6) {
-    let d = '', pen = false, dots = '';
+  // One series as a continuous line with a soft gradient area fill beneath —
+  // matching the dashboard charts. Present points are connected straight
+  // across any missing buckets (no broken segments, no per-point dots).
+  // `baseY` is the plot's bottom edge, used to close the fill to the axis.
+  function linePath(s, labels, x, y, n, baseY) {
+    let line = '', firstX = null, lastX = null;
     for (let i = 0; i < n; i++) {
-      if (s.values.has(labels[i])) {
-        const px = x(i).toFixed(1), py = y(s.values.get(labels[i])).toFixed(1);
-        d += `${pen ? 'L' : 'M'}${px} ${py}`;
-        pen = true;
-        dots += `<circle class="wm-series-dot" cx="${px}" cy="${py}" r="${dotR}" fill="${s.color}"/>`;
-      } else pen = false;
+      if (!s.values.has(labels[i])) continue;
+      const px = x(i), py = y(s.values.get(labels[i]));
+      line += `${firstX === null ? 'M' : 'L'}${px.toFixed(1)} ${py.toFixed(1)}`;
+      if (firstX === null) firstX = px;
+      lastX = px;
     }
-    return `<path class="wm-series-line" d="${d}" stroke="${s.color}"/>${dots}`;
+    if (firstX === null) return '';
+    const gid = `wmg-${s.key}`;
+    const area = `${line} L${lastX.toFixed(1)} ${baseY.toFixed(1)} L${firstX.toFixed(1)} ${baseY.toFixed(1)} Z`;
+    return `<defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">`
+      + `<stop offset="0" stop-color="${s.color}" stop-opacity="0.28"/>`
+      + `<stop offset="1" stop-color="${s.color}" stop-opacity="0"/></linearGradient></defs>`
+      + `<path d="${area}" fill="url(#${gid})" stroke="none"/>`
+      + `<path class="wm-series-line" d="${line}" stroke="${s.color}"/>`;
   }
 
   function renderLegend(series) {
@@ -466,7 +475,7 @@ const WealthMonitorTool = (() => {
       svg += `<text class="wm-axis-text" x="${x(0).toFixed(1)}" y="${H - 7}" text-anchor="start">${escapeHtml(shortLabel(labels[0]))}</text>`;
       svg += `<text class="wm-axis-text" x="${x(n - 1).toFixed(1)}" y="${H - 7}" text-anchor="end">${escapeHtml(shortLabel(labels[n - 1]))}</text>`;
     }
-    svg += linePath(s, labels, x, y, n, expanded ? 2.6 : 2);
+    svg += linePath(s, labels, x, y, n, m.top + ph);
     svg += `<line id="wm-mhl-${idx}" class="wm-hover-line" x1="0" y1="${m.top}" x2="0" y2="${m.top + ph}" style="display:none"/>`;
     return `<svg class="wm-mini-chart" id="wm-msvg-${idx}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${svg}</svg>`;
   }

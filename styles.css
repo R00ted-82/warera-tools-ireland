@@ -2065,8 +2065,11 @@ table.dp-table tr.dp-comp-total td { border-top: 2px solid var(--border); font-w
  *  MY DASHBOARD (#dashboard) — single-column detailed cards
  *  Styled after the warera-toie personal dashboard.
  * ═══════════════════════════════════════════════════════════════════ */
-.dash { max-width: 620px; margin: 0 auto; }
-.dash-idbar { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 18px; }
+.dash { max-width: 620px; margin: 0 auto; padding: 10px 0 40px; }
+.dash .tool-header { margin-bottom: 22px; }
+.dash-idbar { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 14px; }
+/* Recent chips sit between the input and the cards — give them clear space below. */
+#dash-recent { margin: 0 0 20px; }
 .dash-idbar input[type="text"] { flex: 1 1 240px; min-width: 200px; }
 
 .dash-loading, .dash-skel { color: var(--muted); font-size: 13px; display: flex; align-items: center; gap: 8px; }
@@ -2079,9 +2082,9 @@ table.dp-table tr.dp-comp-total td { border-top: 2px solid var(--border); font-w
 @keyframes dash-spin { to { transform: rotate(360deg); } }
 
 /* Single column of stacked cards. */
-.dash-grid { display: flex; flex-direction: column; gap: 14px; }
+.dash-grid { display: flex; flex-direction: column; gap: 16px; }
 
-.dash-card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px 16px; }
+.dash-card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px 18px; }
 .dash-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
 .dash-card-icon { font-size: 16px; line-height: 1; }
 .dash-card-head h3 {
@@ -2177,7 +2180,7 @@ table.dp-table tr.dp-comp-total td { border-top: 2px solid var(--border); font-w
 .dash-seg { display: inline-flex; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 2px; }
 .dash-seg-btn { background: none; border: none; color: var(--muted); font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 6px; cursor: pointer; }
 .dash-seg-btn:hover { color: var(--text); }
-.dash-seg-btn.active { background: var(--accent-dim); color: var(--accent);; }
+.dash-seg-btn.active { background: #16a34a; color: #fff; }
 .dash-seg.wrap { flex-wrap: wrap; }
 
 /* Dashboard — wealth breakdown small-multiples. */

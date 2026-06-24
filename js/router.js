@@ -36,7 +36,7 @@
     'advisor', 'clockin', 'profit', 'wealth', 'buddy', 'battle-orders',  'beer',
     'dashboard',
   ]);
-  const LANDING = new Set(['home', 'community', 'gov', 'beer']);
+  const LANDING = new Set(['dashboard', 'home', 'community', 'gov', 'beer']);
   const DEFAULT_VIEW = 'dashboard';
   const views = document.querySelectorAll('.view');
   const $backLink = document.querySelector('.back-link');

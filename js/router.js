@@ -37,7 +37,7 @@
     'dashboard',
   ]);
   const LANDING = new Set(['home', 'community', 'gov', 'beer']);
-  const DEFAULT_VIEW = 'home';
+  const DEFAULT_VIEW = 'dashboard';
   const views = document.querySelectorAll('.view');
   const $backLink = document.querySelector('.back-link');
   const $tabs = document.getElementById('tabs');
@@ -83,7 +83,7 @@
     const isLanding = LANDING.has(name);
     $backLink.hidden = isLanding;
     $backLink.setAttribute('href',
-      (name === 'buddy' || name === 'battle-orders') ? '#gov' : '#home');
+      (name === 'buddy' || name === 'battle-orders') ? '#gov' : '#dashboard');
     if ($tabs) {
       $tabs.hidden = !isLanding;
       $tabs.querySelectorAll('.tab').forEach(t =>

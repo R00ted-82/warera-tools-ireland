@@ -856,6 +856,27 @@
     </details>
   </section>
 
+  <!-- ─── My Dashboard view (standalone; not linked from home) ─────────
+       A single-glance overview of the main player tools as compact cards.
+       Reached only via #dashboard or #dashboard?u=<name>. Powered by
+       DashboardTool (js/dashboard.js). -->
+  <section class="view" data-view="dashboard">
+    <div class="dash">
+      <div class="tool-header">
+        <div class="title-block">
+          <h2><span>📊</span> My Dashboard</h2>
+          <p>Your War Era at a glance — migration, workers, profit, wealth, buddy &amp; military unit. Each card links to the full tool.</p>
+        </div>
+      </div>
+      <div class="dash-idbar">
+        <input id="dash-username" type="text" placeholder="Your War Era username" autocomplete="off" spellcheck="false" />
+        <button id="dash-load" class="btn-primary">Load</button>
+      </div>
+      <div id="dash-status" class="status hidden"></div>
+      <div id="dash-grid" class="dash-grid"></div>
+    </div>
+  </section>
+
   <!-- ─── Buddy System view (encrypted; MoECON password required) ───── -->
   <section class="view" data-view="buddy">
     <div class="tool-header">
@@ -948,6 +969,7 @@
 <script src="js/clockin.js?v=20260617h"></script>
 <script src="js/wealth.js?v=20260617h"></script>
 <script src="js/daily-profit.js?v=20260617h"></script>
+<script src="js/dashboard.js?v=20260623a"></script>
 <script src="js/buddy.js?v=20260617h"></script>
 <script src="js/battle-orders.js?v=20260617h"></script>
 <script src="js/beer.js?v=20260617h"></script>

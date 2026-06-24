@@ -2060,3 +2060,150 @@ table.dp-table tr.dp-comp-total td { border-top: 2px solid var(--border); font-w
 
 /* Daily Profit — buddy chip in the employee panel */
 .dp-emp-buddy { font-size: 10.5px; color: var(--accent); border: 1px solid rgba(74,222,128,.4); border-radius: 999px; padding: 0 6px; margin-left: 6px; white-space: nowrap; }
+
+/* ═══════════════════════════════════════════════════════════════════
+ *  MY DASHBOARD (#dashboard) — single-column detailed cards
+ *  Styled after the warera-toie personal dashboard.
+ * ═══════════════════════════════════════════════════════════════════ */
+.dash { max-width: 620px; margin: 0 auto; }
+.dash-idbar { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 18px; }
+.dash-idbar input[type="text"] { flex: 1 1 240px; min-width: 200px; }
+
+.dash-loading, .dash-skel { color: var(--muted); font-size: 13px; display: flex; align-items: center; gap: 8px; }
+.dash-loading { padding: 40px 0; justify-content: center; }
+.dash-spinner {
+  width: 13px; height: 13px; border-radius: 50%;
+  border: 2px solid var(--border); border-top-color: var(--accent);
+  display: inline-block; animation: dash-spin .7s linear infinite;
+}
+@keyframes dash-spin { to { transform: rotate(360deg); } }
+
+/* Single column of stacked cards. */
+.dash-grid { display: flex; flex-direction: column; gap: 14px; }
+
+.dash-card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px 16px; }
+.dash-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.dash-card-icon { font-size: 16px; line-height: 1; }
+.dash-card-head h3 {
+  margin: 0; flex: 0 0 auto;
+  font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted);
+}
+.dash-card-note { flex: 1; font-size: 11.5px; color: var(--muted); }
+.dash-open {
+  font-size: 12px; color: var(--link); text-decoration: none; white-space: nowrap;
+  padding: 3px 9px; border-radius: 999px; border: 1px solid transparent;
+}
+.dash-open:hover { border-color: var(--border); background: var(--panel-2); }
+
+/* Lead figure + supporting line. */
+/* Lead figure: present but not shouting — harmonised across every card. */
+.dash-lead { font-size: 20px; font-weight: 600; line-height: 1.15; letter-spacing: -.2px; font-variant-numeric: tabular-nums; color: var(--text); }
+.dash-lead small { font-size: 12px; font-weight: 500; color: var(--muted); margin-left: 3px; }
+.dash-sub { color: var(--muted); font-size: 12.5px; margin-top: 6px; line-height: 1.45; }
+.dash-sub.small { font-size: 11.5px; margin-top: 3px; }
+.dash-sub a, .dash-row-title a { color: var(--link); text-decoration: none; }
+.dash-sub a:hover, .dash-row-title a:hover { text-decoration: underline; }
+.dash-muted { color: var(--muted); }
+.dash-pos { color: var(--accent); }
+.dash-neg { color: var(--danger); }
+
+.dash-statline { font-size: 13px; margin-bottom: 2px; }
+.dash-statline strong { color: var(--text); }
+
+/* Pills (status / membership). */
+.dash-pill { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+.dash-pill.ok   { background: rgba(74,222,128,.15);  color: var(--accent); }
+.dash-pill.warn { background: rgba(251,191,36,.15);  color: var(--warn); }
+.dash-pill.loss { background: rgba(248,113,113,.14); color: var(--danger); }
+
+/* Stat chips. */
+.dash-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.dash-chip {
+  font-size: 11px; color: var(--text); background: var(--panel-2);
+  border: 1px solid var(--border); border-radius: 7px; padding: 2px 7px; white-space: nowrap;
+}
+.dash-chip i { color: var(--muted); font-style: normal; margin-right: 5px; }
+
+/* Per-row lists (workers, companies). */
+.dash-rows { margin-top: 10px; }
+.dash-row { padding: 10px 0; border-top: 1px solid var(--border); }
+.dash-rows .dash-row:first-child, .dash-more .dash-row:first-child { border-top: none; }
+.dash-row-main { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+.dash-row-title { font-size: 13.5px; display: flex; align-items: center; gap: 6px; min-width: 0; }
+.dash-row-title strong { font-weight: 600; }
+
+/* Item icon box (reused for company tags & migration rows). */
+.dash-ic { display: inline-flex; width: 20px; height: 20px; border-radius: 5px; overflow: hidden; align-items: center; justify-content: center; background: var(--panel-2); flex: 0 0 auto; font-size: 12px; }
+.dash-ic img { width: 100%; height: 100%; object-fit: contain; }
+.dash-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; color: var(--muted); background: var(--panel-2); border: 1px solid var(--border); border-radius: 7px; padding: 1px 7px 1px 4px; }
+.dash-tag .dash-ic { width: 16px; height: 16px; }
+
+/* Migration verdict boxes. */
+.dash-verdict { font-size: 12px; font-weight: 600; white-space: nowrap; text-align: right; }
+.dash-verdict.ok   { color: var(--accent); }
+.dash-verdict.move { color: var(--warn); }
+.dash-verdict.move b { margin-left: 6px; color: var(--text); }
+
+/* Daily-profit income rows. */
+.dash-inc-list { margin-top: 12px; }
+.dash-inc { display: grid; grid-template-columns: 1fr auto; gap: 0 12px; align-items: baseline; padding: 7px 0; border-top: 1px solid var(--border); }
+.dash-inc:first-child { border-top: none; }
+.dash-inc-l { font-size: 13px; }
+.dash-inc-v { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.dash-inc-s { grid-column: 1 / -1; font-size: 11px; color: var(--muted); }
+
+/* CTA buttons (join buddy / join MU). */
+.dash-cta { display: inline-block; margin-top: 12px; font-size: 12.5px; font-weight: 600; color: var(--accent); text-decoration: none; padding: 7px 13px; border-radius: 999px; border: 1px solid rgba(74,222,128,.4); }
+.dash-cta:hover { background: var(--accent-dim); }
+
+/* "Show more" disclosure. */
+.dash-more { margin-top: 6px; }
+.dash-more > summary { cursor: pointer; font-size: 12px; color: var(--link); padding: 6px 0; list-style: none; }
+.dash-more > summary::-webkit-details-marker { display: none; }
+.dash-more > summary::before { content: '▸ '; }
+.dash-more[open] > summary::before { content: '▾ '; }
+
+/* Wealth area chart. */
+.dash-chart-wrap { position: relative; margin-top: 12px; }
+.dash-chart { width: 100%; height: 130px; display: block; }
+.dash-chart-hl { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.dash-chart-tip { position: absolute; top: -2px; transform: translateX(-50%); font-size: 11px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 7px; pointer-events: none; opacity: 0; transition: opacity .12s; white-space: nowrap; }
+.dash-chart-axis { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+
+.dash-err { color: var(--danger); font-size: 12.5px; line-height: 1.45; }
+
+/* Dashboard — wealth metric/bucket tabs (segmented controls). */
+.dash-seg-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; }
+.dash-seg { display: inline-flex; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 2px; }
+.dash-seg-btn { background: none; border: none; color: var(--muted); font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 6px; cursor: pointer; }
+.dash-seg-btn:hover { color: var(--text); }
+.dash-seg-btn.active { background: var(--accent); color: #08130c; }
+.dash-seg.wrap { flex-wrap: wrap; }
+
+/* Dashboard — wealth breakdown small-multiples. */
+.dash-mini-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-top: 12px; }
+.dash-mini { background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px 4px; }
+.dash-mini-head { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); }
+.dash-mini-val { margin-left: auto; color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
+.dash-mini .dash-chart { height: 64px; }
+.dash-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: 0 0 auto; }
+.dash-chart-note { color: var(--muted); font-size: 12px; padding: 16px 4px; }
+
+/* Dashboard — buddy "why join" pitch. */
+.dash-why { margin-top: 12px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 11px 13px; }
+.dash-why > strong { font-size: 12.5px; color: var(--text); }
+.dash-why ul { margin: 8px 0 0; padding-left: 2px; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.dash-why li { font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+.dash-why li strong { color: var(--text); }
+.dash-why-foot { margin: 9px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.45; }
+
+/* Dashboard — wealth trend headline row (value · delta · metric name). */
+.dash-wlead-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 9px; margin: 12px 0 2px; }
+.dash-wdelta { font-size: 13px; font-weight: 600; }
+.dash-wmetric { font-size: 13px; font-weight: 600; }
+.dash-chart-hint { color: var(--muted); }
+
+/* Dashboard — migration "move suggested" warning banner. */
+.dash-warn { display: flex; align-items: flex-start; gap: 8px; background: rgba(251,191,36,.10); border: 1px solid rgba(251,191,36,.30); border-radius: 9px; padding: 9px 11px; font-size: 12.5px; color: var(--text); line-height: 1.45; margin-bottom: 8px; }
+.dash-warn .dash-pill { flex: 0 0 auto; }
+.dash-warn strong { color: var(--warn); }

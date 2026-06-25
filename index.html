@@ -330,6 +330,23 @@
     </details>
   </section>
 
+  <!-- ROSTER (#roster) — unlisted Irish citizens list -->
+  <section class="view" data-view="roster">
+    <div class="tool-header">
+      <div class="title-block">
+        <h2>🇮🇪 Irish Roster</h2>
+        <p>Active Irish citizens with build, pill status, health, hunger, MU and last-online time. Useful for war planning. Unlisted by design — share the link only with people who should see it.</p>
+      </div>
+      <div class="controls">
+        <input type="text" id="roster-username" placeholder="Your in-game username" autocomplete="off" spellcheck="false" />
+        <button id="roster-load" class="btn-primary">Load</button>
+      </div>
+    </div>
+
+    <div id="roster-status" class="status hidden"></div>
+    <div id="roster-content"></div>
+</section>  
+
   <!-- ─── Buddy Finder view ─────────────────────────────────────── -->
   <section class="view" data-view="buddy-finder">
     <div class="tool-header">
@@ -974,6 +991,7 @@
 <script src="js/battle-orders.js?v=20260617h"></script>
 <script src="js/beer.js?v=20260617h"></script>
 <script src="js/toolkit.js?v=20260617h"></script>
+<script src="js/roster.js"></script>
 <script src="js/router.js?v=20260617h"></script>
 </body>
 </html>

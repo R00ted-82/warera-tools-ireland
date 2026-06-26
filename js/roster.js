@@ -311,6 +311,21 @@ const RosterTool = (() => {
   }
 
   /* ═══════════════════════════════════════════════════════════════════
+   *  ICONS
+   *  Small inline SVGs (no icon font / CDN dependency — none is loaded
+   *  on the site, so these are hand-sized to match: 12-13px, 1.6 stroke,
+   *  currentColor so they pick up the surrounding chip's text colour
+   *  (which is already a CSS variable, so dark/light both just work).
+   * ═══════════════════════════════════════════════════════════════════ */
+  const ICONS = {
+    arrowUp:  '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="6 11 12 5 18 11"/></svg>',
+    arrowDown:'<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="18 13 12 19 6 13"/></svg>',
+    sword:    '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="13 5 19 5 19 11"/><line x1="19" y1="19" x2="5" y2="5"/><polyline points="11 5 5 5 5 11"/></svg>',
+    coin:     '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M9.5 9.5c0-1.2 1-2 2.5-2s2.5.8 2.5 2-1 1.6-2.5 2.5-2.5 1.3-2.5 2.5 1 2 2.5 2 2.5-.8 2.5-2"/></svg>',
+    overlap:  '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="12" r="6.5"/><circle cx="14.5" cy="12" r="6.5"/></svg>',
+  };
+
+  /* ═══════════════════════════════════════════════════════════════════
    *  RENDERING
    * ═══════════════════════════════════════════════════════════════════ */
   function renderBar(stat) {
@@ -324,24 +339,28 @@ const RosterTool = (() => {
 
   function renderBuild(build) {
     const labels = { combat: 'Combat', economy: 'Economy', mixed: 'Mixed', unknown: '–' };
+    const icon   = { combat: ICONS.sword, economy: ICONS.coin, mixed: ICONS.overlap, unknown: '' };
     const tooltip = build.ratio != null
       ? `${build.ratio.toFixed(0)}% combat skills`
       : 'Too few skill points to classify';
-    return `<span class="rs-build ${build.kind}" title="${tooltip}">${labels[build.kind]}</span>`;
+    return `<span class="rs-build ${build.kind}" title="${tooltip}">${icon[build.kind]}${labels[build.kind]}</span>`;
   }
 
   // Pill cell shows any ACTIVE buff and/or debuff with code + time left.
   // Buff and debuff are styled differently (good vs bad) — and that split
   // is trustworthy because it comes from separate fields, not a guess.
+  // A player can never hold both at once (confirmed), but the buff/debuff
+  // branches stay independent rather than else-if, since that's a true
+  // fact about the GAME, not something to hardcode as a code invariant.
   function renderPill(effects, now) {
     const out = [];
     if (effectActive(effects.buff, now)) {
       const codes = effects.buff.codes.map(escapeHtml).join(', ');
-      out.push(`<span class="rs-eff rs-buff" title="Buff: ${codes}">▲ ${codes} · ${fmtRemaining(effects.buff.until - now)}</span>`);
+      out.push(`<span class="rs-eff rs-buff" title="Buff: ${codes}">${ICONS.arrowUp}${codes} · ${fmtRemaining(effects.buff.until - now)}</span>`);
     }
     if (effectActive(effects.debuff, now)) {
       const codes = effects.debuff.codes.map(escapeHtml).join(', ');
-      out.push(`<span class="rs-eff rs-debuff" title="Debuff: ${codes}">▼ ${codes} · ${fmtRemaining(effects.debuff.until - now)}</span>`);
+      out.push(`<span class="rs-eff rs-debuff" title="Debuff: ${codes}">${ICONS.arrowDown}${codes} · ${fmtRemaining(effects.debuff.until - now)}</span>`);
     }
     if (!out.length) return `<span class="rs-eff rs-none">–</span>`;
     return out.join(' ');

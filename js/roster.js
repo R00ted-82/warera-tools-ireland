@@ -1,27 +1,41 @@
 /* ═══════════════════════════════════════════════════════════════════
  *  ROSTER (#roster)
  *
- *  Unlisted Irish citizens list with build, pill status, health,
- *  hunger, MU and last-online time. Useful for war planning.
+ *  Country citizens list with build, pill (buff/debuff) status, health,
+ *  hunger, MU and last-online time. Sortable columns + filters.
+ *  Useful for war planning. Unlisted by design.
  *
- *  Phase 1: read-only list, no filters yet. Citizenship-gated.
+ *  Loads automatically on open. Country is parametrised (default Ireland)
+ *  so adding another country later is a CONFIG change, not a rewrite —
+ *  see the COUNTRIES map below.
  *
- *  Data sources:
- *    - user.getUsersByCountry (paginated) → list of Irish citizens
- *    - user.getUserLite (per citizen)     → skills, status, dates
- *    - mu.getById (per unique MU)         → MU names
+ *  Data sources (all via the gateway your trpc() helper points at):
+ *    - user.getUsersByCountry (paginated) → list of citizens (_id, username, mu)
+ *    - user.getUserById       (per citizen) → FULL profile: skills, dates, buffs
+ *    - mu.getById             (per unique MU) → MU names
  *
- *  Build classification mirrors the war detector bot:
- *    combat skills:  attack, precision, dodge, armor, lootChance,
- *                    criticalChance, criticalDamages, health
- *    economy skills: companies, entrepreneurship, production, management
- *    ratio = combat / (combat + economy)
- *      >= 70%  → combat
- *      <= 30%  → economy
- *      else    → mixed
+ *  Why getUserById and not getUserLite:
+ *    getUserById is a superset of Lite and is the ONLY place the pill
+ *    (buff/debuff) data lives. Confirmed from the official docs
+ *    (api2.warera.io/docs → user.getUserById, input { userId }).
+ *
+ *  Field shapes below are all confirmed against REAL responses, not
+ *  guessed. Citations are in the comments next to each reader.
  * ═══════════════════════════════════════════════════════════════════ */
 const RosterTool = (() => {
   const PAGE_LIMIT = 100;
+
+  /* ── Country config ───────────────────────────────────────────────
+   * THE ONE PLACE to change for the multi-country rollout. To add a
+   * country: add an entry here with its countryId. The roster reads the
+   * active country from the route (#roster?country=<key>), default below.
+   * IRELAND_COUNTRY_ID is the existing global the old code used. */
+  const COUNTRIES = {
+    ireland: { id: IRELAND_COUNTRY_ID, label: 'Ireland' },
+    // example for later:
+    // britain: { id: 'PUT_BRITAIN_COUNTRY_ID_HERE', label: 'Britain' },
+  };
+  const DEFAULT_COUNTRY = 'ireland';
 
   // Skill buckets — same definitions as the war detector bot, so the
   // build labels on the roster agree with what the bot uses internally.
@@ -29,47 +43,62 @@ const RosterTool = (() => {
                           'criticalChance','criticalDamages','health'];
   const ECO_SKILLS    = ['companies','entrepreneurship','production','management'];
 
-  // Build classification thresholds (combat % of combat+economy skill points).
-  const COMBAT_THRESHOLD = 70;
+  const COMBAT_THRESHOLD = 70;   // combat % of (combat+economy) skill levels
   const ECO_THRESHOLD    = 30;
+  // Sort ordering for the Build column (higher = more combat-leaning).
+  const BUILD_ORDER = { combat: 3, mixed: 2, economy: 1, unknown: 0 };
 
-  // Last-online colour bands. Numbers are "hours since last connection".
-  const ONLINE_FRESH = 24;     // < 24h ago → green
-  const ONLINE_STALE = 72;     // < 72h ago → amber, else red
+  const ONLINE_FRESH = 24;   // < 24h ago → fresh (green)
+  const ONLINE_STALE = 72;   // < 72h ago → stale (amber), else dead (red)
 
-  // Health/hunger colour bands. Bars below these % go amber / red.
-  const BAR_LOW  = 50;
+  const BAR_LOW  = 50;       // health/hunger % bands for colour
   const BAR_CRIT = 25;
 
-  // DOM
-  const $username = document.getElementById('roster-username');
-  const $load     = document.getElementById('roster-load');
-  const $status   = document.getElementById('roster-status');
-  const $content  = document.getElementById('roster-content');
+  /* ── DOM ──────────────────────────────────────────────────────────
+   * Only #roster-content is required now. #roster-status is used if
+   * present. The old #roster-username / #roster-load are no longer used
+   * (the tool loads on open) — you can delete them from the HTML. */
+  const $status  = document.getElementById('roster-status');
+  const $content = document.getElementById('roster-content');
 
-  let running = false;
+  /* ── State ────────────────────────────────────────────────────────── */
+  let countryKey = DEFAULT_COUNTRY;
+  let allRows    = [];        // built once per load, then filtered/sorted in place
+  let muNames    = {};
+  let sortKey    = 'level';
+  let sortDir    = 'desc';
+  let filters    = freshFilters();
+  let running    = false;
+
+  function freshFilters() {
+    return { mu: 'all', build: 'all', pill: 'all',
+             healthBelow: 'all', hungerBelow: 'all', online: 'all' };
+  }
+
   const rs_trpc = (ep, input) => trpc(ep, input, { retry: true });
 
-  /* ── Helpers ─────────────────────────────────────────────────────── */
+  /* ── Status helper ────────────────────────────────────────────────── */
   function setStatus(text, isError = false) {
+    if (!$status) return;
     if (!text) { $status.classList.add('hidden'); return; }
     $status.textContent = text;
     $status.classList.toggle('error', isError);
     $status.classList.remove('hidden');
   }
 
-  // Skill levels are skills.<name>.level (confirmed against the real
-  // getUserLite response). Read ONLY .level. The old version tried .total
-  // first, which on entries like skills.health picked up the health *bar*
-  // total (e.g. 100) instead of the skill level (0), inflating the combat
-  // score so everyone classified as "combat".
+  /* ═══════════════════════════════════════════════════════════════════
+   *  PURE LOGIC  (no DOM, no globals — unit-tested against real captures)
+   * ═══════════════════════════════════════════════════════════════════ */
+
+  // Skill level = skills.<name>.level (confirmed: getUserLite/getUserById
+  // example responses). Read ONLY .level — the old code read .total first,
+  // which on skills.health is the health *bar* total (e.g. 100), wrongly
+  // inflating the combat score so everyone classified as combat.
   function skillLevel(user, skill) {
     const lvl = user?.skills?.[skill]?.level;
     return (typeof lvl === 'number' && isFinite(lvl)) ? lvl : 0;
   }
 
-  // Sum combat / economy skill levels, return null if both are zero
-  // (otherwise we'd classify brand-new players with no skills as "economy").
   function classifyBuild(user) {
     const combat = COMBAT_SKILLS.reduce((s, k) => s + skillLevel(user, k), 0);
     const eco    = ECO_SKILLS.reduce((s, k) => s + skillLevel(user, k), 0);
@@ -80,29 +109,9 @@ const RosterTool = (() => {
     return { kind: 'mixed', ratio };
   }
 
-  // Pill (drug) buff status.
-  // NOTE: confirmed NOT present on the getUserLite response — there is no
-  // pill / activePill / pillCycle block anywhere in it. So this currently
-  // always returns inactive and the Pill column shows "–" for everyone.
-  // The column is kept as a placeholder; populating it needs a different
-  // endpoint (SpyWarEra has the data, so it's reachable — TODO: find it).
-  // Field names below are left as defensive guesses ONLY so that, if a
-  // pill block is ever merged in from another source, this lights up — they
-  // are NOT verified against any real response.
-  function pillStatus(user) {
-    const p = user?.pill || user?.activePill || user?.pillCycle;
-    if (!p) return { active: false, until: null };
-    const untilStr = p.endsAt || p.activeUntil || p.expiresAt || p.until;
-    if (!untilStr) return { active: false, until: null };
-    const until = new Date(untilStr).getTime();
-    if (!isFinite(until)) return { active: false, until: null };
-    return { active: until > Date.now(), until };
-  }
-
-  // Health / hunger live UNDER `skills` as { currentBarValue, total }
-  // (confirmed against the real getUserLite response — not top-level
-  // { current, max }, which was a guess and is why these showed "–").
-  // Returns { pct, label } or null if the field isn't there.
+  // Health / hunger live UNDER skills as { currentBarValue, total }
+  // (confirmed: getUserLite/getUserById responses). Returns { pct, label }
+  // or null if absent.
   function statBar(user, key) {
     const s = user?.skills?.[key];
     if (!s || typeof s !== 'object') return null;
@@ -112,12 +121,34 @@ const RosterTool = (() => {
     return { pct, label: `${Math.round(cur)} / ${Math.round(max)}` };
   }
 
-  function fmtAgoHours(hoursAgo) {
-    if (hoursAgo == null || !isFinite(hoursAgo)) return 'never';
-    if (hoursAgo < 1) return 'just now';
-    if (hoursAgo < 24) return `${Math.floor(hoursAgo)}h ago`;
-    const days = Math.floor(hoursAgo / 24);
-    return `${days}d ago`;
+  // Buffs and debuffs are SEPARATE named fields inside the `buffs` object:
+  //   buff   → buffs.buffCodes  (array) + buffs.buffEndAt   (ISO)
+  //            confirmed from KyleTheTank's getUserById response
+  //   debuff → buffs.debuffCodes(array) + buffs.debuffEndAt (ISO)
+  //            confirmed from RevanEire's  getUserById response
+  // NB: the same code (e.g. "cocain") can be a buff OR a debuff depending
+  // which field it's in — so good/bad comes from the FIELD, never the code.
+  // We return the raw timestamp; "is it active right now" is decided at
+  // render time against the current clock (keeps this function deterministic).
+  function parseEffects(user) {
+    const b = user?.buffs;
+    const grab = (codesKey, endKey) => {
+      if (!b) return null;
+      const codes = b[codesKey];
+      const endStr = b[endKey];
+      if (!Array.isArray(codes) || codes.length === 0 || !endStr) return null;
+      const until = new Date(endStr).getTime();
+      if (!isFinite(until)) return null;
+      return { codes, until };
+    };
+    return {
+      buff:   grab('buffCodes',   'buffEndAt'),
+      debuff: grab('debuffCodes', 'debuffEndAt'),
+    };
+  }
+
+  function effectActive(eff, now) {
+    return !!eff && eff.until > now;
   }
 
   function onlineKind(hoursAgo) {
@@ -127,7 +158,105 @@ const RosterTool = (() => {
     return 'dead';
   }
 
-  /* ── Concurrency helper (matches other tools) ─────────────────────── */
+  // Turn a raw (list + full profile merged) citizen into a display row.
+  // Computes everything once so filter/sort never recompute classify/parse.
+  function buildRow(c) {
+    const lastIso = c?.dates?.lastConnectionAt;          // confirmed: dates.lastConnectionAt
+    const lastMs  = lastIso ? new Date(lastIso).getTime() : null;
+    return {
+      raw:        c,
+      _id:        c._id,
+      username:   c.username || c._id,
+      mu:         c.mu || null,                          // from getUsersByCountry
+      level:      c?.leveling?.level ?? null,            // confirmed: leveling.level
+      build:      classifyBuild(c),
+      health:     statBar(c, 'health'),
+      hunger:     statBar(c, 'hunger'),
+      effects:    parseEffects(c),
+      lastConnMs: (lastMs != null && isFinite(lastMs)) ? lastMs : null,
+    };
+  }
+
+  // Sort key remaining-ms for the Pill column: prefer an active buff,
+  // then an active debuff, else -1 (push the un-pilled to the end).
+  // (Judgment call — flip buff/debuff priority here if you'd rather.)
+  function pillSortKey(effects, now) {
+    if (effectActive(effects.buff, now))   return effects.buff.until - now;
+    if (effectActive(effects.debuff, now)) return effects.debuff.until - now;
+    return -1;
+  }
+
+  const SORTERS = {
+    name:   (r) => (r.username || '').toLowerCase(),
+    level:  (r) => r.level ?? -1,
+    build:  (r) => BUILD_ORDER[r.build.kind] ?? -1,
+    health: (r) => r.health ? r.health.pct : -1,
+    hunger: (r) => r.hunger ? r.hunger.pct : -1,
+    pill:   (r, ctx) => pillSortKey(r.effects, ctx.now),
+    online: (r) => r.lastConnMs ?? -Infinity,
+    mu:     (r, ctx) => (ctx.muNames[r.mu] || '').toLowerCase(),
+  };
+
+  function compareRows(a, b, key, dir, ctx) {
+    const va = SORTERS[key](a, ctx), vb = SORTERS[key](b, ctx);
+    let c;
+    if (typeof va === 'string' || typeof vb === 'string') {
+      c = String(va).localeCompare(String(vb));
+    } else {
+      c = va < vb ? -1 : va > vb ? 1 : 0;
+    }
+    return dir === 'asc' ? c : -c;
+  }
+
+  // All filters AND together. now is needed for pill/online (time-based).
+  function matchesFilters(row, f, now) {
+    if (f.mu !== 'all' && row.mu !== f.mu) return false;
+
+    if (f.build !== 'all' && row.build.kind !== f.build) return false;
+
+    if (f.pill !== 'all') {
+      const hasBuff   = effectActive(row.effects.buff, now);
+      const hasDebuff = effectActive(row.effects.debuff, now);
+      if (f.pill === 'buffed'   && !hasBuff)               return false;
+      if (f.pill === 'debuffed' && !hasDebuff)             return false;
+      if (f.pill === 'clean'    && (hasBuff || hasDebuff)) return false;
+    }
+
+    if (f.healthBelow !== 'all') {
+      const thr = Number(f.healthBelow);
+      if (!row.health || row.health.pct >= thr) return false;
+    }
+    if (f.hungerBelow !== 'all') {
+      const thr = Number(f.hungerBelow);
+      if (!row.hunger || row.hunger.pct >= thr) return false;
+    }
+
+    if (f.online !== 'all') {
+      const hoursAgo = row.lastConnMs == null ? null : (now - row.lastConnMs) / 3600000;
+      if (onlineKind(hoursAgo) !== f.online) return false;
+    }
+    return true;
+  }
+
+  /* ── Formatting helpers ───────────────────────────────────────────── */
+  function fmtAgoHours(hoursAgo) {
+    if (hoursAgo == null || !isFinite(hoursAgo)) return 'never';
+    if (hoursAgo < 1) return 'just now';
+    if (hoursAgo < 24) return `${Math.floor(hoursAgo)}h ago`;
+    return `${Math.floor(hoursAgo / 24)}d ago`;
+  }
+
+  function fmtRemaining(ms) {
+    if (ms <= 0) return '0m';
+    const mins = Math.floor(ms / 60000);
+    if (mins < 60) return `${mins}m`;
+    const h = Math.floor(mins / 60), m = mins % 60;
+    return m ? `${h}h ${m}m` : `${h}h`;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+   *  CONCURRENCY + DATA FETCHERS
+   * ═══════════════════════════════════════════════════════════════════ */
   async function mapConcurrent(items, worker, concurrency = 20) {
     const out = new Array(items.length); let i = 0;
     async function pump() {
@@ -141,13 +270,11 @@ const RosterTool = (() => {
     return out;
   }
 
-  /* ── Data fetchers ────────────────────────────────────────────────── */
-  async function fetchAllIrishCitizens() {
+  async function fetchAllCitizens(countryId) {
     const items = [];
-    let cursor = null;
-    let safety = 0;
+    let cursor = null, safety = 0;
     while (safety++ < 200) {
-      const input = { countryId: IRELAND_COUNTRY_ID, limit: PAGE_LIMIT };
+      const input = { countryId, limit: PAGE_LIMIT };
       if (cursor) input.cursor = cursor;
       const page = await rs_trpc('user.getUsersByCountry', input);
       const arr = page?.items ?? page?.data ?? (Array.isArray(page) ? page : []);
@@ -159,11 +286,14 @@ const RosterTool = (() => {
     return items;
   }
 
-  async function fetchLiteProfiles(citizens) {
+  // Hydrate each citizen with the FULL profile (getUserById). The gateway
+  // batches these (400ms window) and caches them (~5 min), so repeated
+  // loads in a short window mostly don't hit the game API at all.
+  async function fetchFullProfiles(citizens) {
     return mapConcurrent(citizens, async (c) => {
       try {
-        const lite = await rs_trpc('user.getUserLite', { userId: c._id });
-        return lite ? { ...c, ...lite } : c;
+        const full = await rs_trpc('user.getUserById', { userId: c._id });
+        return full ? { ...c, ...full } : c;
       } catch { return c; }
     });
   }
@@ -180,7 +310,9 @@ const RosterTool = (() => {
     return names;
   }
 
-  /* ── Rendering ───────────────────────────────────────────────────── */
+  /* ═══════════════════════════════════════════════════════════════════
+   *  RENDERING
+   * ═══════════════════════════════════════════════════════════════════ */
   function renderBar(stat) {
     if (!stat) return '<span class="rs-bar-val">–</span>';
     let cls = '';
@@ -198,138 +330,250 @@ const RosterTool = (() => {
     return `<span class="rs-build ${build.kind}" title="${tooltip}">${labels[build.kind]}</span>`;
   }
 
-  function renderPill(pill) {
-    if (!pill.active) return `<span class="rs-pill inactive">–</span>`;
-    const hoursLeft = (pill.until - Date.now()) / 3600000;
-    const left = hoursLeft < 1
-      ? `${Math.round(hoursLeft * 60)}m`
-      : `${Math.floor(hoursLeft)}h`;
-    return `<span class="rs-pill active" title="Pill active for ~${left} more">Active</span>`;
-  }
-
-  function renderMu(citizen, muNames) {
-    if (!citizen.mu) return `<span class="rs-mu rs-none">none</span>`;
-    const name = muNames[citizen.mu] || 'unit';
-    return `<span class="rs-mu"><a href="${GAME_BASE}/mu/${escapeHtml(citizen.mu)}" target="_blank" rel="noopener">${escapeHtml(name)}</a></span>`;
-  }
-
-  function renderOnline(citizen) {
-    const iso = citizen?.dates?.lastConnectionAt;
-    if (!iso) return `<span class="rs-online dead">never</span>`;
-    const ts = new Date(iso).getTime();
-    if (!isFinite(ts)) return `<span class="rs-online dead">unknown</span>`;
-    const hoursAgo = (Date.now() - ts) / 3600000;
-    const kind = onlineKind(hoursAgo);
-    return `<span class="rs-online ${kind}">${escapeHtml(fmtAgoHours(hoursAgo))}</span>`;
-  }
-
-  function renderTable(citizens, muNames) {
-    let combatN = 0, economyN = 0, mixedN = 0, unknownN = 0;
-    let pillActiveN = 0;
-
-    const rows = citizens.map(c => {
-      const build = classifyBuild(c);
-      if (build.kind === 'combat')  combatN++;
-      else if (build.kind === 'economy') economyN++;
-      else if (build.kind === 'mixed') mixedN++;
-      else unknownN++;
-
-      const pill = pillStatus(c);
-      if (pill.active) pillActiveN++;
-
-      const health = statBar(c, 'health');
-      const hunger = statBar(c, 'hunger');
-
-      return `
-        <tr>
-          <td class="rs-name"><a href="${GAME_BASE}/user/${escapeHtml(c._id)}" target="_blank" rel="noopener">${escapeHtml(c.username || c._id)}</a></td>
-          <td>${renderBuild(build)}</td>
-          <td>${renderPill(pill)}</td>
-          <td>${renderBar(health)}</td>
-          <td>${renderBar(hunger)}</td>
-          <td>${renderMu(c, muNames)}</td>
-          <td>${renderOnline(c)}</td>
-        </tr>`;
-    }).join('');
-
-    const summary = `
-      <div class="rs-summary">
-        <span><strong>${citizens.length}</strong> citizens loaded</span>
-        <span><strong>${combatN}</strong> combat</span>
-        <span><strong>${economyN}</strong> economy</span>
-        <span><strong>${mixedN}</strong> mixed</span>
-        ${unknownN ? `<span><strong>${unknownN}</strong> too new to classify</span>` : ''}
-        <span><strong>${pillActiveN}</strong> on pills</span>
-      </div>`;
-
-    if (!citizens.length) {
-      return `${summary}<div class="rs-empty">No citizens returned. The data service may be down.</div>`;
+  // Pill cell shows any ACTIVE buff and/or debuff with code + time left.
+  // Buff and debuff are styled differently (good vs bad) — and that split
+  // is trustworthy because it comes from separate fields, not a guess.
+  function renderPill(effects, now) {
+    const out = [];
+    if (effectActive(effects.buff, now)) {
+      const codes = effects.buff.codes.map(escapeHtml).join(', ');
+      out.push(`<span class="rs-eff rs-buff" title="Buff: ${codes}">▲ ${codes} · ${fmtRemaining(effects.buff.until - now)}</span>`);
     }
+    if (effectActive(effects.debuff, now)) {
+      const codes = effects.debuff.codes.map(escapeHtml).join(', ');
+      out.push(`<span class="rs-eff rs-debuff" title="Debuff: ${codes}">▼ ${codes} · ${fmtRemaining(effects.debuff.until - now)}</span>`);
+    }
+    if (!out.length) return `<span class="rs-eff rs-none">–</span>`;
+    return out.join(' ');
+  }
 
-    return `${summary}
-      <div class="rs-table-wrap">
-        <table class="rs-table">
-          <thead>
-            <tr>
-              <th>Player</th>
-              <th>Build</th>
-              <th>Pill</th>
-              <th>Health</th>
-              <th>Hunger</th>
-              <th>MU</th>
-              <th>Last online</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
+  function renderMu(row) {
+    if (!row.mu) return `<span class="rs-mu rs-none">none</span>`;
+    const name = muNames[row.mu] || 'unit';
+    return `<span class="rs-mu"><a href="${GAME_BASE}/mu/${escapeHtml(row.mu)}" target="_blank" rel="noopener">${escapeHtml(name)}</a></span>`;
+  }
+
+  function renderOnline(row) {
+    if (row.lastConnMs == null) return `<span class="rs-online dead">never</span>`;
+    const hoursAgo = (Date.now() - row.lastConnMs) / 3600000;
+    return `<span class="rs-online ${onlineKind(hoursAgo)}">${escapeHtml(fmtAgoHours(hoursAgo))}</span>`;
+  }
+
+  // Column definitions drive both the header (with sort arrows) and which
+  // SORTERS key each click uses.
+  const COLUMNS = [
+    { key: 'name',   label: 'Player' },
+    { key: 'level',  label: 'Lvl' },
+    { key: 'build',  label: 'Build' },
+    { key: 'pill',   label: 'Pill' },
+    { key: 'health', label: 'Health' },
+    { key: 'hunger', label: 'Hunger' },
+    { key: 'mu',     label: 'MU' },
+    { key: 'online', label: 'Last online' },
+  ];
+
+  function renderHeader() {
+    return COLUMNS.map(col => {
+      const active = col.key === sortKey;
+      const arrow = active ? (sortDir === 'asc' ? ' ▲' : ' ▼') : '';
+      const ariaSort = active ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none';
+      return `<th class="rs-th${active ? ' active' : ''}" data-sort="${col.key}"
+                  role="button" tabindex="0" aria-sort="${ariaSort}">${escapeHtml(col.label)}${arrow}</th>`;
+    }).join('');
+  }
+
+  function renderSummary(shownRows, now) {
+    let combat = 0, economy = 0, mixed = 0, unknown = 0, buffed = 0, debuffed = 0;
+    for (const r of shownRows) {
+      if (r.build.kind === 'combat') combat++;
+      else if (r.build.kind === 'economy') economy++;
+      else if (r.build.kind === 'mixed') mixed++;
+      else unknown++;
+      if (effectActive(r.effects.buff, now)) buffed++;
+      if (effectActive(r.effects.debuff, now)) debuffed++;
+    }
+    const filtered = shownRows.length !== allRows.length;
+    return `
+      <div class="rs-summary">
+        <span><strong>${shownRows.length}</strong>${filtered ? ` of ${allRows.length}` : ''} shown</span>
+        <span><strong>${combat}</strong> combat</span>
+        <span><strong>${economy}</strong> economy</span>
+        <span><strong>${mixed}</strong> mixed</span>
+        ${unknown ? `<span><strong>${unknown}</strong> too new</span>` : ''}
+        <span><strong>${buffed}</strong> buffed</span>
+        <span><strong>${debuffed}</strong> debuffed</span>
       </div>`;
   }
 
-  /* ── Orchestration ───────────────────────────────────────────────── */
+  function renderRows(rows, now) {
+    if (!rows.length) {
+      return `<tr><td colspan="${COLUMNS.length}" class="rs-empty">No players match these filters.</td></tr>`;
+    }
+    return rows.map(r => `
+      <tr>
+        <td class="rs-name"><a href="${GAME_BASE}/user/${escapeHtml(r._id)}" target="_blank" rel="noopener">${escapeHtml(r.username)}</a></td>
+        <td class="rs-lvl">${r.level ?? '–'}</td>
+        <td>${renderBuild(r.build)}</td>
+        <td>${renderPill(r.effects, now)}</td>
+        <td>${renderBar(r.health)}</td>
+        <td>${renderBar(r.hunger)}</td>
+        <td>${renderMu(r)}</td>
+        <td>${renderOnline(r)}</td>
+      </tr>`).join('');
+  }
+
+  // Build the filter controls (rendered ONCE per load; values reflect state).
+  function renderControls() {
+    const muOptions = Object.keys(muNames)
+      .map(id => ({ id, name: muNames[id] }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(o => `<option value="${escapeHtml(o.id)}"${filters.mu === o.id ? ' selected' : ''}>${escapeHtml(o.name)}</option>`)
+      .join('');
+
+    const sel = (cur, val) => cur === val ? ' selected' : '';
+
+    return `
+      <div class="rs-controls">
+        <label class="rs-filter">MU
+          <select data-filter="mu">
+            <option value="all"${sel(filters.mu,'all')}>All</option>
+            ${muOptions}
+          </select>
+        </label>
+        <label class="rs-filter">Build
+          <select data-filter="build">
+            <option value="all"${sel(filters.build,'all')}>All</option>
+            <option value="combat"${sel(filters.build,'combat')}>Combat</option>
+            <option value="economy"${sel(filters.build,'economy')}>Economy</option>
+            <option value="mixed"${sel(filters.build,'mixed')}>Mixed</option>
+          </select>
+        </label>
+        <label class="rs-filter">Pill
+          <select data-filter="pill">
+            <option value="all"${sel(filters.pill,'all')}>All</option>
+            <option value="buffed"${sel(filters.pill,'buffed')}>Buffed</option>
+            <option value="debuffed"${sel(filters.pill,'debuffed')}>Debuffed</option>
+            <option value="clean"${sel(filters.pill,'clean')}>No pill</option>
+          </select>
+        </label>
+        <label class="rs-filter">Health
+          <select data-filter="healthBelow">
+            <option value="all"${sel(filters.healthBelow,'all')}>Any</option>
+            <option value="50"${sel(filters.healthBelow,'50')}>Below 50%</option>
+            <option value="25"${sel(filters.healthBelow,'25')}>Below 25%</option>
+          </select>
+        </label>
+        <label class="rs-filter">Hunger
+          <select data-filter="hungerBelow">
+            <option value="all"${sel(filters.hungerBelow,'all')}>Any</option>
+            <option value="50"${sel(filters.hungerBelow,'50')}>Below 50%</option>
+            <option value="25"${sel(filters.hungerBelow,'25')}>Below 25%</option>
+          </select>
+        </label>
+        <label class="rs-filter">Online
+          <select data-filter="online">
+            <option value="all"${sel(filters.online,'all')}>Any</option>
+            <option value="fresh"${sel(filters.online,'fresh')}>Active &lt;24h</option>
+            <option value="stale"${sel(filters.online,'stale')}>24–72h</option>
+            <option value="dead"${sel(filters.online,'dead')}>Inactive &gt;72h</option>
+          </select>
+        </label>
+        <button type="button" class="rs-clear" data-clear>Clear filters</button>
+      </div>
+      <div class="rs-summary-host"></div>
+      <div class="rs-table-host"></div>`;
+  }
+
+  // Re-render summary + table for the current filters/sort. Controls are
+  // left untouched so dropdowns keep focus/value.
+  function applyView() {
+    const now = Date.now();
+    const ctx = { now, muNames };
+    const shown = allRows.filter(r => matchesFilters(r, filters, now));
+    shown.sort((a, b) => compareRows(a, b, sortKey, sortDir, ctx));
+
+    const summaryHost = $content.querySelector('.rs-summary-host');
+    const tableHost   = $content.querySelector('.rs-table-host');
+    if (summaryHost) summaryHost.innerHTML = renderSummary(shown, now);
+    if (tableHost) {
+      tableHost.innerHTML = `
+        <div class="rs-table-wrap">
+          <table class="rs-table">
+            <thead><tr>${renderHeader()}</tr></thead>
+            <tbody>${renderRows(shown, now)}</tbody>
+          </table>
+        </div>`;
+    }
+  }
+
+  /* ── Event wiring (delegated; bound once per load) ────────────────── */
+  function wireControls() {
+    // Filter dropdowns.
+    $content.querySelectorAll('[data-filter]').forEach(el => {
+      el.addEventListener('change', () => {
+        filters[el.dataset.filter] = el.value;
+        applyView();
+      });
+    });
+    // Clear button.
+    const clear = $content.querySelector('[data-clear]');
+    if (clear) clear.addEventListener('click', () => {
+      filters = freshFilters();
+      $content.querySelectorAll('[data-filter]').forEach(el => { el.value = 'all'; });
+      applyView();
+    });
+    // Sort headers (delegated on the table host, since the table re-renders).
+    const tableHost = $content.querySelector('.rs-table-host');
+    if (tableHost) {
+      const onSort = (key) => {
+        if (!key) return;
+        if (key === sortKey) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+        else { sortKey = key; sortDir = (key === 'name' || key === 'mu') ? 'asc' : 'desc'; }
+        applyView();
+      };
+      tableHost.addEventListener('click', (e) => {
+        const th = e.target.closest('[data-sort]');
+        if (th) onSort(th.dataset.sort);
+      });
+      tableHost.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const th = e.target.closest('[data-sort]');
+        if (th) { e.preventDefault(); onSort(th.dataset.sort); }
+      });
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+   *  ORCHESTRATION
+   * ═══════════════════════════════════════════════════════════════════ */
   async function run() {
     if (running) return;
-    const raw = $username.value.trim();
-    if (!raw) { $username.focus(); return; }
+    const country = COUNTRIES[countryKey] || COUNTRIES[DEFAULT_COUNTRY];
 
     running = true;
-    $load.disabled = true;
     setStatus('');
-    $content.innerHTML = `<div class="rs-loading"><span class="rs-spinner"></span>Looking up <strong>${escapeHtml(raw)}</strong>…</div>`;
+    $content.innerHTML = `<div class="rs-loading"><span class="rs-spinner"></span>Loading ${escapeHtml(country.label)} citizens…</div>`;
 
     try {
-      // Step 1: resolve the requester. Used only for the citizenship
-      // gate — we don't display them anywhere specially.
-      const searchRes = await rs_trpc('search.searchAnything', { searchText: raw });
-      const ids = (searchRes?.userIds || []).slice(0, 10);
-      const candidates = await mapConcurrent(ids, (id) =>
-        rs_trpc('user.getUserLite', { userId: id }).catch(() => null), 10);
-      const needle = raw.toLowerCase();
-      const me = candidates.find(u => u && typeof u.username === 'string' && u.username.toLowerCase() === needle);
-      if (!me) throw new Error(`No War Era user found with username "${raw}". Check the spelling and try again.`);
-
-      const country = me.country ?? me.countryId;
-      enforceIrishOnly(country, me.username);
-
-      try { history.replaceState(null, '', `#roster?u=${encodeURIComponent(me.username)}`); } catch {}
-
-      // Step 2: fetch the citizen pool.
-      $content.innerHTML = `<div class="rs-loading"><span class="rs-spinner"></span>Loading Irish citizens…</div>`;
-      const citizens = await fetchAllIrishCitizens();
+      const citizens = await fetchAllCitizens(country.id);
       if (!citizens.length) {
         $content.innerHTML = `<div class="rs-empty">No citizens returned. The data service may be down — try again in a minute.</div>`;
         return;
       }
 
-      // Step 3: hydrate with lite profiles (skills, status, dates).
-      $content.innerHTML = `<div class="rs-loading"><span class="rs-spinner"></span>Loading ${citizens.length} player details…</div>`;
-      const hydrated = await fetchLiteProfiles(citizens);
+      $content.innerHTML = `<div class="rs-loading"><span class="rs-spinner"></span>Loading ${citizens.length} player profiles…</div>`;
+      const hydrated = await fetchFullProfiles(citizens);
 
-      // Step 4: collect MU names.
-      const muNames = await fetchMuNames(hydrated);
+      muNames = await fetchMuNames(hydrated);
+      allRows = hydrated.map(buildRow);
 
-      // Step 5: render.
-      hydrated.sort((a, b) => (b.leveling?.level || 0) - (a.leveling?.level || 0));
-      $content.innerHTML = renderTable(hydrated, muNames);
+      // Reset view state for the fresh dataset.
+      filters = freshFilters();
+      sortKey = 'level'; sortDir = 'desc';
+
+      $content.innerHTML = renderControls();
+      wireControls();
+      applyView();
     } catch (e) {
       $content.innerHTML = '';
       const friendly = (typeof isTransientError === 'function' && isTransientError(e))
@@ -338,23 +582,19 @@ const RosterTool = (() => {
       setStatus(friendly, true);
     } finally {
       running = false;
-      $load.disabled = false;
     }
   }
 
-  /* ── Wire-up ─────────────────────────────────────────────────────── */
-  $load.addEventListener('click', run);
-  $username.addEventListener('keydown', e => { if (e.key === 'Enter') run(); });
-
+  /* ── Public API ───────────────────────────────────────────────────── */
   return {
+    // Loads on open. Reads #roster?country=<key>; defaults to Ireland.
     activate(params) {
-      const u = (params && params.get && params.get('u')) || new URLSearchParams(location.search).get('u');
-      if (u && $username.value.toLowerCase() !== u.toLowerCase()) {
-        $username.value = u;
-        run();
-      } else if (!u && !$username.value) {
-        $username.focus();
-      }
+      const get = (k) => (params && params.get && params.get(k))
+        || new URLSearchParams(location.search).get(k);
+      const c = (get('country') || DEFAULT_COUNTRY).toLowerCase();
+      countryKey = COUNTRIES[c] ? c : DEFAULT_COUNTRY;
+      try { history.replaceState(null, '', `#roster?country=${encodeURIComponent(countryKey)}`); } catch {}
+      run();
     },
   };
 })();

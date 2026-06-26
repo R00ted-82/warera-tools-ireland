@@ -2300,3 +2300,37 @@ table.rs-table {
   .rs-table th, .rs-table td { padding: 7px 8px; font-size: 12px; }
   .rs-bar { width: 50px; }
 }
+
+/* Roster — filter bar, sortable headers, buff/debuff chips
+   (added for the build/pill/filter update). */
+.rs-controls {
+  display: flex; flex-wrap: wrap; gap: 10px 14px;
+  align-items: flex-end; margin-bottom: 14px;
+}
+.rs-filter {
+  display: flex; flex-direction: column; gap: 4px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--muted); font-weight: 600;
+}
+.rs-filter select {
+  background: var(--bg); color: var(--text); border: 1px solid var(--border);
+  border-radius: 6px; padding: 7px 10px; font-size: 13px; font-family: inherit;
+  text-transform: none; letter-spacing: 0; font-weight: 400;
+}
+.rs-filter select:focus { outline: none; border-color: #3a4350; }
+.rs-clear { align-self: flex-end; padding: 7px 12px; font-size: 12.5px; }
+
+/* Sortable column headers (the global .rs-table th sets the base colour) */
+.rs-table th.rs-th { cursor: pointer; user-select: none; }
+.rs-table th.rs-th:hover { color: var(--text); }
+.rs-table th.rs-th.active { color: var(--accent); }
+
+/* Pill cell — buff (good, green) / debuff (bad, red). Same tint pattern
+   as .rs-build so light/dark both work through the theme vars. */
+.rs-eff {
+  display: inline-block; font-size: 11px; font-weight: 600;
+  padding: 1px 7px; border-radius: 999px; white-space: nowrap;
+}
+.rs-eff.rs-buff   { background: rgba(74,222,128,.14); color: var(--accent); }
+.rs-eff.rs-debuff { background: rgba(248,113,113,.14); color: var(--danger); }
+.rs-eff.rs-none   { background: none; color: var(--muted); padding: 0; }

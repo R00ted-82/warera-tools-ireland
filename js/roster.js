@@ -48,8 +48,26 @@ const RosterTool = (() => {
   // Sort ordering for the Build column (higher = more combat-leaning).
   const BUILD_ORDER = { combat: 3, mixed: 2, economy: 1, unknown: 0 };
 
-  const ONLINE_FRESH = 24;   // < 24h ago → fresh (green)
+  const ONLINE_FRESH = 24;   // < 24h ago → fresh (green, table cell colour)
   const ONLINE_STALE = 72;   // < 72h ago → stale (amber), else dead (red)
+
+  // Last-online FILTER buckets — separate from the colour bands above,
+  // since the filter uses finer/different cutoffs than the cell colouring.
+  // Four exclusive bands covering everyone, including never-connected
+  // players (who fall into 'over10').
+  const ONLINE_FILTER_BANDS = [
+    { key: 'under1',  label: '< 1 hour',  maxHours: 1 },
+    { key: 'under4',  label: '< 4 hours', maxHours: 4 },
+    { key: 'under10', label: '< 10 hours', maxHours: 10 },
+    { key: 'over10',  label: '> 10 hours', maxHours: Infinity },
+  ];
+  function onlineFilterBucket(hoursAgo) {
+    if (hoursAgo == null) return 'over10';
+    for (const band of ONLINE_FILTER_BANDS) {
+      if (hoursAgo < band.maxHours) return band.key;
+    }
+    return 'over10';
+  }
 
   const BAR_LOW  = 50;       // health/hunger % bands for colour
   const BAR_CRIT = 25;
@@ -168,17 +186,23 @@ const RosterTool = (() => {
   function buildRow(c) {
     const lastIso = c?.dates?.lastConnectionAt;          // confirmed: dates.lastConnectionAt
     const lastMs  = lastIso ? new Date(lastIso).getTime() : null;
+    // rankings.weeklyUserDamages.value confirmed against RA3BURN's real
+    // getUserById response (3,496,461 → matched the in-game "3.5M" card
+    // exactly, including the #984 rank). Daily damage isn't a thing the
+    // game tracks/shows, so weekly is the figure we're using.
+    const weeklyDmg = c?.rankings?.weeklyUserDamages?.value;
     return {
-      raw:        c,
-      _id:        c._id,
-      username:   c.username || c._id,
-      mu:         c.mu || null,                          // from getUsersByCountry
-      level:      c?.leveling?.level ?? null,            // confirmed: leveling.level
-      build:      classifyBuild(c),
-      health:     statBar(c, 'health'),
-      hunger:     statBar(c, 'hunger'),
-      effects:    parseEffects(c),
-      lastConnMs: (lastMs != null && isFinite(lastMs)) ? lastMs : null,
+      raw:          c,
+      _id:          c._id,
+      username:     c.username || c._id,
+      mu:           c.mu || null,                          // from getUsersByCountry
+      level:        c?.leveling?.level ?? null,            // confirmed: leveling.level
+      build:        classifyBuild(c),
+      health:       statBar(c, 'health'),
+      hunger:       statBar(c, 'hunger'),
+      effects:      parseEffects(c),
+      weeklyDamage: (typeof weeklyDmg === 'number' && isFinite(weeklyDmg)) ? weeklyDmg : null,
+      lastConnMs:   (lastMs != null && isFinite(lastMs)) ? lastMs : null,
     };
   }
 
@@ -220,13 +244,14 @@ const RosterTool = (() => {
   }
 
   const SORTERS = {
-    name:   (r) => (r.username || '').toLowerCase(),
-    level:  (r) => r.level ?? -1,
-    build:  (r) => BUILD_ORDER[r.build.kind] ?? -1,
-    health: (r) => r.health ? r.health.cur : -1,
-    hunger: (r) => r.hunger ? r.hunger.cur : -1,
-    online: (r) => r.lastConnMs ?? -Infinity,
-    mu:     (r, ctx) => (ctx.muNames[r.mu] || '').toLowerCase(),
+    name:    (r) => (r.username || '').toLowerCase(),
+    level:   (r) => r.level ?? -1,
+    build:   (r) => BUILD_ORDER[r.build.kind] ?? -1,
+    health:  (r) => r.health ? r.health.cur : -1,
+    hunger:  (r) => r.hunger ? r.hunger.cur : -1,
+    weekly:  (r) => r.weeklyDamage ?? -1,
+    online:  (r) => r.lastConnMs ?? -Infinity,
+    mu:      (r, ctx) => (ctx.muNames[r.mu] || '').toLowerCase(),
   };
 
   function compareRows(a, b, key, dir, ctx) {
@@ -266,7 +291,7 @@ const RosterTool = (() => {
 
     if (f.online !== 'all') {
       const hoursAgo = row.lastConnMs == null ? null : (now - row.lastConnMs) / 3600000;
-      if (onlineKind(hoursAgo) !== f.online) return false;
+      if (onlineFilterBucket(hoursAgo) !== f.online) return false;
     }
     return true;
   }
@@ -412,6 +437,33 @@ const RosterTool = (() => {
     return `<span class="rs-online ${onlineKind(hoursAgo)}">${escapeHtml(fmtAgoHours(hoursAgo))}</span>`;
   }
 
+  // Abbreviates like the game's own UI cards do. Confirmed against two real
+  // captures: 3,496,461 -> game showed "3.5M"; 9,439,967 -> game showed
+  // "9.44M". Both round to 3 significant figures with trailing zeros
+  // trimmed (3.5 not 3.50; 9.44 not 9.440) — that's the rule this matches,
+  // rather than a fixed decimal count, since the two examples have
+  // different decimal lengths.
+  function fmtAbbrev(n) {
+    if (n == null || !isFinite(n)) return '–';
+    const sign = n < 0 ? '-' : '';
+    n = Math.abs(n);
+    const round3sf = (v) => {
+      if (v === 0) return '0';
+      const digits = Math.max(0, 2 - Math.floor(Math.log10(v)));
+      return (Math.round(v * 10 ** digits) / 10 ** digits).toString();
+    };
+    if (n >= 1e6) return sign + round3sf(n / 1e6) + 'M';
+    if (n >= 1e3) return sign + round3sf(n / 1e3) + 'K';
+    return sign + Math.round(n).toString();
+  }
+
+  // Number only, abbreviated to match the game's own display style
+  // (e.g. "3.5M", "684K", "920") — no tier/rank badge, per request.
+  function renderWeekly(row) {
+    if (row.weeklyDamage == null) return `<span class="rs-online dead">–</span>`;
+    return `<span title="${row.weeklyDamage.toLocaleString()}">${fmtAbbrev(row.weeklyDamage)}</span>`;
+  }
+
   // Column definitions drive both the header (with sort arrows) and which
   // SORTERS key each click uses.
   const COLUMNS = [
@@ -421,6 +473,7 @@ const RosterTool = (() => {
     { key: 'pill',   label: 'Pill' },
     { key: 'health', label: 'Health' },
     { key: 'hunger', label: 'Hunger' },
+    { key: 'weekly', label: 'Weekly dmg' },
     { key: 'mu',     label: 'MU' },
     { key: 'online', label: 'Last online' },
   ];
@@ -470,6 +523,7 @@ const RosterTool = (() => {
         <td>${renderPill(r.effects, now)}</td>
         <td>${renderBar(r.health)}</td>
         <td>${renderBar(r.hunger)}</td>
+        <td>${renderWeekly(r)}</td>
         <td>${renderMu(r)}</td>
         <td>${renderOnline(r)}</td>
       </tr>`).join('');
@@ -526,9 +580,9 @@ const RosterTool = (() => {
         <label class="rs-filter">Online
           <select data-filter="online">
             <option value="all"${sel(filters.online,'all')}>Any</option>
-            <option value="fresh"${sel(filters.online,'fresh')}>Active &lt;24h</option>
-            <option value="stale"${sel(filters.online,'stale')}>24–72h</option>
-            <option value="dead"${sel(filters.online,'dead')}>Inactive &gt;72h</option>
+            ${ONLINE_FILTER_BANDS.map(b =>
+              `<option value="${b.key}"${sel(filters.online,b.key)}>${escapeHtml(b.label)}</option>`
+            ).join('')}
           </select>
         </label>
         <button type="button" class="rs-clear" data-clear>Clear filters</button>

@@ -177,13 +177,41 @@ const RosterTool = (() => {
     };
   }
 
-  // Sort key remaining-ms for the Pill column: prefer an active buff,
-  // then an active debuff, else -1 (push the un-pilled to the end).
-  // (Judgment call — flip buff/debuff priority here if you'd rather.)
-  function pillSortKey(effects, now) {
+  // Pill column has its own comparator (not a simple numeric key) because
+  // buff and debuff must stay as two separate, non-interleaved groups:
+  //
+  //   asc  -> all BUFFED  (high time left -> low),
+  //           then all DEBUFFED (low time left -> high)
+  //   desc -> all DEBUFFED (high time left -> low),
+  //           then all BUFFED  (low time left -> high)
+  //   un-pilled players always last, in both directions.
+  //
+  // A single numeric key can't express "group A counts down, then group B
+  // counts back up", so this compares rows directly instead of going
+  // through the generic compareRows() number-flip path.
+  function pillGroup(effects, now) {
+    if (effectActive(effects.buff, now))   return 'buff';
+    if (effectActive(effects.debuff, now)) return 'debuff';
+    return 'none';
+  }
+  function pillRemainingMs(effects, now) {
     if (effectActive(effects.buff, now))   return effects.buff.until - now;
     if (effectActive(effects.debuff, now)) return effects.debuff.until - now;
-    return -1;
+    return null;
+  }
+  function comparePill(a, b, dir, now) {
+    const ga = pillGroup(a.effects, now), gb = pillGroup(b.effects, now);
+    if (ga === 'none' && gb === 'none') return 0;
+    if (ga === 'none') return 1;     // un-pilled always sinks to the bottom
+    if (gb === 'none') return -1;
+
+    const leadGroup = dir === 'asc' ? 'buff' : 'debuff'; // which group goes first
+    if (ga !== gb) return ga === leadGroup ? -1 : 1;
+
+    // Same group: leading group counts DOWN (high->low), trailing group
+    // counts back UP (low->high).
+    const ra = pillRemainingMs(a.effects, now), rb = pillRemainingMs(b.effects, now);
+    return ga === leadGroup ? (rb - ra) : (ra - rb);
   }
 
   const SORTERS = {
@@ -192,12 +220,12 @@ const RosterTool = (() => {
     build:  (r) => BUILD_ORDER[r.build.kind] ?? -1,
     health: (r) => r.health ? r.health.pct : -1,
     hunger: (r) => r.hunger ? r.hunger.pct : -1,
-    pill:   (r, ctx) => pillSortKey(r.effects, ctx.now),
     online: (r) => r.lastConnMs ?? -Infinity,
     mu:     (r, ctx) => (ctx.muNames[r.mu] || '').toLowerCase(),
   };
 
   function compareRows(a, b, key, dir, ctx) {
+    if (key === 'pill') return comparePill(a, b, dir, ctx.now);   // bespoke: see comparePill
     const va = SORTERS[key](a, ctx), vb = SORTERS[key](b, ctx);
     let c;
     if (typeof va === 'string' || typeof vb === 'string') {
@@ -346,9 +374,10 @@ const RosterTool = (() => {
     return `<span class="rs-build ${build.kind}" title="${tooltip}">${icon[build.kind]}${labels[build.kind]}</span>`;
   }
 
-  // Pill cell shows any ACTIVE buff and/or debuff with code + time left.
-  // Buff and debuff are styled differently (good vs bad) — and that split
-  // is trustworthy because it comes from separate fields, not a guess.
+  // Pill cell shows any ACTIVE buff and/or debuff with time left. Labelled
+  // generically ("Pill" / "Debuff") rather than the raw code (e.g. "cocain")
+  // per request — the underlying code is still in the title tooltip in case
+  // it's ever useful, just not in the visible chip text.
   // A player can never hold both at once (confirmed), but the buff/debuff
   // branches stay independent rather than else-if, since that's a true
   // fact about the GAME, not something to hardcode as a code invariant.
@@ -356,11 +385,11 @@ const RosterTool = (() => {
     const out = [];
     if (effectActive(effects.buff, now)) {
       const codes = effects.buff.codes.map(escapeHtml).join(', ');
-      out.push(`<span class="rs-eff rs-buff" title="Buff: ${codes}">${ICONS.arrowUp}${codes} · ${fmtRemaining(effects.buff.until - now)}</span>`);
+      out.push(`<span class="rs-eff rs-buff" title="${codes}">${ICONS.arrowUp}Pill · ${fmtRemaining(effects.buff.until - now)}</span>`);
     }
     if (effectActive(effects.debuff, now)) {
       const codes = effects.debuff.codes.map(escapeHtml).join(', ');
-      out.push(`<span class="rs-eff rs-debuff" title="Debuff: ${codes}">${ICONS.arrowDown}${codes} · ${fmtRemaining(effects.debuff.until - now)}</span>`);
+      out.push(`<span class="rs-eff rs-debuff" title="${codes}">${ICONS.arrowDown}Debuff · ${fmtRemaining(effects.debuff.until - now)}</span>`);
     }
     if (!out.length) return `<span class="rs-eff rs-none">–</span>`;
     return out.join(' ');

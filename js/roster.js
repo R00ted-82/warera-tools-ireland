@@ -110,15 +110,20 @@ const RosterTool = (() => {
   }
 
   // Health / hunger live UNDER skills as { currentBarValue, total }
-  // (confirmed: getUserLite/getUserById responses). Returns { pct, label }
-  // or null if absent.
+  // (confirmed: getUserLite/getUserById responses). Returns
+  // { pct, cur, label } or null if absent. `cur` (raw points) is kept
+  // separate from `pct` because each player's `total` (cap) differs with
+  // their hunger/health skill level — sorting by % would rank a small-cap
+  // player who's "full" (e.g. 4/4) above a bigger-cap player who isn't
+  // (e.g. 6/7), which is backwards for war-planning purposes. Sort by
+  // raw points (`cur`); use `pct` only for the bar's visual fill width.
   function statBar(user, key) {
     const s = user?.skills?.[key];
     if (!s || typeof s !== 'object') return null;
     const cur = s.currentBarValue, max = s.total;
     if (typeof cur !== 'number' || typeof max !== 'number' || max <= 0) return null;
     const pct = Math.max(0, Math.min(100, (cur / max) * 100));
-    return { pct, label: `${Math.round(cur)} / ${Math.round(max)}` };
+    return { pct, cur, label: `${Math.round(cur)} / ${Math.round(max)}` };
   }
 
   // Buffs and debuffs are SEPARATE named fields inside the `buffs` object:
@@ -218,8 +223,8 @@ const RosterTool = (() => {
     name:   (r) => (r.username || '').toLowerCase(),
     level:  (r) => r.level ?? -1,
     build:  (r) => BUILD_ORDER[r.build.kind] ?? -1,
-    health: (r) => r.health ? r.health.pct : -1,
-    hunger: (r) => r.hunger ? r.hunger.pct : -1,
+    health: (r) => r.health ? r.health.cur : -1,
+    hunger: (r) => r.hunger ? r.hunger.cur : -1,
     online: (r) => r.lastConnMs ?? -Infinity,
     mu:     (r, ctx) => (ctx.muNames[r.mu] || '').toLowerCase(),
   };

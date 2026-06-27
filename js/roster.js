@@ -345,8 +345,8 @@ const RosterTool = (() => {
   let countryKey = DEFAULT_COUNTRY;
   let allRows    = [];        // built once per load, then filtered/sorted in place
   let muInfo     = {};
-  let sortKey    = 'level';
-  let sortDir    = 'desc';
+  let sortKey    = 'name';
+  let sortDir    = 'asc';
   let filters    = freshFilters();
   let running    = false;
 
@@ -1058,7 +1058,7 @@ const RosterTool = (() => {
 
       // Reset view state for the fresh dataset.
       filters = freshFilters();
-      sortKey = 'level'; sortDir = 'desc';
+      sortKey = 'name'; sortDir = 'asc';
 
       $content.innerHTML = renderControls();
       wireControls();

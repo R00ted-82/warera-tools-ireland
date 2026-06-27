@@ -82,7 +82,7 @@ const RosterTool = (() => {
   /* ── State ────────────────────────────────────────────────────────── */
   let countryKey = DEFAULT_COUNTRY;
   let allRows    = [];        // built once per load, then filtered/sorted in place
-  let muNames    = {};
+  let muInfo     = {};
   let sortKey    = 'level';
   let sortDir    = 'desc';
   let filters    = freshFilters();
@@ -195,6 +195,7 @@ const RosterTool = (() => {
       raw:          c,
       _id:          c._id,
       username:     c.username || c._id,
+      avatarUrl:    c.avatarUrl || null,                   // confirmed: RA3BURN's getUserById capture
       mu:           c.mu || null,                          // from getUsersByCountry
       level:        c?.leveling?.level ?? null,            // confirmed: leveling.level
       build:        classifyBuild(c),
@@ -251,7 +252,7 @@ const RosterTool = (() => {
     hunger:  (r) => r.hunger ? r.hunger.cur : -1,
     weekly:  (r) => r.weeklyDamage ?? -1,
     online:  (r) => r.lastConnMs ?? -Infinity,
-    mu:      (r, ctx) => (ctx.muNames[r.mu] || '').toLowerCase(),
+    mu:      (r, ctx) => (ctx.muInfo[r.mu]?.name || '').toLowerCase(),
   };
 
   function compareRows(a, b, key, dir, ctx) {
@@ -358,14 +359,17 @@ const RosterTool = (() => {
 
   async function fetchMuNames(citizens) {
     const muIds = [...new Set(citizens.map(c => c.mu).filter(Boolean))];
-    const names = {};
+    const info = {};
     await mapConcurrent(muIds, async (id) => {
       try {
         const mu = await rs_trpc('mu.getById', { muId: id });
-        if (mu?.name) names[id] = mu.name;
+        // avatarUrl confirmed: same field name as users, also present on
+        // mu.getById per the MU tool's avatarOf(). Same call as before —
+        // we were already fetching this object just to read .name.
+        if (mu?.name) info[id] = { name: mu.name, avatarUrl: mu.avatarUrl || null };
       } catch {}
     }, 10);
-    return names;
+    return info;
   }
 
   /* ═══════════════════════════════════════════════════════════════════
@@ -425,10 +429,23 @@ const RosterTool = (() => {
     return out.join(' ');
   }
 
+  // Mirrors the MU tool's own avatarEl() exactly: validate the URL, fall
+  // back to the MU's first initial. Uses the swap-to-sibling-div pattern
+  // (rather than the buddy finder's textContent-swap) since that's how
+  // the MU tool itself — the actual authority on MU avatars — handles it.
+  function renderMuAvatar(name, avatarUrl) {
+    const initial = (name || '?').slice(0, 1).toUpperCase();
+    if (avatarUrl && /^https?:\/\//.test(avatarUrl)) {
+      return `<img class="rs-mu-avatar" src="${escapeHtml(avatarUrl)}" alt="" data-initial="${escapeHtml(initial)}" onerror="var d=document.createElement('span');d.className='rs-mu-avatar';d.textContent=this.dataset.initial;this.replaceWith(d)">`;
+    }
+    return `<span class="rs-mu-avatar">${escapeHtml(initial)}</span>`;
+  }
+
   function renderMu(row) {
     if (!row.mu) return `<span class="rs-mu rs-none">none</span>`;
-    const name = muNames[row.mu] || 'unit';
-    return `<span class="rs-mu"><a href="${GAME_BASE}/mu/${escapeHtml(row.mu)}" target="_blank" rel="noopener">${escapeHtml(name)}</a></span>`;
+    const info = muInfo[row.mu];
+    const name = info?.name || 'unit';
+    return `<span class="rs-mu">${renderMuAvatar(name, info?.avatarUrl)}<a href="${GAME_BASE}/mu/${escapeHtml(row.mu)}" target="_blank" rel="noopener">${escapeHtml(name)}</a></span>`;
   }
 
   function renderOnline(row) {
@@ -490,6 +507,7 @@ const RosterTool = (() => {
 
   function renderSummary(shownRows, now) {
     let combat = 0, economy = 0, mixed = 0, unknown = 0, buffed = 0, debuffed = 0;
+    let healthSum = 0, healthN = 0, hungerSum = 0, hungerN = 0;
     for (const r of shownRows) {
       if (r.build.kind === 'combat') combat++;
       else if (r.build.kind === 'economy') economy++;
@@ -497,8 +515,15 @@ const RosterTool = (() => {
       else unknown++;
       if (effectActive(r.effects.buff, now)) buffed++;
       if (effectActive(r.effects.debuff, now)) debuffed++;
+      // Average is over players who HAVE a health/hunger reading — not
+      // shownRows.length — so a few missing/unparseable profiles don't
+      // silently drag the average down.
+      if (r.health) { healthSum += r.health.pct; healthN++; }
+      if (r.hunger) { hungerSum += r.hunger.pct; hungerN++; }
     }
     const filtered = shownRows.length !== allRows.length;
+    const avgHealth = healthN ? Math.round(healthSum / healthN) : null;
+    const avgHunger = hungerN ? Math.round(hungerSum / hungerN) : null;
     return `
       <div class="rs-summary">
         <span><strong>${shownRows.length}</strong>${filtered ? ` of ${allRows.length}` : ''} shown</span>
@@ -508,7 +533,21 @@ const RosterTool = (() => {
         ${unknown ? `<span><strong>${unknown}</strong> too new</span>` : ''}
         <span><strong>${buffed}</strong> buffed</span>
         <span><strong>${debuffed}</strong> debuffed</span>
+        <span>avg health <strong>${avgHealth != null ? avgHealth + '%' : '–'}</strong></span>
+        <span>avg hunger <strong>${avgHunger != null ? avgHunger + '%' : '–'}</strong></span>
       </div>`;
+  }
+
+  // Mirrors the buddy finder's renderPlayer avatar pattern exactly:
+  // validate avatarUrl looks like a real http(s) URL, fall back to the
+  // player's first initial in a coloured box if it's missing or 404s.
+  function renderAvatar(row) {
+    const initial = (row.username || '?').slice(0, 1).toUpperCase();
+    const src = row.avatarUrl;
+    if (src && /^https?:\/\//.test(src)) {
+      return `<span class="rs-avatar"><img src="${escapeHtml(src)}" alt="" onerror="this.parentElement.textContent='${escapeHtml(initial)}'"></span>`;
+    }
+    return `<span class="rs-avatar">${escapeHtml(initial)}</span>`;
   }
 
   function renderRows(rows, now) {
@@ -517,7 +556,7 @@ const RosterTool = (() => {
     }
     return rows.map(r => `
       <tr>
-        <td class="rs-name"><a href="${GAME_BASE}/user/${escapeHtml(r._id)}" target="_blank" rel="noopener">${escapeHtml(r.username)}</a></td>
+        <td class="rs-name">${renderAvatar(r)}<a href="${GAME_BASE}/user/${escapeHtml(r._id)}" target="_blank" rel="noopener">${escapeHtml(r.username)}</a></td>
         <td class="rs-lvl">${r.level ?? '–'}</td>
         <td>${renderBuild(r.build)}</td>
         <td>${renderPill(r.effects, now)}</td>
@@ -531,8 +570,8 @@ const RosterTool = (() => {
 
   // Build the filter controls (rendered ONCE per load; values reflect state).
   function renderControls() {
-    const muOptions = Object.keys(muNames)
-      .map(id => ({ id, name: muNames[id] }))
+    const muOptions = Object.keys(muInfo)
+      .map(id => ({ id, name: muInfo[id].name }))
       .sort((a, b) => a.name.localeCompare(b.name))
       .map(o => `<option value="${escapeHtml(o.id)}"${filters.mu === o.id ? ' selected' : ''}>${escapeHtml(o.name)}</option>`)
       .join('');
@@ -595,7 +634,7 @@ const RosterTool = (() => {
   // left untouched so dropdowns keep focus/value.
   function applyView() {
     const now = Date.now();
-    const ctx = { now, muNames };
+    const ctx = { now, muInfo };
     const shown = allRows.filter(r => matchesFilters(r, filters, now));
     shown.sort((a, b) => compareRows(a, b, sortKey, sortDir, ctx));
 
@@ -671,7 +710,7 @@ const RosterTool = (() => {
       $content.innerHTML = `<div class="rs-loading"><span class="rs-spinner"></span>Loading ${citizens.length} player profiles…</div>`;
       const hydrated = await fetchFullProfiles(citizens);
 
-      muNames = await fetchMuNames(hydrated);
+      muInfo = await fetchMuNames(hydrated);
       allRows = hydrated.map(buildRow);
 
       // Reset view state for the fresh dataset.

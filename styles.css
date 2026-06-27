@@ -2334,3 +2334,26 @@ table.rs-table {
 .rs-eff.rs-buff   { background: rgba(74,222,128,.14); color: var(--accent); }
 .rs-eff.rs-debuff { background: rgba(248,113,113,.14); color: var(--danger); }
 .rs-eff.rs-none   { background: none; color: var(--muted); padding: 0; }
+
+/* Roster — small inline player avatar in the name cell. Sized for a
+   dense table row, unlike the buddy finder's bigger card avatar. */
+.rs-avatar {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--panel-2); color: var(--muted);
+  font-size: 11px; font-weight: 600;
+  margin-right: 7px; vertical-align: middle;
+  overflow: hidden; flex: none;
+}
+.rs-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* Roster — small inline MU avatar, next to the MU name. */
+.rs-mu-avatar {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--panel-2); color: var(--muted);
+  font-size: 10px; font-weight: 600;
+  margin-right: 5px; vertical-align: middle;
+  overflow: hidden; flex: none;
+}
+.rs-mu-avatar:not(span) { object-fit: cover; } /* only applies to the <img> case */

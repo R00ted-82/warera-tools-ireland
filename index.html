@@ -331,22 +331,23 @@
     </details>
   </section>
 
-  <!-- ROSTER (#roster) — unlisted Irish citizens list -->
-  <section class="view" data-view="roster">
-    <div class="tool-header">
-      <div class="title-block">
-        <h2>🇮🇪 Irish Roster</h2>
-        <p>Active Irish citizens with build, pill status, health, hunger, MU and last-online time. Useful for war planning. Unlisted by design — share the link only with people who should see it.</p>
-      </div>
-      <div class="controls">
-        <input type="text" id="roster-username" placeholder="Your in-game username" autocomplete="off" spellcheck="false" />
-        <button id="roster-load" class="btn-primary">Load</button>
-      </div>
+<!-- ROSTER (#roster) — multi-country citizen roster -->
+<section class="view" data-view="roster">
+  <div class="tool-header">
+    <div class="title-block">
+      <h1 class="rs-brand">Battle Intel Ireland</h1>
+      <h2 id="roster-title">🇮🇪 Irish Roster</h2>
+      <p>Active citizens with build, pill status, health, hunger, MU and last-online time. Useful for war planning. Unlisted by design — share the link only with people who should see it.</p>
     </div>
+    <div class="controls">
+      <input type="text" id="roster-country-search" placeholder="Search country…" autocomplete="off" spellcheck="false" />
+      <div id="roster-country-dropdown" class="rs-country-dropdown hidden"></div>
+    </div>
+  </div>
 
-    <div id="roster-status" class="status hidden"></div>
-    <div id="roster-content"></div>
-</section>  
+  <div id="roster-status" class="status hidden"></div>
+  <div id="roster-content"></div>
+</section>
 
   <!-- ─── Buddy Finder view ─────────────────────────────────────── -->
   <section class="view" data-view="buddy-finder">

@@ -2357,3 +2357,27 @@ table.rs-table {
   overflow: hidden; flex: none;
 }
 .rs-mu-avatar:not(span) { object-fit: cover; } /* only applies to the <img> case */
+
+/* Roster — "Battle Intel Ireland" brand banner above the dynamic
+   per-country <h2>. Smaller and accent-coloured so it reads as a
+   fixed label, not competing with the real heading below it. */
+.rs-brand {
+  margin: 0 0 2px; font-size: 12px; font-weight: 600;
+  letter-spacing: .04em; text-transform: uppercase; color: var(--accent);
+}
+
+/* Country picker — typeahead replacing the old username input. */
+.rs-controls .controls,
+.tool-header .controls { position: relative; }
+.rs-country-dropdown {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 8px; overflow: hidden; z-index: 10;
+  box-shadow: 0 8px 24px rgba(0,0,0,.3);
+}
+.rs-country-opt {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; cursor: pointer; font-size: 13px;
+}
+.rs-country-opt:hover { background: var(--panel-2); }
+.rs-country-flag { font-size: 15px; }

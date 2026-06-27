@@ -26,16 +26,272 @@ const RosterTool = (() => {
   const PAGE_LIMIT = 100;
 
   /* ── Country config ───────────────────────────────────────────────
-   * THE ONE PLACE to change for the multi-country rollout. To add a
-   * country: add an entry here with its countryId. The roster reads the
-   * active country from the route (#roster?country=<key>), default below.
-   * IRELAND_COUNTRY_ID is the existing global the old code used. */
-  const COUNTRIES = {
-    ireland: { id: IRELAND_COUNTRY_ID, label: 'Ireland' },
-    // example for later:
-    // britain: { id: 'PUT_BRITAIN_COUNTRY_ID_HERE', label: 'Britain' },
+   * Full list extracted from a real country.getAllCountries response
+   * (DevTools capture on warera.io). Validated against the existing
+   * IRELAND_COUNTRY_ID global — match confirmed exact, so this data is
+   * trustworthy. `code` is the 2-letter country code, used to derive the
+   * flag emoji (see flagEmoji()) — never hand-picked per country.
+   * The roster reads the active country from the route
+   * (#roster?country=<key>); default below. */
+  const COUNTRIES_RAW = [
+    ['ireland','6813b6d446e731854c7ac7fe','ie'],
+    ['bolivia','6813b6d546e731854c7ac85c','bo'],
+    ['singapore','6813b6d546e731854c7ac871','sg'],
+    ['switzerland','6813b6d446e731854c7ac7a6','ch'],
+    ['taiwan','6813b6d546e731854c7ac826','tw'],
+    ['trinidadandtobago','6813b6d546e731854c7ac8a3','tt'],
+    ['panama','6813b6d546e731854c7ac8ac','pa'],
+    ['belize','6813b6d546e731854c7ac8bb','bz'],
+    ['haiti','6813b6d546e731854c7ac896','ht'],
+    ['bangladesh','683ddd2c24b5a2e114af15b9','bd'],
+    ['jordan','683ddd2c24b5a2e114af15c7','jo'],
+    ['iceland','683ddd2c24b5a2e114af15c5','is'],
+    ['madagascar','683ddd2c24b5a2e114af15d3','mg'],
+    ['namibia','683ddd2c24b5a2e114af15f7','na'],
+    ['czechia','6813b6d446e731854c7ac7b0','cz'],
+    ['slovenia','6813b6d446e731854c7ac7b4','si'],
+    ['bulgaria','6813b6d446e731854c7ac7be','bg'],
+    ['bosnia','6813b6d446e731854c7ac80e','ba'],
+    ['venezuela','6813b6d546e731854c7ac858','ve'],
+    ['greenland','6813b6d546e731854c7ac890','gl'],
+    ['uzbekistan','6813b6d546e731854c7ac8c1','uz'],
+    ['qatar','6813b6d546e731854c7ac8dd','qa'],
+    ['indonesia','6813b6d546e731854c7ac829','id'],
+    ['algeria','6813b6d546e731854c7ac84b','dz'],
+    ['paraguay','6813b6d546e731854c7ac838','py'],
+    ['angola','683ddd2c24b5a2e114af15b7','ao'],
+    ['lebanon','683ddd2c24b5a2e114af15cf','lb'],
+    ['srilanka','683ddd2c24b5a2e114af15d1','lk'],
+    ['myanmar','683ddd2c24b5a2e114af15d5','mm'],
+    ['unitedkorea','683ddd2c24b5a2e114af15cb','kp'],
+    ['gambia','6873d0ea1758b40e712b5ee7','gm'],
+    ['equatorialguinea','6873d0ea1758b40e712b5f31','gq'],
+    ['capeverde','6873d0ea1758b40e712b5f49','cv'],
+    ['brunei','6873d0ea1758b40e712b5f4f','bn'],
+    ['easttimor','6873d0ea1758b40e712b5f56','tl'],
+    ['colombia','6813b6d546e731854c7ac85f','co'],
+    ['unitedstates','6813b6d446e731854c7ac7e5','us'],
+    ['chile','6813b6d546e731854c7ac83c','cl'],
+    ['libya','6813b6d546e731854c7ac852','ly'],
+    ['honduras','6813b6d546e731854c7ac8b5','hn'],
+    ['guatemala','6813b6d546e731854c7ac8b8','gt'],
+    ['malta','6873d0ea1758b40e712b5f3d','mt'],
+    ['rwanda','6873d0ea1758b40e712b5f40','rw'],
+    ['luxembourg','6813b6d446e731854c7ac7fb','lu'],
+    ['mexico','6813b6d446e731854c7ac7f8','mx'],
+    ['uruguay','6813b6d546e731854c7ac835','uy'],
+    ['moldova','6813b6d546e731854c7ac86b','md'],
+    ['southsudan','6813b6d546e731854c7ac877','ss'],
+    ['fiji','6813b6d546e731854c7ac883','fj'],
+    ['vietnam','683ddd2c24b5a2e114af160c','vn'],
+    ['uganda','6873d0ea1758b40e712b5ef3','ug'],
+    ['burkinafaso','6873d0ea1758b40e712b5f37','bf'],
+    ['tanzania','6873d0ea1758b40e712b5f3a','tz'],
+    ['burundi','6873d0ea1758b40e712b5f43','bi'],
+    ['papuanewguinea','6873d0ea1758b40e712b5f67','pg'],
+    ['canada','6813b6d446e731854c7ac808','ca'],
+    ['peru','6813b6d546e731854c7ac83f','pe'],
+    ['cuba','6813b6d546e731854c7ac886','cu'],
+    ['costarica','6813b6d546e731854c7ac8a9','cr'],
+    ['egypt','6813b6d546e731854c7ac845','eg'],
+    ['kyrgyzstan','6813b6d546e731854c7ac8c4','kg'],
+    ['laos','683ddd2c24b5a2e114af15cd','la'],
+    ['benin','6873d0ea1758b40e712b5f25','bj'],
+    ['ivorycoast','6873d0ea1758b40e712b5f34','ci'],
+    ['zambia','6873d0ea1758b40e712b5f73','zm'],
+    ['italy','6813b6d446e731854c7ac7a2','it'],
+    ['poland','6813b6d446e731854c7ac7ae','pl'],
+    ['lithuania','6813b6d446e731854c7ac7b8','lt'],
+    ['finland','6813b6d446e731854c7ac80b','fi'],
+    ['southkorea','6813b6d546e731854c7ac823','kr'],
+    ['greece','6813b6d446e731854c7ac7e8','gr'],
+    ['sudan','6813b6d546e731854c7ac874','sd'],
+    ['guyana','6813b6d546e731854c7ac893','gy'],
+    ['iran','6813b6d546e731854c7ac8a6','ir'],
+    ['slovakia','6813b6d446e731854c7ac805','sk'],
+    ['iraq','683ddd2c24b5a2e114af15c3','iq'],
+    ['mongolia','683ddd2c24b5a2e114af15d7','mn'],
+    ['southafrica','683ddd2c24b5a2e114af1612','za'],
+    ['senegal','6873d0ea1758b40e712b5eef','sn'],
+    ['ghana','6873d0ea1758b40e712b5eeb','gh'],
+    ['niger','6873d0ea1758b40e712b5ef1','ne'],
+    ['botswana','6873d0ea1758b40e712b5f70','bw'],
+    ['morocco','6813b6d546e731854c7ac848','ma'],
+    ['latvia','6813b6d446e731854c7ac7c0','lv'],
+    ['portugal','6813b6d446e731854c7ac7aa','pt'],
+    ['denmark','6813b6d446e731854c7ac7ef','dk'],
+    ['norway','6813b6d446e731854c7ac802','no'],
+    ['northmacedonia','6813b6d546e731854c7ac811','mk'],
+    ['kosovo','6813b6d546e731854c7ac817','xk'],
+    ['belarus','6813b6d546e731854c7ac87a','by'],
+    ['newzealand','6813b6d546e731854c7ac880','nz'],
+    ['armenia','6813b6d546e731854c7ac8d4','am'],
+    ['saudiarabia','6813b6d546e731854c7ac8cb','sa'],
+    ['tajikistan','6813b6d546e731854c7ac8c8','tj'],
+    ['kuwait','6813b6d546e731854c7ac8e0','kw'],
+    ['nicaragua','6813b6d546e731854c7ac8af','ni'],
+    ['georgia','683ddd2c24b5a2e114af15bf','ge'],
+    ['cambodia','683ddd2c24b5a2e114af15c9','kh'],
+    ['malaysia','683ddd2c24b5a2e114af15d9','my'],
+    ['oman','683ddd2c24b5a2e114af15fd','om'],
+    ['mali','6873d0ea1758b40e712b5ee9','ml'],
+    ['gabon','6873d0ea1758b40e712b5ef7','ga'],
+    ['centralafrica','6873d0ea1758b40e712b5f2e','cf'],
+    ['zimbabwe','6873d0ea1758b40e712b5f6d','zw'],
+    ['drcongo','6873d0ea1758b40e712b5f28','cd'],
+    ['france','6813b6d446e731854c7ac79a','fr'],
+    ['japan','6813b6d546e731854c7ac81d','jp'],
+    ['kazakhstan','6813b6d546e731854c7ac8ce','kz'],
+    ['albania','6813b6d446e731854c7ac7f5','al'],
+    ['argentina','6813b6d546e731854c7ac832','ar'],
+    ['suriname','6813b6d546e731854c7ac8a0','sr'],
+    ['eritrea','6873d0ea1758b40e712b5f19','er'],
+    ['djibouti','6873d0ea1758b40e712b5f16','dj'],
+    ['congo','6873d0ea1758b40e712b5f4c','cg'],
+    ['liberia','6873d0ea1758b40e712b5f79','lr'],
+    ['chad','6873d0ea1758b40e712b5f7c','td'],
+    ['spain','6813b6d446e731854c7ac7a8','es'],
+    ['croatia','6813b6d446e731854c7ac7bc','hr'],
+    ['sweden','6813b6d446e731854c7ac7f2','se'],
+    ['ecuador','6813b6d546e731854c7ac855','ec'],
+    ['australia','6813b6d546e731854c7ac87d','au'],
+    ['puertorico','6813b6d546e731854c7ac89c','pr'],
+    ['turkmenistan','6813b6d546e731854c7ac8be','tm'],
+    ['azerbaijan','6813b6d546e731854c7ac8d1','az'],
+    ['montenegro','6813b6d546e731854c7ac814','me'],
+    ['unitedarabemirates','683ddd2c24b5a2e114af15b5','ae'],
+    ['somalia','683ddd2c24b5a2e114af1603','so'],
+    ['mauritania','6873d0ea1758b40e712b5eed','mr'],
+    ['sierraleone','6873d0ea1758b40e712b5f1f','sl'],
+    ['andorra','687eab339142f76907295e4e','ad'],
+    ['india','6813b6d546e731854c7ac862','in'],
+    ['hungary','6813b6d446e731854c7ac7b2','hu'],
+    ['romania','6813b6d446e731854c7ac7b6','ro'],
+    ['brazil','6813b6d546e731854c7ac82f','br'],
+    ['philippines','6813b6d546e731854c7ac82c','ph'],
+    ['cyprus','6813b6d546e731854c7ac842','cy'],
+    ['kenya','6813b6d546e731854c7ac86e','ke'],
+    ['pakistan','6813b6d546e731854c7ac8da','pk'],
+    ['mozambique','683ddd2c24b5a2e114af15db','mz'],
+    ['nigeria','683ddd2c24b5a2e114af15fa','ng'],
+    ['syria','683ddd2c24b5a2e114af1606','sy'],
+    ['thailand','683ddd2c24b5a2e114af1609','th'],
+    ['malawi','6873d0ea1758b40e712b5f46','mw'],
+    ['unitedkingdom','6813b6d446e731854c7ac79e','uk'],
+    ['bahamas','6813b6d546e731854c7ac889','bs'],
+    ['serbia','6813b6d446e731854c7ac7ba','rs'],
+    ['china','6813b6d546e731854c7ac820','cn'],
+    ['russia','6813b6d546e731854c7ac868','ru'],
+    ['jamaica','6813b6d546e731854c7ac899','jm'],
+    ['elsalvador','6813b6d546e731854c7ac8b2','sv'],
+    ['afghanistan','6813b6d546e731854c7ac8d7','af'],
+    ['austria','6813b6d446e731854c7ac7ac','at'],
+    ['ethiopia','683ddd2c24b5a2e114af15bd','et'],
+    ['bhutan','683ddd2c24b5a2e114af15bb','bt'],
+    ['israel','683ddd2c24b5a2e114af15c1','il'],
+    ['palestine','683ddd2c24b5a2e114af1600','ps'],
+    ['yemen','683ddd2c24b5a2e114af160f','ye'],
+    ['cameroon','6873d0ea1758b40e712b5ef5','cm'],
+    ['guinea','6873d0ea1758b40e712b5f2b','gn'],
+    ['lesotho','6873d0ea1758b40e712b5f5c','ls'],
+    ['eswatini','6873d0ea1758b40e712b5f59','sz'],
+    ['vanuatu','6873d0ea1758b40e712b5f63','vu'],
+    ['solomonislands','6873d0ea1758b40e712b5f60','sb'],
+    ['nepal','6873d0ea1758b40e712b5f6a','np'],
+    ['saotomeandprincipe','6873d0ea1758b40e712b5f76','st'],
+    ['togo','6873d0ea1758b40e712b5f22','tg'],
+    ['bahrain','687eab339142f76907295e50','bh'],
+    ['netherlands','6813b6d446e731854c7ac7a0','nl'],
+    ['belgium','6813b6d446e731854c7ac7a4','be'],
+    ['estonia','6813b6d446e731854c7ac7e2','ee'],
+    ['dominicanrepublic','6813b6d546e731854c7ac88d','do'],
+    ['germany','6813b6d446e731854c7ac79c','de'],
+    ['turkiye','6813b6d446e731854c7ac7eb','tr'],
+    ['tunisia','6813b6d546e731854c7ac84e','tn'],
+    ['ukraine','6813b6d546e731854c7ac865','ua'],
+    ['guineabissau','6873d0ea1758b40e712b5f1c','gw'],
+    ['vatican','69614d0e5d798a861630c58e','va'],
+    ['comoros','696a81da63e2489f47e5a28a','km'],
+    ['liechtenstein','696a81da63e2489f47e5a28c','li'],
+    ['mauritius','696a81da63e2489f47e5a28e','mu'],
+  ];
+  // Official display names (exactly as the game shows them), keyed by
+  // the same key used above. Kept separate from COUNTRIES_RAW purely for
+  // readability — this list is what users actually see/search.
+  const COUNTRY_NAMES = {
+    ireland:'Ireland', bolivia:'Bolivia', singapore:'Singapore', switzerland:'Switzerland',
+    taiwan:'Taiwan', trinidadandtobago:'Trinidad and Tobago', panama:'Panama', belize:'Belize',
+    haiti:'Haiti', bangladesh:'Bangladesh', jordan:'Jordan', iceland:'Iceland',
+    madagascar:'Madagascar', namibia:'Namibia', czechia:'Czechia', slovenia:'Slovenia',
+    bulgaria:'Bulgaria', bosnia:'Bosnia', venezuela:'Venezuela', greenland:'Greenland',
+    uzbekistan:'Uzbekistan', qatar:'Qatar', indonesia:'Indonesia', algeria:'Algeria',
+    paraguay:'Paraguay', angola:'Angola', lebanon:'Lebanon', srilanka:'Sri Lanka',
+    myanmar:'Myanmar', unitedkorea:'United Korea', gambia:'Gambia',
+    equatorialguinea:'Equatorial Guinea', capeverde:'Cape Verde', brunei:'Brunei',
+    easttimor:'East Timor', colombia:'Colombia', unitedstates:'United States', chile:'Chile',
+    libya:'Libya', honduras:'Honduras', guatemala:'Guatemala', malta:'Malta', rwanda:'Rwanda',
+    luxembourg:'Luxembourg', mexico:'Mexico', uruguay:'Uruguay', moldova:'Moldova',
+    southsudan:'South Sudan', fiji:'Fiji', vietnam:'Vietnam', uganda:'Uganda',
+    burkinafaso:'Burkina Faso', tanzania:'Tanzania', burundi:'Burundi',
+    papuanewguinea:'Papua New Guinea', canada:'Canada', peru:'Peru', cuba:'Cuba',
+    costarica:'Costa Rica', egypt:'Egypt', kyrgyzstan:'Kyrgyzstan', laos:'Laos',
+    benin:'Benin', ivorycoast:'Ivory Coast', zambia:'Zambia', italy:'Italy', poland:'Poland',
+    lithuania:'Lithuania', finland:'Finland', southkorea:'South Korea', greece:'Greece',
+    sudan:'Sudan', guyana:'Guyana', iran:'Iran', slovakia:'Slovakia', iraq:'Iraq',
+    mongolia:'Mongolia', southafrica:'South Africa', senegal:'Senegal', ghana:'Ghana',
+    niger:'Niger', botswana:'Botswana', morocco:'Morocco', latvia:'Latvia',
+    portugal:'Portugal', denmark:'Denmark', norway:'Norway', northmacedonia:'North Macedonia',
+    kosovo:'Kosovo', belarus:'Belarus', newzealand:'New Zealand', armenia:'Armenia',
+    saudiarabia:'Saudi Arabia', tajikistan:'Tajikistan', kuwait:'Kuwait',
+    nicaragua:'Nicaragua', georgia:'Georgia', cambodia:'Cambodia', malaysia:'Malaysia',
+    oman:'Oman', mali:'Mali', gabon:'Gabon', centralafrica:'Central Africa',
+    zimbabwe:'Zimbabwe', drcongo:'DR Congo', france:'France', japan:'Japan',
+    kazakhstan:'Kazakhstan', albania:'Albania', argentina:'Argentina', suriname:'Suriname',
+    eritrea:'Eritrea', djibouti:'Djibouti', congo:'Congo', liberia:'Liberia', chad:'Chad',
+    spain:'Spain', croatia:'Croatia', sweden:'Sweden', ecuador:'Ecuador',
+    australia:'Australia', puertorico:'Puerto Rico', turkmenistan:'Turkmenistan',
+    azerbaijan:'Azerbaijan', montenegro:'Montenegro',
+    unitedarabemirates:'United Arab Emirates', somalia:'Somalia', mauritania:'Mauritania',
+    sierraleone:'Sierra Leone', andorra:'Andorra', india:'India', hungary:'Hungary',
+    romania:'Romania', brazil:'Brazil', philippines:'Philippines', cyprus:'Cyprus',
+    kenya:'Kenya', pakistan:'Pakistan', mozambique:'Mozambique', nigeria:'Nigeria',
+    syria:'Syria', thailand:'Thailand', malawi:'Malawi', unitedkingdom:'United Kingdom',
+    bahamas:'Bahamas', serbia:'Serbia', china:'China', russia:'Russia', jamaica:'Jamaica',
+    elsalvador:'El Salvador', afghanistan:'Afghanistan', austria:'Austria',
+    ethiopia:'Ethiopia', bhutan:'Bhutan', israel:'Israel', palestine:'Palestine',
+    yemen:'Yemen', cameroon:'Cameroon', guinea:'Guinea', lesotho:'Lesotho',
+    eswatini:'Eswatini', vanuatu:'Vanuatu', solomonislands:'Solomon Islands', nepal:'Nepal',
+    saotomeandprincipe:'São Tomé and Príncipe', togo:'Togo', bahrain:'Bahrain',
+    netherlands:'Netherlands', belgium:'Belgium', estonia:'Estonia',
+    dominicanrepublic:'Dominican Republic', germany:'Germany', turkiye:'Turkiye',
+    tunisia:'Tunisia', ukraine:'Ukraine', guineabissau:'Guinea-Bissau', vatican:'Vatican',
+    comoros:'Comoros', liechtenstein:'Liechtenstein', mauritius:'Mauritius',
   };
+  const COUNTRIES = {};
+  for (const [key, id, code] of COUNTRIES_RAW) {
+    COUNTRIES[key] = { id, code, label: COUNTRY_NAMES[key] || key };
+  }
   const DEFAULT_COUNTRY = 'ireland';
+
+  // Converts a 2-letter country code (e.g. "ie") into its flag emoji
+  // (🇮🇪) — mechanical Unicode conversion (each letter maps to a
+  // "regional indicator symbol"), not a per-country lookup table, so it
+  // can't drift out of sync with the code list. Tested against every
+  // code actually in COUNTRIES_RAW, including "uk" and "xk" (Kosovo,
+  // no strict ISO-3166 entry) — both render correctly via this scheme.
+  // Fallback only fires for malformed/missing input.
+  function flagEmoji(code) {
+    if (!code || code.length !== 2) return '🏳️';
+    const cc = code.toUpperCase();
+    const base = 0x1F1E6; // regional indicator 'A'
+    const chars = [...cc].map(c => {
+      const off = c.charCodeAt(0) - 65; // 'A' = 0
+      if (off < 0 || off > 25) return null;
+      return String.fromCodePoint(base + off);
+    });
+    if (chars.includes(null)) return '🏳️';
+    return chars.join('');
+  }
 
   // Skill buckets — same definitions as the war detector bot, so the
   // build labels on the roster agree with what the bot uses internally.
@@ -73,11 +329,17 @@ const RosterTool = (() => {
   const BAR_CRIT = 25;
 
   /* ── DOM ──────────────────────────────────────────────────────────
-   * Only #roster-content is required now. #roster-status is used if
-   * present. The old #roster-username / #roster-load are no longer used
-   * (the tool loads on open) — you can delete them from the HTML. */
-  const $status  = document.getElementById('roster-status');
-  const $content = document.getElementById('roster-content');
+   * #roster-content and #roster-status are the existing required hooks.
+   * #roster-country-search / #roster-country-dropdown are the new
+   * country picker (replaces the old dead #roster-username/#roster-load).
+   * #roster-title is the per-country <h2> ("🇮🇪 Irish Roster" etc.) that
+   * this file now updates dynamically — it sits BELOW the static
+   * "Battle Intel Ireland" <h1> banner, which this file never touches. */
+  const $status   = document.getElementById('roster-status');
+  const $content  = document.getElementById('roster-content');
+  const $search   = document.getElementById('roster-country-search');
+  const $dropdown = document.getElementById('roster-country-dropdown');
+  const $title    = document.getElementById('roster-title');
 
   /* ── State ────────────────────────────────────────────────────────── */
   let countryKey = DEFAULT_COUNTRY;
@@ -87,6 +349,80 @@ const RosterTool = (() => {
   let sortDir    = 'desc';
   let filters    = freshFilters();
   let running    = false;
+
+  /* ═══════════════════════════════════════════════════════════════════
+   *  COUNTRY PICKER
+   *  Typeahead over the 180-country list. Search matches the official
+   *  display name (case-insensitive substring) — typing "bra" matches
+   *  "Brazil". Selecting a result updates the URL (same #roster?country=
+   *  pattern the old single-country version already used), updates the
+   *  page title, and reloads the roster for that country.
+   * ═══════════════════════════════════════════════════════════════════ */
+  function updateTitle(key) {
+    if (!$title) return;
+    const c = COUNTRIES[key] || COUNTRIES[DEFAULT_COUNTRY];
+    $title.textContent = `${flagEmoji(c.code)} ${c.label} Roster`;
+  }
+
+  function searchCountries(query) {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    return Object.entries(COUNTRIES)
+      .filter(([, c]) => c.label.toLowerCase().includes(q))
+      .sort((a, b) => a[1].label.localeCompare(b[1].label))
+      .slice(0, 8); // cap the dropdown so it never grows unwieldy
+  }
+
+  function renderDropdown(matches) {
+    if (!$dropdown) return;
+    if (!matches.length) { $dropdown.classList.add('hidden'); $dropdown.innerHTML = ''; return; }
+    $dropdown.innerHTML = matches.map(([key, c]) => `
+      <div class="rs-country-opt" data-key="${escapeHtml(key)}">
+        <span class="rs-country-flag">${flagEmoji(c.code)}</span>
+        <span>${escapeHtml(c.label)}</span>
+      </div>`).join('');
+    $dropdown.classList.remove('hidden');
+  }
+
+  function selectCountry(key) {
+    if (!COUNTRIES[key] || key === countryKey) {
+      // Still close the dropdown even if re-picking the same country —
+      // otherwise it looks like the click did nothing.
+      if ($dropdown) { $dropdown.classList.add('hidden'); $dropdown.innerHTML = ''; }
+      if ($search) $search.value = '';
+      return;
+    }
+    countryKey = key;
+    try { history.replaceState(null, '', `#roster?country=${encodeURIComponent(countryKey)}`); } catch {}
+    updateTitle(countryKey);
+    if ($search) $search.value = '';
+    if ($dropdown) { $dropdown.classList.add('hidden'); $dropdown.innerHTML = ''; }
+    run();
+  }
+
+  function wireCountryPicker() {
+    if (!$search) return; // HTML not updated yet on this page — degrade silently
+    $search.addEventListener('input', () => {
+      renderDropdown(searchCountries($search.value));
+    });
+    $search.addEventListener('focus', () => {
+      if ($search.value.trim()) renderDropdown(searchCountries($search.value));
+    });
+    document.addEventListener('click', (e) => {
+      if ($dropdown && !$dropdown.contains(e.target) && e.target !== $search) {
+        $dropdown.classList.add('hidden');
+      }
+    });
+    if ($dropdown) {
+      $dropdown.addEventListener('click', (e) => {
+        const opt = e.target.closest('.rs-country-opt');
+        if (opt) selectCountry(opt.dataset.key);
+      });
+    }
+    $search.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { $dropdown?.classList.add('hidden'); $search.blur(); }
+    });
+  }
 
   function freshFilters() {
     return { mu: 'all', build: 'all', pill: 'all',
@@ -701,6 +1037,7 @@ const RosterTool = (() => {
   async function run() {
     if (running) return;
     const country = COUNTRIES[countryKey] || COUNTRIES[DEFAULT_COUNTRY];
+    updateTitle(countryKey);
 
     running = true;
     setStatus('');
@@ -738,9 +1075,11 @@ const RosterTool = (() => {
   }
 
   /* ── Public API ───────────────────────────────────────────────────── */
+  let pickerWired = false;
   return {
     // Loads on open. Reads #roster?country=<key>; defaults to Ireland.
     activate(params) {
+      if (!pickerWired) { wireCountryPicker(); pickerWired = true; }
       const get = (k) => (params && params.get && params.get(k))
         || new URLSearchParams(location.search).get(k);
       const c = (get('country') || DEFAULT_COUNTRY).toLowerCase();

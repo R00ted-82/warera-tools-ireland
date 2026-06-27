@@ -380,8 +380,14 @@ const RosterTool = (() => {
    *  (which is already a CSS variable, so dark/light both just work).
    * ═══════════════════════════════════════════════════════════════════ */
   const ICONS = {
-    arrowUp:  '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="6 11 12 5 18 11"/></svg>',
-    arrowDown:'<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="18 13 12 19 6 13"/></svg>',
+    // Real game icons — captured via Inspect Element directly off WarEra's
+    // own profile pages (not redrawn/approximated). buff = mdi-pill,
+    // debuff = mdi-pill-off (same base shape + a diagonal strike). Both use
+    // fill="currentColor" with a solid path, matching the source exactly —
+    // unlike our other hand-drawn stroke icons. Colour still comes from the
+    // surrounding .rs-buff/.rs-debuff CSS class, same as before.
+    arrowUp:  '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M4.22,11.29L11.29,4.22C13.64,1.88 17.43,1.88 19.78,4.22C22.12,6.56 22.12,10.36 19.78,12.71L12.71,19.78C10.36,22.12 6.56,22.12 4.22,19.78C1.88,17.43 1.88,13.64 4.22,11.29M5.64,12.71C4.59,13.75 4.24,15.24 4.6,16.57L10.59,10.59L14.83,14.83L18.36,11.29C19.93,9.73 19.93,7.2 18.36,5.64C16.8,4.07 14.27,4.07 12.71,5.64L5.64,12.71Z"/></svg>',
+    arrowDown:'<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M22.11 21.46L2.39 1.73L1.11 3L6.81 8.7L4.22 11.29C1.88 13.64 1.88 17.43 4.22 19.78C6.56 22.12 10.36 22.12 12.71 19.78L15.39 17.19L20.84 22.73L22.11 21.46M4.6 16.57C4.24 15.24 4.59 13.5 5.64 12.71L8.23 10.12L9.64 11.53L4.6 16.57M10.78 7.58L9.36 6.16L11.29 4.22C13.64 1.88 17.43 1.88 19.78 4.22C22.12 6.56 22.12 10.36 19.78 12.71L17.85 14.65L16.43 13.23L18.36 11.29C19.93 7.2 18.36 5.64C16.8 4.07 14.27 4.07 12.71 5.64L10.78 7.58Z"/></svg>',
     sword:    '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="13 5 19 5 19 11"/><line x1="19" y1="19" x2="5" y2="5"/><polyline points="11 5 5 5 5 11"/></svg>',
     coin:     '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M9.5 9.5c0-1.2 1-2 2.5-2s2.5.8 2.5 2-1 1.6-2.5 2.5-2.5 1.3-2.5 2.5 1 2 2.5 2 2.5-.8 2.5-2"/></svg>',
     overlap:  '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="12" r="6.5"/><circle cx="14.5" cy="12" r="6.5"/></svg>',
@@ -400,7 +406,7 @@ const RosterTool = (() => {
   }
 
   function renderBuild(build) {
-    const labels = { combat: 'Combat', economy: 'Economy', mixed: 'Mixed', unknown: '–' };
+    const labels = { combat: 'War Mode', economy: 'Economy', mixed: 'Mixed', unknown: '–' };
     const icon   = { combat: ICONS.sword, economy: ICONS.coin, mixed: ICONS.overlap, unknown: '' };
     const tooltip = build.ratio != null
       ? `${build.ratio.toFixed(0)}% combat skills`
@@ -527,7 +533,7 @@ const RosterTool = (() => {
     return `
       <div class="rs-summary">
         <span><strong>${shownRows.length}</strong>${filtered ? ` of ${allRows.length}` : ''} shown</span>
-        <span><strong>${combat}</strong> combat</span>
+        <span><strong>${combat}</strong> war mode</span>
         <span><strong>${economy}</strong> economy</span>
         <span><strong>${mixed}</strong> mixed</span>
         ${unknown ? `<span><strong>${unknown}</strong> too new</span>` : ''}
@@ -589,7 +595,7 @@ const RosterTool = (() => {
         <label class="rs-filter">Build
           <select data-filter="build">
             <option value="all"${sel(filters.build,'all')}>All</option>
-            <option value="combat"${sel(filters.build,'combat')}>Combat</option>
+            <option value="combat"${sel(filters.build,'combat')}>War Mode</option>
             <option value="economy"${sel(filters.build,'economy')}>Economy</option>
             <option value="mixed"${sel(filters.build,'mixed')}>Mixed</option>
           </select>

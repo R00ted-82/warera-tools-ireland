@@ -103,9 +103,17 @@
         🏛️ Restricted tools for Irish government ministers.
       </p>
       <div class="community-note">
-        These tools are encrypted and require a minister password to open. If you're not a current minister, you won't be able to load them.
+        The 🔒 tools are encrypted and require a minister password to open — if you're not a current minister, you won't be able to load them. Others are open to everyone.
       </div>
       <div class="tool-cards">
+        <a class="tool-card" href="#tax">
+          <div class="tool-card-icon">🧾</div>
+          <div class="tool-card-body">
+            <h3>Irish Factory Tax</h3>
+            <p>Irish-owned factories grouped by the country they're based in, and the income tax that country takes off their workers' wages — surfacing tax leaking to foreign economies. Open to everyone.</p>
+            <span class="tool-link">Open Irish Factory Tax →</span>
+          </div>
+        </a>
         <a class="tool-card" href="#buddy">
           <div class="tool-card-icon">👀</div>
           <div class="tool-card-body">
@@ -897,6 +905,47 @@
     </div>
   </section>
 
+  <!-- ─── Irish Tax Flow view (standalone; not linked from nav) ──────
+       Where Irish citizens work and which country collects the income
+       tax on their wages. Powered by IrishTaxTool (js/irish-tax.js). -->
+  <section class="view" data-view="tax">
+    <div class="tool-header">
+      <div class="title-block">
+        <h2><span>🧾</span> Irish Factory Tax</h2>
+        <p>Irish-owned factories that employ workers, grouped by the country they're based in — and the income tax that country takes off those wages. Surfaces tax "leaking" to foreign economies.</p>
+      </div>
+      <div class="controls">
+        <button id="tax-refresh">Refresh</button>
+      </div>
+    </div>
+
+    <div id="tax-steps" class="steps hidden">
+      <div class="step" data-state="pending" data-step="1">
+        <div class="step-icon"></div>
+        <div class="step-body"><div class="step-title">Finding Irish citizens</div><div class="step-sub"></div></div>
+        <div class="step-count"></div>
+      </div>
+      <div class="step" data-state="pending" data-step="2">
+        <div class="step-icon"></div>
+        <div class="step-body"><div class="step-title">Pulling Irish-owned factories &amp; workers</div><div class="step-sub"></div></div>
+        <div class="step-count"></div>
+      </div>
+      <div class="step" data-state="pending" data-step="3">
+        <div class="step-icon"></div>
+        <div class="step-body"><div class="step-title">Loading countries &amp; tax rates</div><div class="step-sub"></div></div>
+        <div class="step-count"></div>
+      </div>
+      <div class="step" data-state="pending" data-step="4">
+        <div class="step-icon"></div>
+        <div class="step-body"><div class="step-title">Summing actual wages</div><div class="step-sub"></div></div>
+        <div class="step-count"></div>
+      </div>
+    </div>
+    <div id="tax-status" class="status hidden"></div>
+    <div id="tax-summary"></div>
+    <div id="tax-table"></div>
+  </section>
+
   <!-- ─── Buddy System view (encrypted; MoECON password required) ───── -->
   <section class="view" data-view="buddy">
     <div class="tool-header">
@@ -990,6 +1039,7 @@
 <script src="js/wealth.js?v=20260617h"></script>
 <script src="js/daily-profit.js?v=20260617h"></script>
 <script src="js/dashboard.js?v=20260623a"></script>
+<script src="js/irish-tax.js?v=20260629b"></script>
 <script src="js/buddy.js?v=20260617h"></script>
 <script src="js/battle-orders.js?v=20260617h"></script>
 <script src="js/beer.js?v=20260617h"></script>

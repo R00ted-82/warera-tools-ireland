@@ -34,7 +34,7 @@
   const VALID = new Set([
     'home', 'community', 'gov', 'mu', 'buddy-finder',
     'advisor', 'clockin', 'profit', 'wealth', 'buddy', 'battle-orders',  'beer',
-    'dashboard', 'roster'
+    'dashboard', 'roster', 'tax',
   ]);
   const LANDING = new Set(['dashboard', 'home', 'community', 'gov', 'beer']);
   const DEFAULT_VIEW = 'dashboard';
@@ -57,7 +57,8 @@
     'battle-orders': BattleOrdersGate,
     beer: BeerGate,
     dashboard: DashboardTool,
-    roster: RosterTool
+    roster: RosterTool,
+    tax: IrishTaxTool,
   };
 
   function parseRoute() {

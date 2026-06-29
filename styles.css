@@ -2385,7 +2385,7 @@ table.rs-table {
 /* ═══════════════════════════════════════════════════════════════════
  *  IRISH TAX FLOW (#tax)
  * ═══════════════════════════════════════════════════════════════════ */
-.tax-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 4px 0 20px; }
+.tax-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 4px 0 20px; }
 .tax-card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
 .tax-card.warn { border-color: rgba(251,191,36,.35); }
 .tax-card.ok { border-color: rgba(74,222,128,.35); }
@@ -2424,3 +2424,19 @@ table.rs-table {
 .tax-fac-workers a:hover { color: var(--link); border-color: var(--link); }
 .tax-sep { color: var(--border); margin: 0 6px; }
 .tax-dim { color: var(--muted); }
+
+/* Irish Factory Tax — table scrolls horizontally instead of overflowing the page */
+.tax-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -2px; }
+
+/* Irish Factory Tax — mobile tuning */
+@media (max-width: 560px) {
+  .tax-cards { gap: 8px; margin-bottom: 16px; }
+  .tax-card { padding: 11px 13px; border-radius: 10px; }
+  .tax-card-v { font-size: 19px; }
+  .tax-card-l { font-size: 11px; }
+  .tax-tbl { font-size: 12.5px; }
+  .tax-tbl th, .tax-tbl td { padding: 8px 9px; }
+  .tax-tbl th { font-size: 11px; }
+  .tax-fac-workers { font-size: 12px; line-height: 1.9; }
+  .tax-note { font-size: 11px; }
+}

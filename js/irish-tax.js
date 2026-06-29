@@ -249,7 +249,7 @@ const IrishTaxTool = (() => {
       </div>`;
 
     $table.innerHTML = `
-      <table class="tax-tbl">
+      <div class="tax-table-wrap"><table class="tax-tbl">
         <thead><tr>
           <th class="l">Factory country</th>
           <th>Factories</th>
@@ -268,7 +268,7 @@ const IrishTaxTool = (() => {
             <td><strong>₿${money(r.tax)}</strong></td>
           </tr>
           <tr class="tax-detail" data-detail="${r.id}"><td colspan="6">${detailHtml(r)}</td></tr>`).join('')}</tbody>
-      </table>
+      </table></div>
       <p class="tax-note">Tax is estimated: wage transactions carry no tax line, so each country's income-tax rate is applied to the wages its Irish-owned factories actually paid in the last 24h. Click any country to see its factories, owners and workers. Factories are matched to a country via their region.</p>`;
 
     // Expand/collapse a country's drill-down.

@@ -2381,6 +2381,8 @@ table.rs-table {
 }
 .rs-country-opt:hover { background: var(--panel-2); }
 .rs-country-flag { font-size: 15px; }
+
+/* ═══════════════════════════════════════════════════════════════════
  *  IRISH TAX FLOW (#tax)
  * ═══════════════════════════════════════════════════════════════════ */
 .tax-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 4px 0 20px; }

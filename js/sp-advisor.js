@@ -14,12 +14,14 @@
  *   - user.getUserLite({userId}) -> leveling.level (player level).
  *     Official documented schema confirms this field exists on the
  *     LITE endpoint, no need for the heavier getUserById.
- *   - company.getCompanies({userId}) -> array of company objects,
- *     each with workerCount already attached. companies owned =
- *     array.length; workers managed = sum of workerCount across the
- *     array. Confirmed from a real capture showing workerCount on
- *     individual company objects (including 0 for unstaffed
- *     companies — they appear in the array, not omitted).
+ *   - company.getCompanies({userId, perPage}) -> { items: [companyId, ...] }.
+ *     The items are ID strings, NOT full company objects, so worker
+ *     counts are not attached here. companies owned = items.length.
+ *     perPage must be passed (default page size is 10) or users with
+ *     more than 10 companies get silently truncated.
+ *   - worker.getWorkers({userId}) -> { workersPerCompany: [{ company,
+ *     workers: [...] }, ...] }. Workers managed = sum of workers.length
+ *     across every entry. Same source advisor/daily-profit/clockin use.
  *   - Username resolution follows the exact same anti-fuzzy pattern
  *     as buddy-finder.js: search.searchAnything for candidates, then
  *     verify by exact case-insensitive username match via
@@ -140,9 +142,12 @@ const SkillPointAdvisorTool = (() => {
       return;
     }
 
-    let companies;
+    let companies, workersData;
     try {
-      companies = await trpc('company.getCompanies', { userId: user._id, perPage: 100 }, { retry: true });
+      [companies, workersData] = await Promise.all([
+        trpc('company.getCompanies', { userId: user._id, perPage: 100 }, { retry: true }),
+        trpc('worker.getWorkers', { userId: user._id }, { retry: true }),
+      ]);
     } catch (e) {
       if (myGeneration !== lookupGeneration) return;
       showLookupStatus('error', `Found ${escapeHtml(user.username)}, but couldn't load their companies. ${escapeHtml(e.message)}`);
@@ -150,9 +155,14 @@ const SkillPointAdvisorTool = (() => {
     }
     if (myGeneration !== lookupGeneration) return;
 
+    // company.getCompanies returns { items: [companyId, ...] } — the items are
+    // ID strings, not full company objects, so worker counts are NOT attached
+    // here. Workers come from worker.getWorkers -> workersPerCompany, the same
+    // source advisor/daily-profit/clockin use.
     const companyList = Array.isArray(companies) ? companies : (companies?.items || []);
     const numCompanies = companyList.length;
-    const numWorkers = companyList.reduce((sum, c) => sum + (Number(c?.workerCount) || 0), 0);
+    const numWorkers = (workersData?.workersPerCompany || [])
+      .reduce((sum, entry) => sum + (entry?.workers?.length || 0), 0);
     const level = user?.leveling?.level;
 
     if (!Number.isFinite(level)) {

@@ -142,7 +142,7 @@ const SkillPointAdvisorTool = (() => {
 
     let companies;
     try {
-      companies = await trpc('company.getCompanies', { userId: user._id }, { retry: true });
+      companies = await trpc('company.getCompanies', { userId: user._id, perPage: 100 }, { retry: true });
     } catch (e) {
       if (myGeneration !== lookupGeneration) return;
       showLookupStatus('error', `Found ${escapeHtml(user.username)}, but couldn't load their companies. ${escapeHtml(e.message)}`);

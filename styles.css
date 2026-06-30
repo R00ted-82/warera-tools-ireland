@@ -2544,6 +2544,9 @@ table.rs-table {
 }
 .spa-lookup-status strong { color: inherit; font-weight: 600; }
 
+/* Hide eco-only fields in war mode */
+.spa-field-hidden { display: none; }
+
 /* Build type toggle */
 .spa-build-type-field { margin-top: 2px; }
 .spa-build-toggle { display: flex; gap: 8px; margin-top: 2px; }
@@ -2566,4 +2569,14 @@ table.rs-table {
 
 @media (max-width: 720px) {
   .spa-results { flex-direction: column; }
+  .spa-stats-card { flex-direction: column; gap: 16px; }
+  .spa-current-alloc { padding-left: 0; border-left: none; border-top: 1px solid var(--border); padding-top: 16px; }
+  .spa-assump { gap: 10px 16px; }
+  .spa-field input { width: 80px; }
+  .spa-build-row { grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 6px; }
+  .spa-build-chip { padding: 6px 8px; }
+  .spa-build-chip .k { font-size: 9.5px; }
+  .spa-build-chip .v { font-size: 15px; }
+  .spa-toggle-opt { font-size: 12px; padding: 4px 8px; }
+  .spa-result-card { padding: 14px; }
 }

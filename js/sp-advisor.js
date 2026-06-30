@@ -51,10 +51,12 @@ const SkillPointAdvisorTool = (() => {
 
   const $ecoCard      = document.getElementById('spa-eco-card');
   const $warCard      = document.getElementById('spa-war-card');
-  const $warBuild   = document.getElementById('spa-war-build');
-  const $warUnspent = document.getElementById('spa-war-unspent');
-  const $warEmpty   = document.getElementById('spa-war-empty');
-  const $buildTypeInputs = document.querySelectorAll('input[name="spa-build-type"]');
+  const $warBuild     = document.getElementById('spa-war-build');
+  const $warUnspent   = document.getElementById('spa-war-unspent');
+  const $warEmpty     = document.getElementById('spa-war-empty');
+  const $buildTypeInputs    = document.querySelectorAll('input[name="spa-build-type"]');
+  const $companiesField = document.getElementById('spa-companies-field');
+  const $workersField   = document.getElementById('spa-workers-field');
 
   // Tracks the last username we successfully resolved, so re-activating
   // with the same ?u= (e.g. switching tabs and back) is a no-op rather
@@ -295,6 +297,8 @@ const SkillPointAdvisorTool = (() => {
     const buildType = selectedBuildType();
 
     if (buildType === 'war') {
+      $companiesField.classList.add('spa-field-hidden');
+      $workersField.classList.add('spa-field-hidden');
       $ecoCard.classList.add('hidden');
       $warCard.classList.remove('hidden');
       renderWarBuild(level);
@@ -302,6 +306,8 @@ const SkillPointAdvisorTool = (() => {
     }
 
     // Eco mode
+    $companiesField.classList.remove('spa-field-hidden');
+    $workersField.classList.remove('spa-field-hidden');
     $warCard.classList.add('hidden');
     $ecoCard.classList.remove('hidden');
 

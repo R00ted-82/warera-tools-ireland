@@ -248,7 +248,7 @@ const SkillPointAdvisorTool = (() => {
     const row = lookupWarBuildTable(level);
     if (!row) {
       $warBuild.innerHTML = '';
-      $warUnspent.classList.add('hidden');
+      $warUnspent.textContent = '';
       $warEmpty.classList.remove('hidden');
       return;
     }
@@ -258,12 +258,9 @@ const SkillPointAdvisorTool = (() => {
     $warBuild.innerHTML = WAR_SKILL_DEFS.map(({ key, label }) =>
       buildChip(label, display[key], null, '')
     ).join('');
-    if (display.unspentSP > 0) {
-      $warUnspent.textContent = `${display.unspentSP} SP left unspent — save it for your next level-up upgrade.`;
-      $warUnspent.classList.remove('hidden');
-    } else {
-      $warUnspent.classList.add('hidden');
-    }
+    $warUnspent.textContent = display.unspentSP > 0
+      ? `${display.unspentSP} SP left unspent — save it for your next level-up upgrade.`
+      : '';
   }
 
   function recompute() {

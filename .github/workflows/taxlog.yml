@@ -2,9 +2,16 @@ name: Tax logger
 
 on:
   schedule:
-    # Once daily at 22:07 UTC — after the wealth logger (21:37 / 23:37)
-    # so both scripts aren't hammering the proxy at the same time.
-    - cron: "07 22 * * *"
+    # Daily, with built-in retries. The script records ONE entry per day and
+    # only writes when it actually sees wage data — an outage run writes
+    # nothing and exits, so the next cron retries ~2h later. Once a day has a
+    # good entry, later runs that day see it's done and exit immediately.
+    # All four times sit within the same UTC day so every attempt files under
+    # the same date (clean Mon–Sun weekly totals).
+    - cron: "07 16 * * *"   # 16:07 UTC — first attempt
+    - cron: "07 18 * * *"   # 18:07 UTC — retry if 16:07 found no data
+    - cron: "07 20 * * *"   # 20:07 UTC — retry
+    - cron: "07 22 * * *"   # 22:07 UTC — last attempt before midnight
   workflow_dispatch:
 
 permissions:

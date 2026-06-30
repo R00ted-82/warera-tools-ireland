@@ -346,6 +346,16 @@ def main():
         current = {"week_start": monday_iso, "days": [], "totals": {}}
         log(f"started week log for {monday_iso}")
 
+    # Skip-if-already-done: if today already has a real (non-empty) entry, a
+    # successful run has already happened today. The remaining fallback crons
+    # don't need to repeat the work. (An empty/zero entry from an outage run is
+    # never written — see the no-data guard below — so this only matches a good
+    # reading.)
+    for d in current["days"]:
+        if d.get("date") == today_iso and d.get("countries"):
+            log(f"{today_iso} already logged with data — nothing to do")
+            return 0
+
     # ── Step 1: Irish citizens ────────────────────────────────────────────────
     log("step 1: fetching Irish citizens…")
     citizens = fetch_all_irish()
@@ -375,9 +385,12 @@ def main():
     log(f"  {len(comp_ids)} factories across {len(owners)} Irish owners")
 
     if not comp_ids:
-        log("no Irish-owned factories found — saving empty day entry")
-        upsert_day(current, today_iso, [])
-        save_current_week(current)
+        # No factories with workers usually means the API didn't serve worker
+        # data (outage) rather than every Irish owner genuinely closing shop.
+        # Skip without writing so a fallback cron retries — don't record a
+        # blank day.
+        log("no Irish-owned factories found (likely API outage) — skipping "
+            "write, will retry on the next scheduled run")
         return 0
 
     # ── Step 3: Factory location → country → income-tax rate ─────────────────
@@ -424,6 +437,16 @@ def main():
 
     total_wages = sum(comp_wages.values())
     log(f"  total wages observed: {total_wages:.2f}")
+
+    # No-data guard: zero wages across every owner means the API isn't serving
+    # transaction data (game outage) — a real active player base never pays
+    # nothing in 24h. Don't write a misleading zero day; exit without touching
+    # the log so a later fallback cron retries. Today stays blank until a run
+    # actually sees wage data.
+    if total_wages <= 0:
+        log("no wage data observed (likely API outage) — skipping write, "
+            "will retry on the next scheduled run")
+        return 0
 
     # ── Aggregate per country ─────────────────────────────────────────────────
     agg = {}

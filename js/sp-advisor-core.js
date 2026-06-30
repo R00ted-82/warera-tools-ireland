@@ -115,6 +115,28 @@ function optimizeAllocation(remainingSP) {
   return best;
 }
 
+/* ── War build table (levels 20-30) ─────────────────────────────
+ *  Each entry is the cumulative skill allocation at that level.
+ *  Skills: attack, precision, critChance, critDamage, armor, dodge,
+ *          health, loot, hunger, ent, energy, prod, companies, management, unspentSP */
+const WAR_BUILD_TABLE = [
+  { level:20, attack:5, precision:4, critChance:3, critDamage:2, armor:4, dodge:4, health:4, loot:2, hunger:2, ent:0, energy:0, prod:0, companies:4, management:0, unspentSP:0 },
+  { level:21, attack:5, precision:4, critChance:3, critDamage:3, armor:4, dodge:4, health:4, loot:2, hunger:2, ent:0, energy:0, prod:0, companies:4, management:0, unspentSP:1 },
+  { level:22, attack:5, precision:4, critChance:3, critDamage:3, armor:4, dodge:4, health:4, loot:2, hunger:3, ent:0, energy:0, prod:0, companies:4, management:0, unspentSP:2 },
+  { level:23, attack:6, precision:4, critChance:3, critDamage:3, armor:4, dodge:4, health:4, loot:2, hunger:3, ent:0, energy:0, prod:0, companies:4, management:0, unspentSP:0 },
+  { level:24, attack:6, precision:4, critChance:4, critDamage:3, armor:4, dodge:4, health:4, loot:2, hunger:3, ent:0, energy:0, prod:0, companies:4, management:0, unspentSP:0 },
+  { level:25, attack:6, precision:4, critChance:4, critDamage:3, armor:4, dodge:4, health:4, loot:3, hunger:3, ent:0, energy:0, prod:0, companies:4, management:0, unspentSP:1 },
+  { level:26, attack:6, precision:4, critChance:4, critDamage:3, armor:4, dodge:5, health:4, loot:3, hunger:3, ent:0, energy:0, prod:0, companies:4, management:0, unspentSP:0 },
+  { level:27, attack:6, precision:4, critChance:4, critDamage:4, armor:4, dodge:5, health:4, loot:3, hunger:3, ent:0, energy:0, prod:0, companies:4, management:0, unspentSP:0 },
+  { level:28, attack:6, precision:4, critChance:4, critDamage:4, armor:4, dodge:5, health:4, loot:3, hunger:3, ent:0, energy:0, prod:0, companies:4, management:0, unspentSP:4 },
+  { level:29, attack:6, precision:5, critChance:4, critDamage:4, armor:4, dodge:5, health:4, loot:3, hunger:3, ent:0, energy:0, prod:0, companies:4, management:0, unspentSP:3 },
+  { level:30, attack:7, precision:5, critChance:4, critDamage:4, armor:4, dodge:5, health:4, loot:3, hunger:3, ent:0, energy:0, prod:0, companies:4, management:0, unspentSP:0 },
+];
+
+function lookupWarBuildTable(level) {
+  return WAR_BUILD_TABLE.find(r => r.level === level) || null;
+}
+
 /* ── Top-level entry point ──────────────────────────────────────
  *  level: player level (total SP available = level * 4, per the
  *         "4 SP per level" rule confirmed by the maintainer)

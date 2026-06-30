@@ -49,6 +49,13 @@ const SkillPointAdvisorTool = (() => {
   const $currentBuild = document.getElementById('spa-current-build');
   const $spRemaining  = document.getElementById('spa-sp-remaining');
 
+  const $ecoCard      = document.getElementById('spa-eco-card');
+  const $warCard      = document.getElementById('spa-war-card');
+  const $warBuild   = document.getElementById('spa-war-build');
+  const $warUnspent = document.getElementById('spa-war-unspent');
+  const $warEmpty   = document.getElementById('spa-war-empty');
+  const $buildTypeInputs = document.querySelectorAll('input[name="spa-build-type"]');
+
   // Tracks the last username we successfully resolved, so re-activating
   // with the same ?u= (e.g. switching tabs and back) is a no-op rather
   // than re-fetching. A generation counter guards against a slow,
@@ -219,6 +226,46 @@ const SkillPointAdvisorTool = (() => {
     }
   }
 
+  function selectedBuildType() {
+    for (const r of $buildTypeInputs) { if (r.checked) return r.value; }
+    return 'eco';
+  }
+
+  const WAR_SKILL_DEFS = [
+    { key: 'attack',     label: '⚔️ Attack'      },
+    { key: 'precision',  label: '🎯 Precision'    },
+    { key: 'critChance', label: '🎲 Crit Chance'  },
+    { key: 'critDamage', label: '💥 Crit Damage'  },
+    { key: 'armor',      label: '🛡️ Armor'        },
+    { key: 'dodge',      label: '💨 Dodge'        },
+    { key: 'health',     label: '❤️ Health'       },
+    { key: 'loot',       label: '💰 Loot'         },
+    { key: 'hunger',     label: '🍖 Hunger'       },
+    { key: 'companies',  label: '🏢 Companies'    },
+  ];
+
+  function renderWarBuild(level) {
+    const row = lookupWarBuildTable(level);
+    if (!row) {
+      $warBuild.innerHTML = '';
+      $warUnspent.classList.add('hidden');
+      $warEmpty.classList.remove('hidden');
+      return;
+    }
+    $warEmpty.classList.add('hidden');
+    // Companies is always Lv 4 for war build (6 companies active)
+    const display = { ...row, companies: 4 };
+    $warBuild.innerHTML = WAR_SKILL_DEFS.map(({ key, label }) =>
+      buildChip(label, display[key], null, '')
+    ).join('');
+    if (display.unspentSP > 0) {
+      $warUnspent.textContent = `${display.unspentSP} SP left unspent — save it for your next level-up upgrade.`;
+      $warUnspent.classList.remove('hidden');
+    } else {
+      $warUnspent.classList.add('hidden');
+    }
+  }
+
   function recompute() {
     const level = parseInt($level.value, 10);
     const numCompanies = parseInt($companies.value, 10);
@@ -247,6 +294,19 @@ const SkillPointAdvisorTool = (() => {
       return;
     }
     hideError();
+
+    const buildType = selectedBuildType();
+
+    if (buildType === 'war') {
+      $ecoCard.classList.add('hidden');
+      $warCard.classList.remove('hidden');
+      renderWarBuild(level);
+      return;
+    }
+
+    // Eco mode
+    $warCard.classList.add('hidden');
+    $ecoCard.classList.remove('hidden');
 
     // Current allocation panel is populated by autoPopulate() from live API data.
     // recompute() does not touch it — if no username has been looked up it stays hidden.
@@ -289,6 +349,9 @@ const SkillPointAdvisorTool = (() => {
 
   [$level, $companies, $workers].forEach($el => {
     $el.addEventListener('input', scheduleRecompute);
+  });
+  $buildTypeInputs.forEach($el => {
+    $el.addEventListener('change', scheduleRecompute);
   });
 
   return {

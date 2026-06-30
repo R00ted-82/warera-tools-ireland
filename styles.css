@@ -2544,6 +2544,26 @@ table.rs-table {
 }
 .spa-lookup-status strong { color: inherit; font-weight: 600; }
 
+/* Build type toggle */
+.spa-build-type-field { margin-top: 2px; }
+.spa-build-toggle { display: flex; gap: 8px; margin-top: 2px; }
+.spa-toggle-opt {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 13px; color: var(--text); cursor: pointer;
+  padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border);
+  transition: border-color .15s, background .15s;
+}
+.spa-toggle-opt:has(input:checked) {
+  border-color: rgba(96,165,250,.6); background: rgba(96,165,250,.08);
+}
+.spa-toggle-opt input { margin: 0; cursor: pointer; }
+
+/* War build card */
+.spa-result-card.spa-war { border-color: rgba(251,146,60,.35); }
+.spa-result-card.hidden { display: none; }
+.spa-war-empty { font-size: 12px; color: var(--muted); margin-top: 10px; }
+.spa-war-empty.hidden { display: none; }
+
 @media (max-width: 720px) {
   .spa-results { flex-direction: column; }
 }

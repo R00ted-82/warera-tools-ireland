@@ -599,6 +599,17 @@
           <input type="number" id="spa-workers" min="0" step="1" value="4" inputmode="numeric">
         </div>
       </div>
+      <div class="spa-field spa-build-type-field">
+        <label>Build type</label>
+        <div class="spa-build-toggle">
+          <label class="spa-toggle-opt">
+            <input type="radio" name="spa-build-type" value="eco" checked> Eco
+          </label>
+          <label class="spa-toggle-opt">
+            <input type="radio" name="spa-build-type" value="war"> War
+          </label>
+        </div>
+      </div>
       <div class="spa-lookup-status hidden" id="spa-lookup-status"></div>
       <div class="spa-error hidden" id="spa-error"></div>
     </div>
@@ -609,7 +620,7 @@
   </div>
 
   <div class="spa-results" id="spa-results">
-    <div class="spa-result-card spa-noresets">
+    <div class="spa-result-card spa-noresets" id="spa-eco-card">
       <div class="spa-result-label">📊 Recommended Skill Point Allocation (Eco Mode)</div>
       <div class="spa-result-sub">A smooth split you can follow as you level up, without ever needing to reset and re-spend.</div>
       <div class="spa-build-row" id="spa-noresets-build"></div>
@@ -617,6 +628,14 @@
         This reference table currently only covers 30–165 remaining SP. Outside that range, use the absolute optimum calculation — at low SP there's rarely a difference to worry about anyway.
       </div>
       <div class="spa-sp-remaining hidden" id="spa-sp-remaining"></div>
+    </div>
+
+    <div class="spa-result-card spa-war hidden" id="spa-war-card">
+      <div class="spa-result-label">⚔️ War Build — Skill Point Allocation (Levels 20–30)</div>
+      <div class="spa-result-sub">This is a guide for lvl 20–30 for the skills best suited for your war build. Focuses on Attack, Precision, Crit, Armor, and Dodge — not eco skills. Assumes 6 companies active (Companies Lv 4).</div>
+      <div class="spa-build-row" id="spa-war-build"></div>
+      <div class="spa-leftover hidden" id="spa-war-unspent"></div>
+      <div class="spa-war-empty hidden" id="spa-war-empty">War build guide covers levels 20–30. Outside that range, the eco build advisor applies.</div>
     </div>
 
     <div class="spa-result-card spa-optimal" style="display:none">

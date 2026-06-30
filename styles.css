@@ -2440,3 +2440,102 @@ table.rs-table {
   .tax-fac-workers { font-size: 12px; line-height: 1.9; }
   .tax-note { font-size: 11px; }
 }
+/* ═══════════════════════════════════════════════════════════════════
+ *  SKILL POINT ADVISOR (spa-)
+ *  Pure client-side calculator — no trpc calls. Styled to match the
+ *  dp-* assumption fields and tax-* result cards already in use.
+ * ═══════════════════════════════════════════════════════════════════ */
+.spa-card {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px 18px; margin-bottom: 16px;
+}
+.spa-card h3 { margin: 0 0 12px; font-size: 15px; font-weight: 600; color: var(--text); }
+
+.spa-assump { display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: flex-start; }
+.spa-field { display: flex; flex-direction: column; gap: 4px; }
+.spa-field label { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.spa-field input {
+  background: var(--bg); color: var(--text); border: 1px solid var(--border);
+  border-radius: 6px; padding: 7px 10px; font-size: 14px; font-family: inherit;
+  font-variant-numeric: tabular-nums; width: 140px;
+}
+.spa-field input:focus { outline: none; border-color: #3a4350; }
+.spa-field input[type=number]::-webkit-outer-spin-button,
+.spa-field input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.spa-field input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+.spa-suffix { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+.spa-error {
+  margin-top: 12px; padding: 10px 12px;
+  background: rgba(248,113,113,.08); border: 1px solid rgba(248,113,113,.3);
+  border-radius: 6px; color: var(--danger); font-size: 13px; line-height: 1.5;
+}
+.spa-error.hidden { display: none; }
+
+/* Two result cards side by side on desktop, stacked on mobile.
+   Flexbox rather than grid — equally correct for a simple even 2-column
+   split, and verified to render correctly across more tooling. */
+.spa-results {
+  display: flex; gap: 14px;
+  margin-bottom: 16px;
+}
+.spa-results > .spa-result-card { flex: 1 1 0; min-width: 0; }
+.spa-result-card {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px 18px;
+}
+.spa-result-card.spa-optimal { border-color: rgba(74,222,128,.35); }
+.spa-result-card.spa-noresets { border-color: rgba(96,165,250,.35); }
+
+.spa-result-label { font-size: 14px; font-weight: 600; color: var(--text); }
+.spa-result-sub { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+
+.spa-build-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px;
+  margin-top: 14px;
+}
+.spa-build-chip {
+  display: flex; flex-direction: column; gap: 2px;
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 10px; min-width: 0;
+}
+.spa-build-chip .k {
+  font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em;
+  display: flex; align-items: center; gap: 4px;
+  word-break: break-word; overflow-wrap: break-word; line-height: 1.3;
+}
+.spa-build-chip .v {
+  font-size: 17px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums;
+}
+.spa-build-chip .v small { font-size: 11px; font-weight: 500; color: var(--muted); margin-left: 4px; }
+
+.spa-leftover { font-size: 11.5px; color: var(--muted); margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+
+.spa-noresets-empty {
+  margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);
+  font-size: 12px; color: var(--muted); line-height: 1.5;
+}
+.spa-noresets-empty.hidden { display: none; }
+
+/* Lookup status — shown briefly while auto-populating from a profile lookup.
+   Same info/success/error pattern as .bf-inline-status, scoped under spa- so
+   it doesn't collide if both happen to be visible on the same shell page. */
+.spa-lookup-status {
+  padding: 8px 12px; border-radius: 6px;
+  font-size: 12px; line-height: 1.5; margin-top: 10px;
+}
+.spa-lookup-status.hidden { display: none; }
+.spa-lookup-status.info {
+  background: rgba(96, 165, 250, 0.08); border: 1px solid rgba(96, 165, 250, 0.25); color: var(--link);
+}
+.spa-lookup-status.success {
+  background: rgba(74, 222, 128, 0.10); border: 1px solid rgba(74, 222, 128, 0.30); color: var(--accent);
+}
+.spa-lookup-status.error {
+  background: rgba(248, 113, 113, 0.08); border: 1px solid rgba(248, 113, 113, 0.25); color: var(--danger);
+}
+.spa-lookup-status strong { color: inherit; font-weight: 600; }
+
+@media (max-width: 720px) {
+  .spa-results { flex-direction: column; }
+}

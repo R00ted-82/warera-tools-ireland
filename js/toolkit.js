@@ -32,8 +32,8 @@
 const ToolkitShell = (() => {
   const DEFAULT_TOOL       = 'advisor';   // first tab; used when no name yet
   const DEFAULT_AFTER_LOAD = 'advisor';   // user typed a name, show their data
-  const TOOLS              = ['advisor', 'clockin', 'buddy-finder', 'profit', 'wealth', 'mu'];
-  const USERNAME_DRIVEN    = new Set(['buddy-finder', 'advisor', 'clockin', 'profit', 'wealth']);
+  const TOOLS              = ['advisor', 'clockin', 'buddy-finder', 'profit', 'wealth', 'mu', 'sp-advisor'];
+  const USERNAME_DRIVEN    = new Set(['buddy-finder', 'advisor', 'clockin', 'profit', 'wealth', 'sp-advisor']);
 
   const MODULES = {
     mu:             () => MUTool,
@@ -42,6 +42,7 @@ const ToolkitShell = (() => {
     clockin:        () => ClockInTool,
     profit:         () => DailyProfitTool,
     wealth:         () => WealthMonitorTool,
+    'sp-advisor':   () => SkillPointAdvisorTool,
   };
 
   // One-line explainer shown in the info box for each tool. Replaces every
@@ -53,6 +54,7 @@ const ToolkitShell = (() => {
     'buddy-finder': { icon: '🤝', title: 'Buddy Finder',      desc: `Find a buddy for the Irish buddy system (you hire each other at minimum wage), or join the waiting list.` },
     profit:         { icon: '📈', title: 'Daily Profit',      desc: `Your projected daily profit — companies, salary, missions and case sales — plus which products pay best per production point.` },
     mu:             { icon: '🇮🇪', title: 'Irish Military Units', desc: `Military Units owned by Irish citizens, based in Ireland, with a majority-Irish roster.` },
+    'sp-advisor':   { icon: '🧮', title: 'Skill Point Advisor', desc: `Optimize your skill point allocation across different attributes and abilities.` },
   };
 
   const $mount    = document.getElementById('stg-mount');
@@ -173,7 +175,7 @@ const ToolkitShell = (() => {
     nativeReplace = history.replaceState.bind(history);
     history.replaceState = function (s, t, url) {
       if (typeof url === 'string') {
-        const m = url.match(/^#(mu|buddy-finder|advisor|clockin|profit|wealth)\b/);
+        const m = url.match(/^#(mu|buddy-finder|advisor|clockin|profit|wealth|sp-advisor)\b/);
         if (m) {
           const q = url.split('?')[1] || '';
           const u = new URLSearchParams(q).get('u');
@@ -354,6 +356,7 @@ const ToolkitShell = (() => {
     { title: '🏭 Production', tools: ['advisor', 'clockin'] },
     { title: '💰 Profits',    tools: ['buddy-finder', 'profit', 'wealth'] },
     { title: '⚔️ Combat',   tools: ['mu'] },
+    { title: '🧮 Planning',  tools: ['sp-advisor'] },
   ];
   function renderPreview() {
     if (!$preview || $preview.dataset.done) return;

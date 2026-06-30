@@ -1,0 +1,40 @@
+name: Tax logger
+
+on:
+  schedule:
+    # Once daily at 22:07 UTC — after the wealth logger (21:37 / 23:37)
+    # so both scripts aren't hammering the proxy at the same time.
+    - cron: "07 22 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tax-log
+  cancel-in-progress: false
+
+jobs:
+  log:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run tax logger
+        run: python tax_log.py
+
+      - name: Commit data
+        run: |
+          git config user.name "tax-log-bot"
+          git config user.email "tax-log-bot@users.noreply.github.com"
+          git add data/tax 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "no changes to commit"
+          else
+            git commit -m "tax-log: $(date -u +%FT%TZ)"
+            git push
+          fi

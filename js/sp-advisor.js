@@ -11,9 +11,11 @@
  *
  *  Data sources (confirmed from a real captured response, not
  *  guessed — see project notes):
- *   - user.getUserLite({userId}) -> leveling.level (player level).
- *     Official documented schema confirms this field exists on the
- *     LITE endpoint, no need for the heavier getUserById.
+ *   - user.getUserLite({userId}) -> leveling.level (player level),
+ *     leveling.availableSkillPoints (unspent SP), and skills.*level
+ *     for all skills including entrepreneurship, energy, production,
+ *     companies, management. Used to drive the live Current Allocation
+ *     panel directly — no derivation needed.
  *   - company.getCompanies({userId, perPage}) -> { items: [companyId, ...] }.
  *     The items are ID strings, NOT full company objects, so worker
  *     counts are not attached here. companies owned = items.length.
@@ -43,6 +45,10 @@ const SkillPointAdvisorTool = (() => {
   const $noResetsBuild = document.getElementById('spa-noresets-build');
   const $noResetsEmpty = document.getElementById('spa-noresets-empty');
 
+  const $currentAlloc = document.getElementById('spa-current-alloc');
+  const $currentBuild = document.getElementById('spa-current-build');
+  const $spRemaining  = document.getElementById('spa-sp-remaining');
+
   // Tracks the last username we successfully resolved, so re-activating
   // with the same ?u= (e.g. switching tabs and back) is a no-op rather
   // than re-fetching. A generation counter guards against a slow,
@@ -65,6 +71,8 @@ const SkillPointAdvisorTool = (() => {
     $error.textContent = msg;
     $error.classList.remove('hidden');
     $results.classList.add('hidden');
+    $currentAlloc.classList.add('hidden');
+    $spRemaining.classList.add('hidden');
   }
   function hideError() {
     $error.classList.add('hidden');
@@ -81,13 +89,14 @@ const SkillPointAdvisorTool = (() => {
   }
 
   function renderBuild($el, { companiesLevel, managementLevel, entL, eneL, prodL }) {
-    $el.innerHTML = [
-      buildChip('💡 Entrepreneurship', entL, null, `(${entrepreneurshipValue(entL)})`),
-      buildChip('⚡ Energy', eneL, null, `(${energyValue(eneL)})`),
-      buildChip('⛏️ Production', prodL, null, `(${productionValue(prodL)})`),
+    const chips = [
       buildChip('🏢 Companies', companiesLevel, null, `(${companiesCap(companiesLevel)})`),
       buildChip('🙍 Management', managementLevel, null, `(${managementWorkers(managementLevel)})`),
-    ].join('');
+    ];
+    if (entL !== null) chips.push(buildChip('💡 Entrepreneurship', entL, null, `(${entrepreneurshipValue(entL)})`));
+    if (eneL !== null) chips.push(buildChip('⚡ Energy', eneL, null, `(${energyValue(eneL)})`));
+    if (prodL !== null) chips.push(buildChip('⛏️ Production', prodL, null, `(${productionValue(prodL)})`));
+    $el.innerHTML = chips.join('');
   }
 
   /* ── Username resolution — same anti-fuzzy pattern as buddy-finder.js ── */
@@ -175,6 +184,25 @@ const SkillPointAdvisorTool = (() => {
     $companies.value = Math.max(2, numCompanies); // 2 is the game's free floor
     $workers.value = numWorkers;
 
+    // Current allocation — live in-game skill levels from the API
+    const s = user.skills || {};
+    renderBuild($currentBuild, {
+      companiesLevel:  s.companies?.level      ?? 0,
+      managementLevel: s.management?.level     ?? 0,
+      entL:            s.entrepreneurship?.level ?? null,
+      eneL:            s.energy?.level          ?? null,
+      prodL:           s.production?.level      ?? null,
+    });
+    const availableSP = user.leveling?.availableSkillPoints ?? 0;
+    if (availableSP > 0) {
+      $spRemaining.innerHTML = `<span class="spa-remain-count">${availableSP} SP unspent</span> — being saved for your next level-up upgrade.`;
+      $spRemaining.classList.remove('hidden');
+    } else {
+      $spRemaining.innerHTML = '';
+      $spRemaining.classList.add('hidden');
+    }
+    $currentAlloc.classList.remove('hidden');
+
     showLookupStatus('success', `✅ Auto-filled from <strong>${escapeHtml(user.username)}</strong>'s profile. Adjust any field below if you want to try a different scenario.`);
     recompute();
     setTimeout(() => {
@@ -215,11 +243,15 @@ const SkillPointAdvisorTool = (() => {
 
     if (advice.error) {
       showError(advice.error);
+      $currentAlloc.classList.add('hidden');
       return;
     }
     hideError();
 
-    // Absolute optimum
+    // Current allocation panel is populated by autoPopulate() from live API data.
+    // recompute() does not touch it — if no username has been looked up it stays hidden.
+
+    // Absolute optimum (hidden card — still computed, just not shown)
     const opt = advice.allocation;
     renderBuild($optimalBuild, {
       companiesLevel: advice.companiesLevel,
@@ -233,7 +265,7 @@ const SkillPointAdvisorTool = (() => {
       $optimalLeftover.textContent = '';
     }
 
-    // No-resets path
+    // Recommended (no-resets / Eco Mode) path
     if (advice.noResets) {
       const nr = advice.noResets;
       renderBuild($noResetsBuild, {

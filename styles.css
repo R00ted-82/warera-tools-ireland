@@ -2451,6 +2451,14 @@ table.rs-table {
 }
 .spa-card h3 { margin: 0 0 12px; font-size: 15px; font-weight: 600; color: var(--text); }
 
+.spa-stats-card { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+.spa-stats-inputs { flex: 0 0 auto; }
+.spa-current-alloc { flex: 1 1 0; min-width: 220px; padding-left: 24px; border-left: 1px solid var(--border); }
+.spa-current-alloc.hidden { display: none; }
+.spa-sp-remaining { font-size: 12px; color: var(--muted); margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); line-height: 1.5; }
+.spa-sp-remaining.hidden { display: none; }
+.spa-remain-count { font-weight: 600; color: var(--text); }
+
 .spa-assump { display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: flex-start; }
 .spa-field { display: flex; flex-direction: column; gap: 4px; }
 .spa-field label { font-size: 11px; color: var(--muted); white-space: nowrap; }

@@ -581,38 +581,45 @@
     </div>
   </div>
 
-  <div class="spa-card">
-    <h3>Your stats</h3>
-    <div class="spa-assump">
-      <div class="spa-field">
-        <label for="spa-level">Player level</label>
-        <input type="number" id="spa-level" min="1" step="1" value="13" inputmode="numeric">
-        <span class="spa-suffix" id="spa-total-sp-hint"></span>
+  <div class="spa-card spa-stats-card">
+    <div class="spa-stats-inputs">
+      <h3>Your stats</h3>
+      <div class="spa-assump">
+        <div class="spa-field">
+          <label for="spa-level">Player level</label>
+          <input type="number" id="spa-level" min="1" step="1" value="13" inputmode="numeric">
+          <span class="spa-suffix" id="spa-total-sp-hint"></span>
+        </div>
+        <div class="spa-field">
+          <label for="spa-companies">Companies owned</label>
+          <input type="number" id="spa-companies" min="2" step="1" value="4" inputmode="numeric">
+        </div>
+        <div class="spa-field">
+          <label for="spa-workers">Workers managed</label>
+          <input type="number" id="spa-workers" min="0" step="1" value="4" inputmode="numeric">
+        </div>
       </div>
-      <div class="spa-field">
-        <label for="spa-companies">Companies owned</label>
-        <input type="number" id="spa-companies" min="2" step="1" value="4" inputmode="numeric">
-      </div>
-      <div class="spa-field">
-        <label for="spa-workers">Workers managed</label>
-        <input type="number" id="spa-workers" min="0" step="1" value="4" inputmode="numeric">
-      </div>
+      <div class="spa-lookup-status hidden" id="spa-lookup-status"></div>
+      <div class="spa-error hidden" id="spa-error"></div>
     </div>
-    <div class="spa-lookup-status hidden" id="spa-lookup-status"></div>
-    <div class="spa-error hidden" id="spa-error"></div>
+    <div class="spa-current-alloc hidden" id="spa-current-alloc">
+      <h3>Current allocation</h3>
+      <div class="spa-build-row" id="spa-current-build"></div>
+    </div>
   </div>
 
   <div class="spa-results" id="spa-results">
     <div class="spa-result-card spa-noresets">
-      <div class="spa-result-label">🔁 No-resets path</div>
+      <div class="spa-result-label">📊 Recommended Skill Point Allocation (Eco Mode)</div>
       <div class="spa-result-sub">A smooth split you can follow as you level up, without ever needing to reset and re-spend.</div>
       <div class="spa-build-row" id="spa-noresets-build"></div>
       <div class="spa-noresets-empty hidden" id="spa-noresets-empty">
-        This reference table currently only covers 30–165 remaining SP. Outside that range, follow the absolute optimum above — at low SP there's rarely a difference to worry about anyway.
+        This reference table currently only covers 30–165 remaining SP. Outside that range, use the absolute optimum calculation — at low SP there's rarely a difference to worry about anyway.
       </div>
+      <div class="spa-sp-remaining hidden" id="spa-sp-remaining"></div>
     </div>
 
-    <div class="spa-result-card spa-optimal">
+    <div class="spa-result-card spa-optimal" style="display:none">
       <div class="spa-result-label">🏆 Absolute optimum</div>
       <div class="spa-result-sub">The single best split for your exact remaining SP right now.</div>
       <div class="spa-build-row" id="spa-optimal-build"></div>
@@ -626,8 +633,8 @@
       <ul>
         <li>You get <strong>4 skill points per level</strong>. Some of those have to go into <code>Companies limit</code> and <code>Management</code> first, based on how many companies you own and workers you manage.</li>
         <li>Whatever's left gets optimized across <code>Entrepreneurship</code>, <code>Energy</code>, and <code>Production</code> to maximize your production points per hour.</li>
-        <li>The <strong>absolute optimum</strong> is the single best split for your exact SP total right now — but following it perfectly as you level up can sometimes mean moving a point from Entrepreneurship to Energy (or back), which only a full skill reset allows.</li>
-        <li>The <strong>no-resets path</strong> is a steadier split that never asks you to take back a point you've already spent — better for normal play where you're not resetting every level-up.</li>
+        <li><strong>Eco Mode</strong> is a steadier split that never asks you to take back a point you've already spent — better for normal play where you're not resetting every level-up.</li>
+        <li>Any SP left over after the recommended allocation isn't wasted — it's shown as <em>saved for your next level-up</em>, where it will unlock the next upgrade.</li>
       </ul>
     </div>
   </details>

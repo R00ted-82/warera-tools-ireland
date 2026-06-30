@@ -96,9 +96,14 @@ def http_get_json(url):
     raise RuntimeError(f"GET failed after {MAX_RETRIES} attempts: {last_err}")
 
 
-def trpc(method, payload):
+def trpc_raw(method, payload):
+    """Return the full decoded JSON envelope (not just result.data)."""
     inp = urllib.parse.quote(json.dumps(payload, separators=(",", ":")))
-    return (http_get_json(f"{PROXY_BASE}/{method}?input={inp}") or {}).get("result", {}).get("data")
+    return http_get_json(f"{PROXY_BASE}/{method}?input={inp}")
+
+
+def trpc(method, payload):
+    return (trpc_raw(method, payload) or {}).get("result", {}).get("data")
 
 
 # ── API calls ─────────────────────────────────────────────────────────────────
@@ -110,7 +115,18 @@ def fetch_all_irish():
         inp = {"countryId": IRELAND_COUNTRY_ID, "limit": PAGE_LIMIT}
         if cursor:
             inp["cursor"] = cursor
-        page = trpc("user.getUsersByCountry", inp)
+        if safety == 0:
+            # First page: fetch raw so we can dump the envelope if it's empty.
+            raw = trpc_raw("user.getUsersByCountry", inp)
+            page = (raw or {}).get("result", {}).get("data")
+            first_arr = (page.get("items") if isinstance(page, dict)
+                         else (page if isinstance(page, list) else []))
+            if not first_arr:
+                log("DIAG: first getUsersByCountry page returned no items.")
+                log(f"DIAG: raw envelope (first 800 chars): "
+                    f"{json.dumps(raw)[:800] if raw is not None else 'None'}")
+        else:
+            page = trpc("user.getUsersByCountry", inp)
         arr = (page.get("items") if isinstance(page, dict)
                else (page if isinstance(page, list) else []))
         items.extend(arr or [])

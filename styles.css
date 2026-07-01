@@ -1532,7 +1532,7 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
   padding: 8px 14px; border-radius: 999px;
   background: var(--panel); border: 1px solid var(--border);
   color: var(--muted); font-size: 13px; font-weight: 500;
-  cursor: pointer; white-space: nowrap;
+  cursor: pointer; white-space: nowrap; text-decoration: none;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 .stg-tab:hover { background: var(--panel-2); color: var(--text); }

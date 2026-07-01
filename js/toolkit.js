@@ -427,7 +427,10 @@ const ToolkitShell = (() => {
   /* ── Wire-up ────────────────────────────────────────────── */
   $nav.addEventListener('click', e => {
     const btn = e.target.closest('.stg-tab');
-    if (btn) selectTool(btn.dataset.stgTab);
+    // Plain links (e.g. Battle Intel Ireland) have no data-stg-tab — they're
+    // not shell tools, so let the browser navigate instead of routing them
+    // through selectTool (which would fall back to DEFAULT_TOOL).
+    if (btn && btn.dataset.stgTab) selectTool(btn.dataset.stgTab);
   });
   $nav.addEventListener('scroll', updateNavFade, { passive: true });
   window.addEventListener('resize', updateNavFade);

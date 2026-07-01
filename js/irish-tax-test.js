@@ -423,6 +423,8 @@ const IrishTaxTestTool = (() => {
         <div class="tax-card ok"><div class="tax-card-v">₿${moneyK(ieTax)}</div><div class="tax-card-l">daily wage tax staying in Ireland</div></div>
       </div>`;
 
+    const loggedTax = (countryId) => currentLog?.totals?.[countryId]?.tax;
+
     $table.innerHTML = `
       <div class="tax-table-wrap"><table class="tax-tbl">
         <thead><tr>
@@ -432,6 +434,7 @@ const IrishTaxTestTool = (() => {
           <th title="Income-tax rate this country takes off wages">Tax rate</th>
           <th title="Wages these factories actually paid in the last 24h">Daily wages</th>
           <th title="Daily wages × tax rate">Tax / day</th>
+          <th title="Sum of this country's daily tax snapshots so far this week, from the tax logger">Logged this week</th>
         </tr></thead>
         <tbody>${rows.map(r => `
           <tr class="tax-row" data-c="${r.id}" title="Click for options">
@@ -441,10 +444,11 @@ const IrishTaxTestTool = (() => {
             <td>${r.rate}%</td>
             <td>₿${money(r.wages)}</td>
             <td><strong>₿${money(r.tax)}</strong></td>
+            <td>₿${money(loggedTax(r.id))}</td>
           </tr>
-          <tr class="tax-detail" data-detail="${r.id}"><td colspan="6"></td></tr>`).join('')}</tbody>
+          <tr class="tax-detail" data-detail="${r.id}"><td colspan="7"></td></tr>`).join('')}</tbody>
       </table></div>
-      <p class="tax-note">Tax is estimated: wage transactions carry no tax line, so each country's income-tax rate is applied to the wages its Irish-owned factories actually paid in the last 24h. Click any country for options — workers, this week's trend, or the last 5 weeks — sourced from the daily tax logger. Factories are matched to a country via their region.</p>`;
+      <p class="tax-note">Tax is estimated: wage transactions carry no tax line, so each country's income-tax rate is applied to the wages its Irish-owned factories actually paid in the last 24h. "Logged this week" totals the daily tax snapshots the logger has recorded so far this week (resets each Monday). Click any country for options — workers, this week's trend, or the last 5 weeks — sourced from the daily tax logger. Factories are matched to a country via their region.</p>`;
 
     const byId = {};
     rows.forEach(r => { byId[r.id] = r; });

@@ -65,6 +65,7 @@ const SkillPointAdvisorTool = (() => {
   // username changes again before the first lookup finishes.
   let lastResolvedUsername = null;
   let lookupGeneration = 0;
+  let lastSkills = null; // raw skills object from the last successful profile lookup
 
   function showLookupStatus(level, html) {
     $lookupStatus.className = `spa-lookup-status ${level}`;
@@ -194,14 +195,8 @@ const SkillPointAdvisorTool = (() => {
     $workers.value = numWorkers;
 
     // Current allocation — live in-game skill levels from the API
-    const s = user.skills || {};
-    renderBuild($currentBuild, {
-      companiesLevel:  s.companies?.level      ?? 0,
-      managementLevel: s.management?.level     ?? 0,
-      entL:            s.entrepreneurship?.level ?? null,
-      eneL:            s.energy?.level          ?? null,
-      prodL:           s.production?.level      ?? null,
-    });
+    lastSkills = user.skills || {};
+    renderCurrentAlloc();
     const availableSP = user.leveling?.availableSkillPoints ?? 0;
     if (availableSP > 0) {
       $spRemaining.innerHTML = `<span class="spa-remain-count">${availableSP} SP unspent</span> — being saved for your next level-up upgrade.`;
@@ -265,6 +260,35 @@ const SkillPointAdvisorTool = (() => {
       : '';
   }
 
+  function renderCurrentAlloc() {
+    if (!lastSkills) return;
+    const s = lastSkills;
+    if (selectedBuildType() === 'war') {
+      // Show war skills from profile
+      $currentBuild.innerHTML = [
+        { label: '⚔️ Attack',     lv: s.attack?.level     ?? 0 },
+        { label: '🎯 Precision',  lv: s.precision?.level  ?? 0 },
+        { label: '🎲 Crit Chance',lv: s.criticalChance?.level  ?? 0 },
+        { label: '💥 Crit Damage',lv: s.criticalDamages?.level ?? 0 },
+        { label: '🛡️ Armor',      lv: s.armor?.level      ?? 0 },
+        { label: '💨 Dodge',      lv: s.dodge?.level      ?? 0 },
+        { label: '❤️ Health',     lv: s.health?.level     ?? 0 },
+        { label: '💰 Loot',       lv: s.lootChance?.level  ?? 0 },
+        { label: '🍖 Hunger',     lv: s.hunger?.level     ?? 0 },
+        { label: '🏢 Companies',  lv: s.companies?.level  ?? 0 },
+      ].map(({ label, lv }) => buildChip(label, lv, null, '')).join('');
+    } else {
+      // Show eco skills from profile
+      renderBuild($currentBuild, {
+        companiesLevel:  s.companies?.level       ?? 0,
+        managementLevel: s.management?.level      ?? 0,
+        entL:            s.entrepreneurship?.level ?? null,
+        eneL:            s.energy?.level           ?? null,
+        prodL:           s.production?.level       ?? null,
+      });
+    }
+  }
+
   function recompute() {
     const level = parseInt($level.value, 10);
     const numCompanies = parseInt($companies.value, 10);
@@ -302,6 +326,7 @@ const SkillPointAdvisorTool = (() => {
       $ecoCard.classList.add('hidden');
       $warCard.classList.remove('hidden');
       renderWarBuild(level);
+      renderCurrentAlloc();
       return;
     }
 
@@ -310,6 +335,7 @@ const SkillPointAdvisorTool = (() => {
     $workersField.classList.remove('spa-field-hidden');
     $warCard.classList.add('hidden');
     $ecoCard.classList.remove('hidden');
+    renderCurrentAlloc();
 
     // Current allocation panel is populated by autoPopulate() from live API data.
     // recompute() does not touch it — if no username has been looked up it stays hidden.

@@ -445,6 +445,451 @@
           "tax": 0.0
         }
       ]
+    },
+    {
+      "date": "2026-07-01",
+      "countries": [
+        {
+          "id": "683ddd2c24b5a2e114af1612",
+          "name": "South Africa",
+          "code": "za",
+          "rate": 12.0,
+          "factories": 40,
+          "workers": 43,
+          "wages": 1212.18,
+          "tax": 145.45
+        },
+        {
+          "id": "6813b6d546e731854c7ac862",
+          "name": "India",
+          "code": "in",
+          "rate": 7.5,
+          "factories": 33,
+          "workers": 41,
+          "wages": 1609.28,
+          "tax": 120.72
+        },
+        {
+          "id": "6813b6d446e731854c7ac7b8",
+          "name": "Lithuania",
+          "code": "lt",
+          "rate": 8.0,
+          "factories": 5,
+          "workers": 6,
+          "wages": 455.95,
+          "tax": 36.47
+        },
+        {
+          "id": "6813b6d446e731854c7ac7ae",
+          "name": "Poland",
+          "code": "pl",
+          "rate": 12.0,
+          "factories": 7,
+          "workers": 7,
+          "wages": 296.71,
+          "tax": 35.62
+        },
+        {
+          "id": "6813b6d446e731854c7ac7ba",
+          "name": "Serbia",
+          "code": "rs",
+          "rate": 4.0,
+          "factories": 8,
+          "workers": 8,
+          "wages": 588.18,
+          "tax": 23.54
+        },
+        {
+          "id": "6813b6d546e731854c7ac8a9",
+          "name": "Costa Rica",
+          "code": "cr",
+          "rate": 8.0,
+          "factories": 5,
+          "workers": 8,
+          "wages": 294.34,
+          "tax": 23.54
+        },
+        {
+          "id": "6813b6d546e731854c7ac820",
+          "name": "China",
+          "code": "cn",
+          "rate": 10.0,
+          "factories": 4,
+          "workers": 4,
+          "wages": 190.34,
+          "tax": 19.03
+        },
+        {
+          "id": "683ddd2c24b5a2e114af15c5",
+          "name": "Iceland",
+          "code": "is",
+          "rate": 10.0,
+          "factories": 3,
+          "workers": 4,
+          "wages": 176.57,
+          "tax": 17.65
+        },
+        {
+          "id": "6813b6d446e731854c7ac802",
+          "name": "Norway",
+          "code": "no",
+          "rate": 9.0,
+          "factories": 3,
+          "workers": 3,
+          "wages": 154.57,
+          "tax": 13.91
+        },
+        {
+          "id": "6813b6d546e731854c7ac8dd",
+          "name": "Qatar",
+          "code": "qa",
+          "rate": 7.5,
+          "factories": 2,
+          "workers": 2,
+          "wages": 164.3,
+          "tax": 12.32
+        },
+        {
+          "id": "6813b6d446e731854c7ac7fe",
+          "name": "Ireland",
+          "code": "ie",
+          "rate": 4.0,
+          "factories": 5,
+          "workers": 11,
+          "wages": 249.76,
+          "tax": 9.99
+        },
+        {
+          "id": "6873d0ea1758b40e712b5f79",
+          "name": "Liberia",
+          "code": "lr",
+          "rate": 16.0,
+          "factories": 1,
+          "workers": 1,
+          "wages": 61.06,
+          "tax": 9.77
+        },
+        {
+          "id": "6813b6d546e731854c7ac852",
+          "name": "Libya",
+          "code": "ly",
+          "rate": 5.0,
+          "factories": 3,
+          "workers": 3,
+          "wages": 178.9,
+          "tax": 8.95
+        },
+        {
+          "id": "6813b6d546e731854c7ac890",
+          "name": "Greenland",
+          "code": "gl",
+          "rate": 10.0,
+          "factories": 1,
+          "workers": 1,
+          "wages": 68.79,
+          "tax": 6.88
+        },
+        {
+          "id": "6813b6d546e731854c7ac82c",
+          "name": "Philippines",
+          "code": "ph",
+          "rate": 8.0,
+          "factories": 1,
+          "workers": 1,
+          "wages": 75.57,
+          "tax": 6.05
+        },
+        {
+          "id": "683ddd2c24b5a2e114af160f",
+          "name": "Yemen",
+          "code": "ye",
+          "rate": 2.0,
+          "factories": 11,
+          "workers": 12,
+          "wages": 282.97,
+          "tax": 5.65
+        },
+        {
+          "id": "6813b6d546e731854c7ac845",
+          "name": "Egypt",
+          "code": "eg",
+          "rate": 10.0,
+          "factories": 4,
+          "workers": 6,
+          "wages": 43.07,
+          "tax": 4.31
+        },
+        {
+          "id": "6813b6d446e731854c7ac7a0",
+          "name": "Netherlands",
+          "code": "nl",
+          "rate": 8.0,
+          "factories": 1,
+          "workers": 1,
+          "wages": 51.83,
+          "tax": 4.15
+        },
+        {
+          "id": "683ddd2c24b5a2e114af15c9",
+          "name": "Cambodia",
+          "code": "kh",
+          "rate": 6.0,
+          "factories": 1,
+          "workers": 1,
+          "wages": 66.46,
+          "tax": 3.99
+        },
+        {
+          "id": "696a81da63e2489f47e5a28a",
+          "name": "Comoros",
+          "code": "km",
+          "rate": 5.0,
+          "factories": 1,
+          "workers": 1,
+          "wages": 78.3,
+          "tax": 3.92
+        },
+        {
+          "id": "6813b6d446e731854c7ac7ac",
+          "name": "Austria",
+          "code": "at",
+          "rate": 5.0,
+          "factories": 3,
+          "workers": 3,
+          "wages": 73.35,
+          "tax": 3.67
+        },
+        {
+          "id": "683ddd2c24b5a2e114af15cd",
+          "name": "Laos",
+          "code": "la",
+          "rate": 7.5,
+          "factories": 1,
+          "workers": 1,
+          "wages": 45.79,
+          "tax": 3.43
+        },
+        {
+          "id": "6873d0ea1758b40e712b5f73",
+          "name": "Zambia",
+          "code": "zm",
+          "rate": 3.0,
+          "factories": 2,
+          "workers": 2,
+          "wages": 96.92,
+          "tax": 2.91
+        },
+        {
+          "id": "6813b6d546e731854c7ac880",
+          "name": "New Zealand",
+          "code": "nz",
+          "rate": 3.9,
+          "factories": 1,
+          "workers": 1,
+          "wages": 73.46,
+          "tax": 2.86
+        },
+        {
+          "id": "683ddd2c24b5a2e114af15bd",
+          "name": "Ethiopia",
+          "code": "et",
+          "rate": 5.0,
+          "factories": 2,
+          "workers": 3,
+          "wages": 55.74,
+          "tax": 2.79
+        },
+        {
+          "id": "6873d0ea1758b40e712b5ef1",
+          "name": "Niger",
+          "code": "ne",
+          "rate": 3.0,
+          "factories": 3,
+          "workers": 5,
+          "wages": 89.97,
+          "tax": 2.71
+        },
+        {
+          "id": "6813b6d446e731854c7ac7b0",
+          "name": "Czechia",
+          "code": "cz",
+          "rate": 3.0,
+          "factories": 1,
+          "workers": 2,
+          "wages": 84.99,
+          "tax": 2.55
+        },
+        {
+          "id": "6873d0ea1758b40e712b5f43",
+          "name": "Burundi",
+          "code": "bi",
+          "rate": 7.0,
+          "factories": 4,
+          "workers": 6,
+          "wages": 32.14,
+          "tax": 2.25
+        },
+        {
+          "id": "6813b6d546e731854c7ac8ce",
+          "name": "Kazakhstan",
+          "code": "kz",
+          "rate": 8.0,
+          "factories": 1,
+          "workers": 1,
+          "wages": 16.75,
+          "tax": 1.34
+        },
+        {
+          "id": "683ddd2c24b5a2e114af15c3",
+          "name": "Iraq",
+          "code": "iq",
+          "rate": 10.0,
+          "factories": 1,
+          "workers": 1,
+          "wages": 9.94,
+          "tax": 0.99
+        },
+        {
+          "id": "683ddd2c24b5a2e114af15d9",
+          "name": "Malaysia",
+          "code": "my",
+          "rate": 1.0,
+          "factories": 5,
+          "workers": 7,
+          "wages": 80.87,
+          "tax": 0.81
+        },
+        {
+          "id": "683ddd2c24b5a2e114af15cb",
+          "name": "United Korea",
+          "code": "kp",
+          "rate": 13.0,
+          "factories": 1,
+          "workers": 1,
+          "wages": 5.67,
+          "tax": 0.74
+        },
+        {
+          "id": "6873d0ea1758b40e712b5f7c",
+          "name": "Chad",
+          "code": "td",
+          "rate": 1.0,
+          "factories": 1,
+          "workers": 1,
+          "wages": 69.43,
+          "tax": 0.69
+        },
+        {
+          "id": "6813b6d546e731854c7ac82f",
+          "name": "Brazil",
+          "code": "br",
+          "rate": 2.5,
+          "factories": 1,
+          "workers": 1,
+          "wages": 22.49,
+          "tax": 0.56
+        },
+        {
+          "id": "6813b6d546e731854c7ac85f",
+          "name": "Colombia",
+          "code": "co",
+          "rate": 3.0,
+          "factories": 2,
+          "workers": 3,
+          "wages": 16.5,
+          "tax": 0.49
+        },
+        {
+          "id": "6813b6d546e731854c7ac855",
+          "name": "Ecuador",
+          "code": "ec",
+          "rate": 3.4,
+          "factories": 1,
+          "workers": 1,
+          "wages": 10.46,
+          "tax": 0.36
+        },
+        {
+          "id": "6813b6d446e731854c7ac7c0",
+          "name": "Latvia",
+          "code": "lv",
+          "rate": 5.9,
+          "factories": 2,
+          "workers": 2,
+          "wages": 4.0,
+          "tax": 0.24
+        },
+        {
+          "id": "687eab339142f76907295e4e",
+          "name": "Andorra",
+          "code": "ad",
+          "rate": 1.0,
+          "factories": 1,
+          "workers": 1,
+          "wages": 3.72,
+          "tax": 0.04
+        },
+        {
+          "id": "683ddd2c24b5a2e114af15fa",
+          "name": "Nigeria",
+          "code": "ng",
+          "rate": 10.0,
+          "factories": 3,
+          "workers": 3,
+          "wages": 0.0,
+          "tax": 0.0
+        },
+        {
+          "id": "6873d0ea1758b40e712b5ef7",
+          "name": "Gabon",
+          "code": "ga",
+          "rate": 5.0,
+          "factories": 1,
+          "workers": 1,
+          "wages": 0.0,
+          "tax": 0.0
+        },
+        {
+          "id": "6873d0ea1758b40e712b5f22",
+          "name": "Togo",
+          "code": "tg",
+          "rate": 1.0,
+          "factories": 1,
+          "workers": 1,
+          "wages": 0.0,
+          "tax": 0.0
+        },
+        {
+          "id": "683ddd2c24b5a2e114af15b5",
+          "name": "United Arab Emirates",
+          "code": "ae",
+          "rate": 5.0,
+          "factories": 1,
+          "workers": 1,
+          "wages": 0.0,
+          "tax": 0.0
+        },
+        {
+          "id": "6873d0ea1758b40e712b5f2e",
+          "name": "Central Africa",
+          "code": "cf",
+          "rate": 4.0,
+          "factories": 1,
+          "workers": 1,
+          "wages": 0.0,
+          "tax": 0.0
+        },
+        {
+          "id": "6813b6d446e731854c7ac7a2",
+          "name": "Italy",
+          "code": "it",
+          "rate": 7.9,
+          "factories": 1,
+          "workers": 1,
+          "wages": 0.0,
+          "tax": 0.0
+        }
+      ]
     }
   ],
   "totals": {
@@ -452,46 +897,46 @@
       "name": "South Africa",
       "code": "za",
       "rate": 12.0,
-      "factories": 35,
-      "workers": 37,
-      "wages": 1102.41,
-      "tax": 132.3
+      "factories": 75,
+      "workers": 80,
+      "wages": 2314.59,
+      "tax": 277.75
     },
     "6813b6d546e731854c7ac862": {
       "name": "India",
       "code": "in",
       "rate": 7.5,
-      "factories": 27,
-      "workers": 34,
-      "wages": 1154.17,
-      "tax": 86.57
+      "factories": 60,
+      "workers": 75,
+      "wages": 2763.45,
+      "tax": 207.29
     },
     "6813b6d446e731854c7ac7ae": {
       "name": "Poland",
       "code": "pl",
       "rate": 12.0,
-      "factories": 9,
-      "workers": 9,
-      "wages": 358.44,
-      "tax": 43.02
+      "factories": 16,
+      "workers": 16,
+      "wages": 655.15,
+      "tax": 78.64
     },
     "6813b6d446e731854c7ac7ba": {
       "name": "Serbia",
       "code": "rs",
       "rate": 4.0,
-      "factories": 8,
-      "workers": 8,
-      "wages": 435.02,
-      "tax": 17.4
+      "factories": 16,
+      "workers": 16,
+      "wages": 1023.2,
+      "tax": 40.94
     },
     "6813b6d446e731854c7ac7b8": {
       "name": "Lithuania",
       "code": "lt",
       "rate": 8.0,
-      "factories": 4,
-      "workers": 4,
-      "wages": 215.39,
-      "tax": 17.23
+      "factories": 9,
+      "workers": 10,
+      "wages": 671.34,
+      "tax": 53.7
     },
     "6813b6d546e731854c7ac84e": {
       "name": "Tunisia",
@@ -506,73 +951,73 @@
       "name": "Iraq",
       "code": "iq",
       "rate": 10.0,
-      "factories": 3,
-      "workers": 4,
-      "wages": 154.01,
-      "tax": 15.4
+      "factories": 4,
+      "workers": 5,
+      "wages": 163.95,
+      "tax": 16.39
     },
     "6813b6d546e731854c7ac8a9": {
       "name": "Costa Rica",
       "code": "cr",
       "rate": 8.0,
-      "factories": 4,
-      "workers": 8,
-      "wages": 175.46,
-      "tax": 14.03
+      "factories": 9,
+      "workers": 16,
+      "wages": 469.8,
+      "tax": 37.57
     },
     "6813b6d546e731854c7ac8dd": {
       "name": "Qatar",
       "code": "qa",
       "rate": 7.5,
-      "factories": 3,
-      "workers": 3,
-      "wages": 157.09,
-      "tax": 11.79
+      "factories": 5,
+      "workers": 5,
+      "wages": 321.39,
+      "tax": 24.11
     },
     "683ddd2c24b5a2e114af15c5": {
       "name": "Iceland",
       "code": "is",
       "rate": 10.0,
-      "factories": 3,
-      "workers": 4,
-      "wages": 112.46,
-      "tax": 11.25
+      "factories": 6,
+      "workers": 8,
+      "wages": 289.03,
+      "tax": 28.9
     },
     "683ddd2c24b5a2e114af15c9": {
       "name": "Cambodia",
       "code": "kh",
       "rate": 6.0,
-      "factories": 3,
-      "workers": 3,
-      "wages": 169.87,
-      "tax": 10.19
+      "factories": 4,
+      "workers": 4,
+      "wages": 236.33,
+      "tax": 14.18
     },
     "6813b6d446e731854c7ac802": {
       "name": "Norway",
       "code": "no",
       "rate": 9.0,
-      "factories": 3,
-      "workers": 3,
-      "wages": 100.69,
-      "tax": 9.06
+      "factories": 6,
+      "workers": 6,
+      "wages": 255.26,
+      "tax": 22.97
     },
     "6813b6d546e731854c7ac890": {
       "name": "Greenland",
       "code": "gl",
       "rate": 10.0,
-      "factories": 1,
-      "workers": 1,
-      "wages": 73.25,
-      "tax": 7.32
+      "factories": 2,
+      "workers": 2,
+      "wages": 142.04,
+      "tax": 14.2
     },
     "6813b6d446e731854c7ac7fe": {
       "name": "Ireland",
       "code": "ie",
       "rate": 4.0,
-      "factories": 3,
-      "workers": 7,
-      "wages": 136.61,
-      "tax": 5.47
+      "factories": 8,
+      "workers": 18,
+      "wages": 386.37,
+      "tax": 15.46
     },
     "6813b6d446e731854c7ac80b": {
       "name": "Finland",
@@ -587,100 +1032,100 @@
       "name": "China",
       "code": "cn",
       "rate": 10.0,
-      "factories": 3,
-      "workers": 3,
-      "wages": 51.76,
-      "tax": 5.17
+      "factories": 7,
+      "workers": 7,
+      "wages": 242.1,
+      "tax": 24.2
     },
     "6813b6d546e731854c7ac852": {
       "name": "Libya",
       "code": "ly",
       "rate": 5.0,
-      "factories": 1,
-      "workers": 1,
-      "wages": 100.24,
-      "tax": 5.01
+      "factories": 4,
+      "workers": 4,
+      "wages": 279.14,
+      "tax": 13.96
     },
     "6873d0ea1758b40e712b5f43": {
       "name": "Burundi",
       "code": "bi",
       "rate": 7.0,
-      "factories": 4,
-      "workers": 6,
-      "wages": 70.21,
-      "tax": 4.91
+      "factories": 8,
+      "workers": 12,
+      "wages": 102.35,
+      "tax": 7.16
     },
     "683ddd2c24b5a2e114af160f": {
       "name": "Yemen",
       "code": "ye",
       "rate": 2.0,
-      "factories": 6,
-      "workers": 6,
-      "wages": 239.72,
-      "tax": 4.81
+      "factories": 17,
+      "workers": 18,
+      "wages": 522.69,
+      "tax": 10.46
     },
     "6813b6d546e731854c7ac845": {
       "name": "Egypt",
       "code": "eg",
       "rate": 10.0,
-      "factories": 4,
-      "workers": 6,
-      "wages": 37.26,
-      "tax": 3.73
+      "factories": 8,
+      "workers": 12,
+      "wages": 80.33,
+      "tax": 8.04
     },
     "6813b6d446e731854c7ac7ac": {
       "name": "Austria",
       "code": "at",
       "rate": 5.0,
-      "factories": 3,
-      "workers": 3,
-      "wages": 71.76,
-      "tax": 3.58
+      "factories": 6,
+      "workers": 6,
+      "wages": 145.11,
+      "tax": 7.25
     },
     "696a81da63e2489f47e5a28a": {
       "name": "Comoros",
       "code": "km",
       "rate": 5.0,
-      "factories": 1,
-      "workers": 1,
-      "wages": 70.33,
-      "tax": 3.52
+      "factories": 2,
+      "workers": 2,
+      "wages": 148.63,
+      "tax": 7.44
     },
     "6813b6d546e731854c7ac8ce": {
       "name": "Kazakhstan",
       "code": "kz",
       "rate": 8.0,
-      "factories": 1,
-      "workers": 1,
-      "wages": 35.83,
-      "tax": 2.87
+      "factories": 2,
+      "workers": 2,
+      "wages": 52.58,
+      "tax": 4.21
     },
     "683ddd2c24b5a2e114af15bd": {
       "name": "Ethiopia",
       "code": "et",
       "rate": 5.0,
-      "factories": 2,
-      "workers": 3,
-      "wages": 55.88,
-      "tax": 2.79
+      "factories": 4,
+      "workers": 6,
+      "wages": 111.62,
+      "tax": 5.58
     },
     "6813b6d546e731854c7ac880": {
       "name": "New Zealand",
       "code": "nz",
       "rate": 3.9,
-      "factories": 1,
-      "workers": 1,
-      "wages": 69.64,
-      "tax": 2.72
+      "factories": 2,
+      "workers": 2,
+      "wages": 143.1,
+      "tax": 5.58
     },
     "683ddd2c24b5a2e114af15cd": {
       "name": "Laos",
       "code": "la",
       "rate": 7.5,
-      "factories": 1,
-      "workers": 1,
-      "wages": 26.61,
-      "tax": 2.0
+      "factories": 2,
+      "workers": 2,
+      "wages": 72.4,
+      "tax": 5.43
     },
     "683ddd2c24b5a2e114af1609": {
       "name": "Thailand",
@@ -695,28 +1140,28 @@
       "name": "Colombia",
       "code": "co",
       "rate": 3.0,
-      "factories": 3,
-      "workers": 4,
-      "wages": 40.08,
-      "tax": 1.2
+      "factories": 5,
+      "workers": 7,
+      "wages": 56.58,
+      "tax": 1.69
     },
     "683ddd2c24b5a2e114af15d9": {
       "name": "Malaysia",
       "code": "my",
       "rate": 1.0,
-      "factories": 6,
-      "workers": 8,
-      "wages": 117.68,
-      "tax": 1.18
+      "factories": 11,
+      "workers": 15,
+      "wages": 198.55,
+      "tax": 1.99
     },
     "6813b6d446e731854c7ac7c0": {
       "name": "Latvia",
       "code": "lv",
       "rate": 5.9,
-      "factories": 1,
-      "workers": 1,
-      "wages": 11.18,
-      "tax": 0.66
+      "factories": 3,
+      "workers": 3,
+      "wages": 15.18,
+      "tax": 0.9
     },
     "6813b6d546e731854c7ac8c4": {
       "name": "Kyrgyzstan",
@@ -731,19 +1176,19 @@
       "name": "United Korea",
       "code": "kp",
       "rate": 13.0,
-      "factories": 1,
-      "workers": 1,
-      "wages": 4.49,
-      "tax": 0.58
+      "factories": 2,
+      "workers": 2,
+      "wages": 10.16,
+      "tax": 1.32
     },
     "6813b6d446e731854c7ac7b0": {
       "name": "Czechia",
       "code": "cz",
       "rate": 3.0,
-      "factories": 1,
-      "workers": 2,
-      "wages": 18.77,
-      "tax": 0.56
+      "factories": 2,
+      "workers": 4,
+      "wages": 103.76,
+      "tax": 3.11
     },
     "6813b6d546e731854c7ac838": {
       "name": "Paraguay",
@@ -758,35 +1203,35 @@
       "name": "Ecuador",
       "code": "ec",
       "rate": 3.4,
-      "factories": 1,
-      "workers": 1,
-      "wages": 13.23,
-      "tax": 0.45
+      "factories": 2,
+      "workers": 2,
+      "wages": 23.69,
+      "tax": 0.81
     },
     "6873d0ea1758b40e712b5f73": {
       "name": "Zambia",
       "code": "zm",
       "rate": 3.0,
-      "factories": 1,
-      "workers": 1,
-      "wages": 8.2,
-      "tax": 0.25
+      "factories": 3,
+      "workers": 3,
+      "wages": 105.12,
+      "tax": 3.16
     },
     "6873d0ea1758b40e712b5ef1": {
       "name": "Niger",
       "code": "ne",
       "rate": 3.0,
-      "factories": 1,
-      "workers": 1,
-      "wages": 6.25,
-      "tax": 0.19
+      "factories": 4,
+      "workers": 6,
+      "wages": 96.22,
+      "tax": 2.9
     },
     "683ddd2c24b5a2e114af15fa": {
       "name": "Nigeria",
       "code": "ng",
       "rate": 10.0,
-      "factories": 3,
-      "workers": 3,
+      "factories": 6,
+      "workers": 6,
       "wages": 0.0,
       "tax": 0.0
     },
@@ -803,8 +1248,8 @@
       "name": "Togo",
       "code": "tg",
       "rate": 1.0,
-      "factories": 1,
-      "workers": 1,
+      "factories": 2,
+      "workers": 2,
       "wages": 0.0,
       "tax": 0.0
     },
@@ -812,17 +1257,17 @@
       "name": "Brazil",
       "code": "br",
       "rate": 2.5,
-      "factories": 1,
-      "workers": 1,
-      "wages": 0.0,
-      "tax": 0.0
+      "factories": 2,
+      "workers": 2,
+      "wages": 22.49,
+      "tax": 0.56
     },
     "683ddd2c24b5a2e114af15b5": {
       "name": "United Arab Emirates",
       "code": "ae",
       "rate": 5.0,
-      "factories": 1,
-      "workers": 1,
+      "factories": 2,
+      "workers": 2,
       "wages": 0.0,
       "tax": 0.0
     },
@@ -830,8 +1275,8 @@
       "name": "Central Africa",
       "code": "cf",
       "rate": 4.0,
-      "factories": 1,
-      "workers": 1,
+      "factories": 2,
+      "workers": 2,
       "wages": 0.0,
       "tax": 0.0
     },
@@ -839,6 +1284,60 @@
       "name": "Italy",
       "code": "it",
       "rate": 7.9,
+      "factories": 2,
+      "workers": 2,
+      "wages": 0.0,
+      "tax": 0.0
+    },
+    "6873d0ea1758b40e712b5f79": {
+      "name": "Liberia",
+      "code": "lr",
+      "rate": 16.0,
+      "factories": 1,
+      "workers": 1,
+      "wages": 61.06,
+      "tax": 9.77
+    },
+    "6813b6d546e731854c7ac82c": {
+      "name": "Philippines",
+      "code": "ph",
+      "rate": 8.0,
+      "factories": 1,
+      "workers": 1,
+      "wages": 75.57,
+      "tax": 6.05
+    },
+    "6813b6d446e731854c7ac7a0": {
+      "name": "Netherlands",
+      "code": "nl",
+      "rate": 8.0,
+      "factories": 1,
+      "workers": 1,
+      "wages": 51.83,
+      "tax": 4.15
+    },
+    "6873d0ea1758b40e712b5f7c": {
+      "name": "Chad",
+      "code": "td",
+      "rate": 1.0,
+      "factories": 1,
+      "workers": 1,
+      "wages": 69.43,
+      "tax": 0.69
+    },
+    "687eab339142f76907295e4e": {
+      "name": "Andorra",
+      "code": "ad",
+      "rate": 1.0,
+      "factories": 1,
+      "workers": 1,
+      "wages": 3.72,
+      "tax": 0.04
+    },
+    "6873d0ea1758b40e712b5ef7": {
+      "name": "Gabon",
+      "code": "ga",
+      "rate": 5.0,
       "factories": 1,
       "workers": 1,
       "wages": 0.0,

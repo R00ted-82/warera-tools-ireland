@@ -34,7 +34,7 @@
   const VALID = new Set([
     'home', 'community', 'gov', 'mu', 'buddy-finder',
     'advisor', 'clockin', 'profit', 'wealth', 'buddy', 'battle-orders',  'beer',
-    'dashboard', 'roster', 'tax', 'tax-test',
+    'dashboard', 'roster', 'tax',
   ]);
   const LANDING = new Set(['dashboard', 'home', 'community', 'gov', 'beer']);
   const DEFAULT_VIEW = 'dashboard';
@@ -59,7 +59,6 @@
     dashboard: DashboardTool,
     roster: RosterTool,
     tax: IrishTaxTool,
-    'tax-test': IrishTaxTestTool,
   };
 
   function parseRoute() {

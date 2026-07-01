@@ -5,11 +5,27 @@
  *  factory sits in, showing the income-tax rate that country takes off
  *  those workers' wages — and how much tax that amounts to per day.
  *
- *  Each country row expands (click) to a drill-down of the factories
- *  there: factory → owner → workers, every name linked to its in-game
- *  profile.
+ *  Each country row, when clicked, opens a small options menu instead of
+ *  jumping straight to a drill-down:
+ *    - View workers        factory → owner → workers, every name linked
+ *                           to its in-game profile.
+ *    - This week's trend    daily tax for that country, from the logger.
+ *    - Last 5 weeks trend   weekly tax for that country, from the logger.
  *
- *  Pipeline:
+ *  Trend data comes from the tax_log.py daily snapshots:
+ *    data/tax/current_week.json      — this week's days + running totals
+ *    data/tax/weeks/YYYY-MM-DD.json  — archived completed weeks
+ *
+ *  A "tax log report" card up top summarises what the logger has recorded
+ *  so far this week (days logged, total tax logged, last update), and the
+ *  table's "Logged this week" column shows each country's running total
+ *  from the same source.
+ *
+ *  Chart styling/logic (gradient line chart) is copied from the Wealth
+ *  Monitor's wealth-over-time chart (js/wealth.js) and reuses its .wm-*
+ *  CSS classes.
+ *
+ *  Pipeline (live data, unchanged):
  *    1. Paginate all Irish citizens (the pool of possible owners; also
  *       gives us their usernames for free).
  *    2. worker.getWorkers per citizen → the factories they OWN that have
@@ -30,12 +46,15 @@ const IrishTaxTool = (() => {
 
   const $refresh = document.getElementById('tax-refresh');
   const $summary = document.getElementById('tax-summary');
+  const $logReport = document.getElementById('tax-log-report');
   const $table   = document.getElementById('tax-table');
   const steps    = makeSteps(document.getElementById('tax-steps'));
   const setStatus = makeStatus(document.getElementById('tax-status'));
 
   let loaded = false;
   let nameById = {};   // userId -> username (citizens free; workers resolved)
+  let currentLog = null;      // parsed data/tax/current_week.json
+  let weekLogs = null;        // [{ weekStart, data }], lazy-loaded
 
   const it_trpc = (ep, inp) => trpc(ep, inp, { retry: true, timeoutMs: 20000 });
   const money  = (v) => (v == null || !isFinite(v)) ? '–' : v.toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -48,6 +67,14 @@ const IrishTaxTool = (() => {
     }
     await Promise.all(Array(Math.min(concurrency, items.length || 1)).fill(0).map(pump));
     return out;
+  }
+
+  async function fetchJson(url) {
+    try {
+      const res = await fetch(`${url}?t=${Math.floor(Date.now() / 30000)}`, { cache: 'no-cache' });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch { return null; }
   }
 
   async function fetchIrishCitizens(onProgress) {
@@ -90,16 +117,72 @@ const IrishTaxTool = (() => {
     return byCompany;
   }
 
+  /* ── Tax logger report ─────────────────────────────────────────── */
+  function thisMonday(d) {
+    const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+    const dow = t.getUTCDay() || 7;
+    t.setUTCDate(t.getUTCDate() - (dow - 1));
+    return t;
+  }
+  function isoDate(d) { return d.toISOString().slice(0, 10); }
+
+  async function loadCurrentLog() {
+    currentLog = await fetchJson('data/tax/current_week.json');
+    return currentLog;
+  }
+
+  // Lazily loads the current (in-progress) week + up to 4 archived weeks
+  // before it. Missing archives (fewer than 5 weeks of history so far)
+  // are simply skipped.
+  async function loadWeekLogs() {
+    if (weekLogs) return weekLogs;
+    const out = [];
+    if (currentLog) out.push({ weekStart: currentLog.week_start, data: currentLog });
+    const monday = currentLog ? new Date(currentLog.week_start) : thisMonday(new Date());
+    const candidates = [];
+    for (let i = 1; i <= 4; i++) {
+      const m = new Date(monday); m.setUTCDate(m.getUTCDate() - 7 * i);
+      candidates.push(isoDate(m));
+    }
+    const fetched = await mapConcurrent(candidates, async (ws) => fetchJson(`data/tax/weeks/${ws}.json`), 5);
+    candidates.forEach((ws, i) => { if (fetched[i]) out.push({ weekStart: ws, data: fetched[i] }); });
+    weekLogs = out;
+    return weekLogs;
+  }
+
+  function renderLogReport() {
+    if (!currentLog || !currentLog.days || !currentLog.days.length) {
+      $logReport.innerHTML = `<div class="tax-log-report dim">Tax logger: no daily snapshots recorded yet.</div>`;
+      return;
+    }
+    const days = currentLog.days;
+    const lastDay = days[days.length - 1]?.date;
+    const totalTax = Object.values(currentLog.totals || {}).reduce((s, c) => s + (c.tax || 0), 0);
+    $logReport.innerHTML = `
+      <div class="tax-log-report">
+        <span class="tax-log-icon">📋</span>
+        <span><strong>Tax log:</strong> week of ${escapeHtml(currentLog.week_start)}
+        · ${days.length} day${days.length === 1 ? '' : 's'} logged
+        · ₿${moneyK(totalTax)} tax logged so far
+        · last snapshot ${escapeHtml(lastDay || '–')}</span>
+      </div>`;
+  }
+
   async function load() {
     $refresh.disabled = true;
     $summary.innerHTML = '';
     $table.innerHTML = '';
+    $logReport.innerHTML = '';
     setStatus('');
     steps.reset();
     setTrpcCache(true);
     nameById = {};
+    weekLogs = null;
 
     try {
+      // Kick off the log fetch in parallel with the live pipeline.
+      const logPromise = loadCurrentLog().then(renderLogReport);
+
       // 1) Irish citizens
       steps.setStep(1, 'active', { sub: 'Paginating the citizen list' });
       const citizens = await fetchIrishCitizens(n => steps.setStep(1, 'active', { count: `${n} loaded` }));
@@ -134,7 +217,7 @@ const IrishTaxTool = (() => {
       const companyIds = Object.keys(factories);
       steps.setStep(2, 'done', { count: `${companyIds.length} factories · ${owners.length} Irish owners` });
 
-      if (!companyIds.length) { steps.fadeOut(300); setStatus('No Irish-owned factories with workers found.'); return; }
+      if (!companyIds.length) { steps.fadeOut(300); setStatus('No Irish-owned factories with workers found.'); await logPromise; return; }
 
       // 3) Factory location → country → income-tax rate
       steps.setStep(3, 'active', { sub: 'Loading factory locations & tax rates' });
@@ -202,6 +285,7 @@ const IrishTaxTool = (() => {
       const rows = Object.values(agg)
         .map(a => ({ ...a, tax: a.wages * (a.rate / 100) }))
         .sort((x, y) => y.tax - x.tax || y.factories - x.factories);
+      await logPromise;
       render(rows, { factories: companyIds.length });
     } catch (e) {
       steps.markActiveAsError(e.message);
@@ -218,9 +302,9 @@ const IrishTaxTool = (() => {
     const n = nameById[id] || ('user ' + String(id).slice(-4));
     return `<a href="${GAME_BASE}/user/${escapeHtml(id)}" target="_blank" rel="noopener">${escapeHtml(n)}</a>`;
   }
-  function detailHtml(country) {
+  function workersHtml(country) {
     const facs = country.facList.slice().sort((a, b) => b.workers.length - a.workers.length);
-    return `<div class="tax-detail-wrap">${facs.map(f => `
+    return `<div class="tax-detail-wrap"><button class="tax-back" data-back="${country.id}">← back to options</button>${facs.map(f => `
       <div class="tax-fac">
         <div class="tax-fac-h">
           <a class="tax-fac-name" href="${GAME_BASE}/company/${escapeHtml(f.id)}" target="_blank" rel="noopener">🏭 ${escapeHtml(f.name || f.itemCode || 'factory')}</a>
@@ -228,6 +312,117 @@ const IrishTaxTool = (() => {
         </div>
         <div class="tax-fac-workers">${f.workers.length ? f.workers.map(userLink).join('<span class="tax-sep">·</span>') : '<span class="tax-dim">no current workers</span>'}</div>
       </div>`).join('')}</div>`;
+  }
+
+  function menuHtml(countryId) {
+    return `<div class="tax-menu-wrap">
+      <button class="tax-menu-opt" data-action="workers" data-c="${countryId}">👷 View workers</button>
+      <button class="tax-menu-opt" data-action="week" data-c="${countryId}">📅 This week's trend</button>
+      <button class="tax-menu-opt" data-action="weeks" data-c="${countryId}">📈 Last 5 weeks trend</button>
+    </div>`;
+  }
+
+  function backHtml(countryId) {
+    return `<button class="tax-back" data-back="${countryId}">← back to options</button>`;
+  }
+
+  /* ── Mini trend chart (styled like the Wealth Monitor's chart) ──── */
+  function niceNum(range, round) {
+    if (range <= 0 || !isFinite(range)) return 1;
+    const exp = Math.floor(Math.log10(range));
+    const f = range / Math.pow(10, exp);
+    const nf = round ? (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) : (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10);
+    return nf * Math.pow(10, exp);
+  }
+  function yDomain(values) {
+    let min = Infinity, max = -Infinity;
+    for (const v of values) { if (v < min) min = v; if (v > max) max = v; }
+    if (!isFinite(min)) return { min: 0, max: 1, step: 1 };
+    if (max === min) { const p = Math.abs(max) * 0.1 || 1; min -= p; max += p; }
+    else { const p = (max - min) * 0.08; min -= p; max += p; }
+    min = Math.max(0, min);
+    const step = niceNum((max - min) / 4, true);
+    const niceMin = Math.floor(min / step) * step;
+    let niceMax = Math.ceil(max / step) * step;
+    if (niceMax <= niceMin) niceMax = niceMin + step;
+    return { min: niceMin, max: niceMax, step };
+  }
+  function fmtTick(v, step) {
+    const a = Math.abs(v);
+    if (a >= 1000 || (a === 0 && step >= 1000)) {
+      const dp = Math.min(3, Math.max(0, Math.ceil(-Math.log10(step / 1000))));
+      return (v / 1000).toFixed(dp) + 'K';
+    }
+    const dp = Math.min(2, Math.max(0, Math.ceil(-Math.log10(step || 1))));
+    return v.toFixed(dp);
+  }
+
+  // Renders one gradient line chart (₿ tax on y, labels on x) — same visual
+  // language as .wm-chart in js/wealth.js, sized to sit inside the drill-down.
+  function trendChartHtml(labels, values, emptyMsg) {
+    const n = labels.length;
+    const have = values.filter(v => v != null).length;
+    if (!n || have === 0) return `<div class="wm-chart-empty">${escapeHtml(emptyMsg)}</div>`;
+    if (have === 1) return `<div class="wm-chart-empty">Only one data point logged so far — check back after another snapshot.</div>`;
+
+    const W = 860, H = 260, M = { top: 14, right: 14, bottom: 26, left: 52 };
+    const PW = W - M.left - M.right, PH = H - M.top - M.bottom;
+    const x = i => M.left + (n === 1 ? PW / 2 : (i / (n - 1)) * PW);
+    const { min: yMin, max: yMax, step } = yDomain(values.filter(v => v != null));
+    const y = v => M.top + PH - ((v - yMin) / (yMax - yMin || 1)) * PH;
+
+    let svg = '';
+    const ticks = Math.max(1, Math.round((yMax - yMin) / step));
+    for (let i = 0; i <= ticks; i++) {
+      const val = yMin + step * i, yy = y(val);
+      svg += `<line class="wm-grid-line" x1="${M.left}" y1="${yy.toFixed(1)}" x2="${M.left + PW}" y2="${yy.toFixed(1)}"/>`;
+      svg += `<text class="wm-axis-text" x="${M.left - 8}" y="${(yy + 3).toFixed(1)}" text-anchor="end">₿${fmtTick(val, step)}</text>`;
+    }
+    const xstep = Math.max(1, Math.ceil(n / 8));
+    for (let i = 0; i < n; i += xstep) {
+      svg += `<text class="wm-axis-text" x="${x(i).toFixed(1)}" y="${H - 8}" text-anchor="middle">${escapeHtml(labels[i])}</text>`;
+    }
+
+    let line = '', firstX = null, lastX = null;
+    for (let i = 0; i < n; i++) {
+      if (values[i] == null) continue;
+      const px = x(i), py = y(values[i]);
+      line += `${firstX === null ? 'M' : 'L'}${px.toFixed(1)} ${py.toFixed(1)}`;
+      if (firstX === null) firstX = px;
+      lastX = px;
+    }
+    if (firstX !== null) {
+      const area = `${line} L${lastX.toFixed(1)} ${(M.top + PH).toFixed(1)} L${firstX.toFixed(1)} ${(M.top + PH).toFixed(1)} Z`;
+      svg += `<defs><linearGradient id="taxg" x1="0" y1="0" x2="0" y2="1">`
+        + `<stop offset="0" stop-color="#4ade80" stop-opacity="0.28"/>`
+        + `<stop offset="1" stop-color="#4ade80" stop-opacity="0"/></linearGradient></defs>`
+        + `<path d="${area}" fill="url(#taxg)" stroke="none"/>`
+        + `<path class="wm-series-line" d="${line}" stroke="#4ade80"/>`;
+    }
+    return `<svg class="wm-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${svg}</svg>`;
+  }
+
+  async function weekTrendHtml(countryId) {
+    if (!currentLog || !currentLog.days) return `<div class="wm-chart-empty">No tax log data yet.</div>`;
+    const labels = currentLog.days.map(d => d.date.slice(5)); // MM-DD
+    const values = currentLog.days.map(d => {
+      const c = (d.countries || []).find(c => c.id === countryId);
+      return c ? c.tax : null;
+    });
+    return trendChartHtml(labels, values, 'No daily tax snapshots logged yet for this country this week.');
+  }
+
+  async function fiveWeekTrendHtml(countryId) {
+    const logs = await loadWeekLogs();
+    if (!logs.length) return `<div class="wm-chart-empty">No weekly tax log data yet.</div>`;
+    const ordered = logs.slice().sort((a, b) => a.weekStart.localeCompare(b.weekStart));
+    const labels = ordered.map(w => w.weekStart.slice(5));
+    const values = ordered.map(w => {
+      const totals = w.data.totals || {};
+      const c = totals[countryId];
+      return c ? c.tax : null;
+    });
+    return trendChartHtml(labels, values, 'No weekly tax log data yet for this country.');
   }
 
   function render(rows, meta) {
@@ -248,6 +443,8 @@ const IrishTaxTool = (() => {
         <div class="tax-card ok"><div class="tax-card-v">₿${moneyK(ieTax)}</div><div class="tax-card-l">daily wage tax staying in Ireland</div></div>
       </div>`;
 
+    const loggedTax = (countryId) => currentLog?.totals?.[countryId]?.tax;
+
     $table.innerHTML = `
       <div class="tax-table-wrap"><table class="tax-tbl">
         <thead><tr>
@@ -257,28 +454,73 @@ const IrishTaxTool = (() => {
           <th title="Income-tax rate this country takes off wages">Tax rate</th>
           <th title="Wages these factories actually paid in the last 24h">Daily wages</th>
           <th title="Daily wages × tax rate">Tax / day</th>
+          <th title="Sum of this country's daily tax snapshots so far this week, from the tax logger">Logged this week</th>
         </tr></thead>
         <tbody>${rows.map(r => `
-          <tr class="tax-row" data-c="${r.id}" title="Click for the factories & workers">
+          <tr class="tax-row" data-c="${r.id}" title="Click for options">
             <td class="l"><span class="tax-caret">▸</span> ${flagOf(r.code)} ${escapeHtml(r.name)}${r.id === IRELAND_COUNTRY_ID ? ' <span class="tax-home-tag">home</span>' : ''}</td>
             <td>${r.factories}</td>
             <td>${r.workers}</td>
             <td>${r.rate}%</td>
             <td>₿${money(r.wages)}</td>
             <td><strong>₿${money(r.tax)}</strong></td>
+            <td>₿${money(loggedTax(r.id))}</td>
           </tr>
-          <tr class="tax-detail" data-detail="${r.id}"><td colspan="6">${detailHtml(r)}</td></tr>`).join('')}</tbody>
+          <tr class="tax-detail" data-detail="${r.id}"><td colspan="7"></td></tr>`).join('')}</tbody>
       </table></div>
-      <p class="tax-note">Tax is estimated: wage transactions carry no tax line, so each country's income-tax rate is applied to the wages its Irish-owned factories actually paid in the last 24h. Click any country to see its factories, owners and workers. Factories are matched to a country via their region.</p>`;
+      <p class="tax-note">Tax is estimated: wage transactions carry no tax line, so each country's income-tax rate is applied to the wages its Irish-owned factories actually paid in the last 24h. "Logged this week" totals the daily tax snapshots the logger has recorded so far this week (resets each Monday). Click any country for options — workers, this week's trend, or the last 5 weeks — sourced from the daily tax logger. Factories are matched to a country via their region.</p>`;
 
-    // Expand/collapse a country's drill-down.
+    const byId = {};
+    rows.forEach(r => { byId[r.id] = r; });
+
+    function openDetail(countryId, html) {
+      const row = $table.querySelector(`.tax-row[data-c="${countryId}"]`);
+      const det = $table.querySelector(`.tax-detail[data-detail="${countryId}"] > td`);
+      if (!det) return;
+      det.innerHTML = html;
+      det.closest('.tax-detail').classList.add('open');
+      row?.classList.add('open');
+    }
+    function closeDetail(countryId) {
+      const row = $table.querySelector(`.tax-row[data-c="${countryId}"]`);
+      const det = $table.querySelector(`.tax-detail[data-detail="${countryId}"]`);
+      det?.classList.remove('open');
+      row?.classList.remove('open');
+    }
+    function showMenu(countryId) { openDetail(countryId, menuHtml(countryId)); }
+
+    // Country row: open (and reset to) the options menu, or close if already open.
     $table.querySelectorAll('.tax-row').forEach(row => {
       row.addEventListener('click', () => {
-        const det = $table.querySelector(`.tax-detail[data-detail="${row.dataset.c}"]`);
-        if (!det) return;
-        const open = det.classList.toggle('open');
-        row.classList.toggle('open', open);
+        const cid = row.dataset.c;
+        if (row.classList.contains('open')) { closeDetail(cid); return; }
+        showMenu(cid);
       });
+    });
+
+    // Menu options + back-to-menu, delegated on the table.
+    $table.addEventListener('click', async (e) => {
+      const back = e.target.closest('[data-back]');
+      if (back) { e.stopPropagation(); showMenu(back.dataset.back); return; }
+
+      const opt = e.target.closest('.tax-menu-opt');
+      if (!opt) return;
+      e.stopPropagation();
+      const cid = opt.dataset.c;
+      const country = byId[cid];
+      if (!country) return;
+      const action = opt.dataset.action;
+      if (action === 'workers') {
+        openDetail(cid, backHtml(cid) + workersHtml(country));
+      } else if (action === 'week') {
+        openDetail(cid, backHtml(cid) + '<div class="tax-chart-title">This week’s tax, logged daily</div>' + '<div class="wm-chart-box">Loading…</div>');
+        const html = await weekTrendHtml(cid);
+        openDetail(cid, backHtml(cid) + '<div class="tax-chart-title">This week’s tax, logged daily</div>' + `<div class="wm-chart-box">${html}</div>`);
+      } else if (action === 'weeks') {
+        openDetail(cid, backHtml(cid) + '<div class="tax-chart-title">Last 5 weeks, logged tax total</div>' + '<div class="wm-chart-box">Loading…</div>');
+        const html = await fiveWeekTrendHtml(cid);
+        openDetail(cid, backHtml(cid) + '<div class="tax-chart-title">Last 5 weeks, logged tax total</div>' + `<div class="wm-chart-box">${html}</div>`);
+      }
     });
   }
 

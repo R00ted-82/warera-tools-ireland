@@ -1035,6 +1035,51 @@
     <div id="tax-table"></div>
   </section>
 
+  <!-- ─── Irish Tax TEST view (direct-link only; not linked from any nav) ──
+       Test phase for the tax-log report + country options menu (workers /
+       this week trend / last 5 weeks trend). Powered by IrishTaxTestTool
+       (js/irish-tax-test.js). Reach via #tax-test. Remove once merged into
+       the live #tax view. -->
+  <section class="view" data-view="tax-test">
+    <div class="tool-header">
+      <div class="title-block">
+        <h2><span>🧪</span> Irish Factory Tax (test)</h2>
+        <p>Test build: click a country for a menu (workers / weekly trend / 5-week trend) sourced from the daily tax logger.</p>
+      </div>
+      <div class="controls">
+        <button id="tax2-refresh">Refresh</button>
+      </div>
+    </div>
+
+    <div id="tax2-log-report"></div>
+
+    <div id="tax2-steps" class="steps hidden">
+      <div class="step" data-state="pending" data-step="1">
+        <div class="step-icon"></div>
+        <div class="step-body"><div class="step-title">Finding Irish citizens</div><div class="step-sub"></div></div>
+        <div class="step-count"></div>
+      </div>
+      <div class="step" data-state="pending" data-step="2">
+        <div class="step-icon"></div>
+        <div class="step-body"><div class="step-title">Pulling Irish-owned factories &amp; workers</div><div class="step-sub"></div></div>
+        <div class="step-count"></div>
+      </div>
+      <div class="step" data-state="pending" data-step="3">
+        <div class="step-icon"></div>
+        <div class="step-body"><div class="step-title">Loading countries &amp; tax rates</div><div class="step-sub"></div></div>
+        <div class="step-count"></div>
+      </div>
+      <div class="step" data-state="pending" data-step="4">
+        <div class="step-icon"></div>
+        <div class="step-body"><div class="step-title">Summing actual wages</div><div class="step-sub"></div></div>
+        <div class="step-count"></div>
+      </div>
+    </div>
+    <div id="tax2-status" class="status hidden"></div>
+    <div id="tax2-summary"></div>
+    <div id="tax2-table"></div>
+  </section>
+
   <!-- ─── Buddy System view (encrypted; MoECON password required) ───── -->
   <section class="view" data-view="buddy">
     <div class="tool-header">
@@ -1129,6 +1174,7 @@
 <script src="js/daily-profit.js?v=20260617h"></script>
 <script src="js/dashboard.js?v=20260623a"></script>
 <script src="js/irish-tax.js?v=20260629b"></script>
+<script src="js/irish-tax-test.js?v=20260701a"></script>
 <script src="js/buddy.js?v=20260617h"></script>
 <script src="js/battle-orders.js?v=20260617h"></script>
 <script src="js/beer.js?v=20260617h"></script>

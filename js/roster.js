@@ -3,7 +3,8 @@
  *
  *  Country citizens list with build, pill (buff/debuff) status, health,
  *  hunger, MU and last-online time. Sortable columns + filters.
- *  Useful for war planning. Unlisted by design.
+ *  Useful for war planning. Linked from the Irish tools (#home) page as
+ *  "Battle Intel Ireland".
  *
  *  Loads automatically on open. Country is parametrised (default Ireland)
  *  so adding another country later is a CONFIG change, not a rewrite —

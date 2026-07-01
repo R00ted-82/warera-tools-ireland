@@ -355,7 +355,9 @@ const ToolkitShell = (() => {
   const PREVIEW_CATS = [
     { title: '🏭 Production', tools: ['advisor', 'clockin'] },
     { title: '💰 Profits',    tools: ['buddy-finder', 'profit', 'wealth'] },
-    { title: '⚔️ Combat',   tools: ['mu'] },
+    { title: '⚔️ Combat',   tools: ['mu'], links: [
+      { href: '#roster', icon: '🛰️', title: 'Battle Intel Ireland', desc: `Live Irish citizen roster: build, pill status, health, hunger, MU and last-online time. Useful for war planning.` },
+    ] },
     { title: '🧮 Planning',  tools: ['sp-advisor'] },
   ];
   function renderPreview() {
@@ -371,8 +373,17 @@ const ToolkitShell = (() => {
         </div>
       </button>`;
     };
+    // Plain links (not shell tools) navigate directly rather than pre-selecting a tab.
+    const linkCard = l => `<a class="tool-card" href="${l.href}">
+      <div class="tool-card-icon">${l.icon}</div>
+      <div class="tool-card-body">
+        <h3>${escapeHtml(l.title)}</h3>
+        <p>${escapeHtml(l.desc)}</p>
+        <span class="tool-link">Open ${escapeHtml(l.title)} →</span>
+      </div>
+    </a>`;
     $preview.innerHTML = PREVIEW_CATS.map(c =>
-      `<h3 class="community-cat">${c.title}</h3><div class="tool-cards">${c.tools.map(card).join('')}</div>`
+      `<h3 class="community-cat">${c.title}</h3><div class="tool-cards">${c.tools.map(card).join('')}${(c.links || []).map(linkCard).join('')}</div>`
     ).join('');
     $preview.dataset.done = '1';
   }

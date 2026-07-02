@@ -2382,94 +2382,10 @@ table.rs-table {
 .rs-country-opt:hover { background: var(--panel-2); }
 .rs-country-flag { font-size: 15px; }
 
-/* ═══════════════════════════════════════════════════════════════════
- *  IRISH TAX FLOW (#tax)
- * ═══════════════════════════════════════════════════════════════════ */
-.tax-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 4px 0 20px; }
-.tax-card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
-.tax-card.warn { border-color: rgba(251,191,36,.35); }
-.tax-card.ok { border-color: rgba(74,222,128,.35); }
-.tax-card-v { font-size: 24px; font-weight: 700; letter-spacing: -.5px; font-variant-numeric: tabular-nums; }
-.tax-card.warn .tax-card-v { color: var(--warn); }
-.tax-card.ok .tax-card-v { color: var(--accent); }
-.tax-card-l { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
-.tax-card-l span { display: block; opacity: .8; }
+/* Irish Factory Tax (#tax) CSS moved into tax-payload.js — the tool is
+ * now password-gated (see js/irish-tax.js), so its styling ships inside
+ * the encrypted payload rather than here. */
 
-.tax-tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-.tax-tbl th, .tax-tbl td { padding: 9px 12px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; }
-.tax-tbl th { color: var(--muted); font-weight: 600; font-size: 12px; }
-.tax-tbl th.l, .tax-tbl td.l { text-align: left; }
-.tax-tbl td.l { font-weight: 500; }
-.tax-tbl tbody tr:hover { background: var(--panel-2); }
-.tax-tbl tr.home { background: rgba(74,222,128,.07); }
-.tax-tbl tr.home td { border-color: rgba(74,222,128,.2); }
-.tax-home-tag { font-size: 10px; font-weight: 600; color: var(--accent); border: 1px solid rgba(74,222,128,.4); border-radius: 999px; padding: 1px 6px; margin-left: 4px; }
-.tax-note { font-size: 11.5px; color: var(--muted); margin-top: 12px; line-height: 1.5; }
-
-/* Irish Factory Tax — expandable per-country drill-down */
-.tax-row { cursor: pointer; }
-.tax-caret { display: inline-block; width: 12px; color: var(--muted); font-size: 10px; transition: transform .12s; }
-.tax-row.open .tax-caret { transform: rotate(90deg); }
-.tax-detail { display: none; }
-.tax-detail.open { display: table-row; }
-.tax-detail > td { background: var(--panel-2); padding: 0; border-bottom: 1px solid var(--border); }
-.tax-detail-wrap { padding: 10px 14px; display: flex; flex-direction: column; gap: 10px; }
-.tax-fac { border-left: 2px solid var(--border); padding-left: 10px; }
-.tax-fac-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
-.tax-fac-name { font-weight: 600; font-size: 13px; text-decoration: none; color: var(--link); }
-.tax-fac-meta { font-size: 11.5px; color: var(--muted); }
-.tax-fac-meta a { color: var(--link); text-decoration: none; }
-.tax-fac-workers { font-size: 12px; margin-top: 3px; line-height: 1.7; }
-.tax-fac-workers a { color: var(--text); text-decoration: none; border-bottom: 1px dotted var(--border); }
-.tax-fac-workers a:hover { color: var(--link); border-color: var(--link); }
-.tax-sep { color: var(--border); margin: 0 6px; }
-.tax-dim { color: var(--muted); }
-.tax-worker-flag { font-size: 11px; margin-left: 1px; cursor: help; }
-
-/* Irish Factory Tax — table scrolls horizontally instead of overflowing the page */
-.tax-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -2px; }
-
-/* Irish Factory Tax (test) — tax-log summary card */
-.tax-log-report {
-  display: flex; align-items: center; gap: 8px;
-  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
-  padding: 10px 14px; margin: 0 0 16px; font-size: 12.5px; color: var(--muted);
-}
-.tax-log-report.dim { color: var(--muted); font-style: italic; }
-.tax-log-report strong { color: var(--text); }
-.tax-log-icon { font-size: 15px; flex: none; }
-
-/* Irish Factory Tax (test) — country row options menu */
-.tax-menu-wrap { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; }
-.tax-menu-opt {
-  display: flex; align-items: center; gap: 8px; text-align: left;
-  background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px;
-  padding: 9px 12px; font-size: 13px; color: var(--text); cursor: pointer;
-  font-family: inherit; transition: border-color .12s, background .12s;
-}
-.tax-menu-opt:hover { border-color: var(--link); background: var(--panel); }
-
-.tax-back {
-  background: none; border: none; color: var(--link); font-size: 12px;
-  cursor: pointer; font-family: inherit; padding: 10px 14px 0; margin: 0;
-}
-.tax-back:hover { text-decoration: underline; }
-
-.tax-chart-title { font-size: 12.5px; color: var(--muted); padding: 6px 14px 0; }
-.tax-detail .wm-chart-box { padding: 4px 14px 12px; }
-
-/* Irish Factory Tax — mobile tuning */
-@media (max-width: 560px) {
-  .tax-cards { gap: 8px; margin-bottom: 16px; }
-  .tax-card { padding: 11px 13px; border-radius: 10px; }
-  .tax-card-v { font-size: 19px; }
-  .tax-card-l { font-size: 11px; }
-  .tax-tbl { font-size: 12.5px; }
-  .tax-tbl th, .tax-tbl td { padding: 8px 9px; }
-  .tax-tbl th { font-size: 11px; }
-  .tax-fac-workers { font-size: 12px; line-height: 1.9; }
-  .tax-note { font-size: 11px; }
-}
 /* ═══════════════════════════════════════════════════════════════════
  *  SKILL POINT ADVISOR (spa-)
  *  Pure client-side calculator — no trpc calls. Styled to match the

@@ -996,11 +996,12 @@
     </div>
   </section>
 
-  <!-- ─── Irish Tax Flow view (standalone; not linked from nav) ──────
+  <!-- ─── Irish Tax Flow view (encrypted; password required) ─────────
        Where Irish citizens work and which country collects the income
-       tax on their wages. Powered by IrishTaxTool (js/irish-tax.js).
-       Click a country for options: view workers, this week's trend, or
-       the last 5 weeks — the trends and the tax-log report card are
+       tax on their wages. Powered by IrishTaxGate (js/irish-tax.js),
+       which decrypts and injects the full tool from tax-payload.js.
+       Click a country for options: view workers, this week's Gross/Nett,
+       or the last 5 weeks — the trends and the tax-log report card are
        sourced from the daily snapshots in data/tax/ (see tax_log.py). -->
   <section class="view" data-view="tax">
     <div class="tool-header">
@@ -1008,38 +1009,43 @@
         <h2><span>🧾</span> Irish Factory Tax</h2>
         <p>Irish-owned factories that employ workers, grouped by the country they're based in — and the income tax that country takes off those wages. Surfaces tax "leaking" to foreign economies.</p>
       </div>
-      <div class="controls">
-        <button id="tax-refresh">Refresh</button>
+      <div class="controls" id="tax-controls">
+        <!-- Refresh button injected here after unlock. -->
       </div>
     </div>
 
-    <div id="tax-log-report"></div>
+    <div id="tax-gate" class="bo-gate">
+      <div class="lock-icon">🔒</div>
+      <h3>Restricted access</h3>
+      <p>This tool is encrypted. Enter the password to decrypt and load it.</p>
+      <form id="tax-gate-form" class="bo-gate-form">
+        <input id="tax-gate-pw" type="password" placeholder="Password" autocomplete="current-password" />
+        <button id="tax-gate-submit" type="submit" class="btn-primary">Unlock</button>
+        <div id="tax-gate-error" class="bo-gate-error" aria-live="polite"></div>
+      </form>
+    </div>
 
-    <div id="tax-steps" class="steps hidden">
-      <div class="step" data-state="pending" data-step="1">
-        <div class="step-icon"></div>
-        <div class="step-body"><div class="step-title">Finding Irish citizens</div><div class="step-sub"></div></div>
-        <div class="step-count"></div>
+    <div id="tax-content"><!-- Decrypted Irish Factory Tax HTML lands here. --></div>
+  </section>
+
+  <!-- ─── Irish Tax Flow — DEV/TEST COPY (link-only; NOT in any nav) ──
+       ⚠️ Unencrypted duplicate of the #tax view above, for iterating on
+       the tool without re-encrypting on every change. Reachable only by
+       going to #tax-dev directly — no tab, tool-card, or link points here.
+       Powered by IrishTaxDevTool (js/irish-tax-dev.js), which ships its
+       logic in the clear. Do not link to this from anywhere public. -->
+  <section class="view" data-view="tax-dev">
+    <div class="tool-header">
+      <div class="title-block">
+        <h2><span>🧾</span> Irish Factory Tax <span style="color:var(--warn)">— DEV COPY</span></h2>
+        <p style="color:var(--warn)">⚠️ Unencrypted test copy, link-only access. Not linked from any nav — for local iteration, not for sharing.</p>
       </div>
-      <div class="step" data-state="pending" data-step="2">
-        <div class="step-icon"></div>
-        <div class="step-body"><div class="step-title">Pulling Irish-owned factories &amp; workers</div><div class="step-sub"></div></div>
-        <div class="step-count"></div>
-      </div>
-      <div class="step" data-state="pending" data-step="3">
-        <div class="step-icon"></div>
-        <div class="step-body"><div class="step-title">Loading countries &amp; tax rates</div><div class="step-sub"></div></div>
-        <div class="step-count"></div>
-      </div>
-      <div class="step" data-state="pending" data-step="4">
-        <div class="step-icon"></div>
-        <div class="step-body"><div class="step-title">Summing actual wages</div><div class="step-sub"></div></div>
-        <div class="step-count"></div>
+      <div class="controls" id="taxdev-controls">
+        <!-- Refresh button injected here. -->
       </div>
     </div>
-    <div id="tax-status" class="status hidden"></div>
-    <div id="tax-summary"></div>
-    <div id="tax-table"></div>
+
+    <div id="taxdev-content"></div>
   </section>
 
   <!-- ─── Buddy System view (encrypted; MoECON password required) ───── -->
@@ -1135,7 +1141,8 @@
 <script src="js/wealth.js?v=20260617h"></script>
 <script src="js/daily-profit.js?v=20260617h"></script>
 <script src="js/dashboard.js?v=20260623a"></script>
-<script src="js/irish-tax.js?v=20260701a"></script>
+<script src="js/irish-tax.js?v=20260702a"></script>
+<script src="js/irish-tax-dev.js?v=20260702a"></script>
 <script src="js/buddy.js?v=20260617h"></script>
 <script src="js/battle-orders.js?v=20260617h"></script>
 <script src="js/beer.js?v=20260617h"></script>

@@ -9,6 +9,7 @@ ONBOARDING.md
 bo-payload.js
 buddy-payload.js
 beer-payload.js
+tax-payload.js
 
 # Local-only dev helper: serves the site and proxies the API with the Origin
 # spoofed to tools.we-ie.com (works around the Worker's CORS allowlist).

@@ -7,10 +7,12 @@
  *
  *  Each country row, when clicked, opens a small options menu instead of
  *  jumping straight to a drill-down:
- *    - View workers        factory → owner → workers, every name linked
- *                           to its in-game profile.
- *    - This week's trend    daily tax for that country, from the logger.
- *    - Last 5 weeks trend   weekly tax for that country, from the logger.
+ *    - View workers          factory → owner → workers, every name linked
+ *                             to its in-game profile.
+ *    - This week's Gross     daily gross tax for that country, from the logger.
+ *    - This week's Nett      daily nett tax retained (70% of gross), from the logger.
+ *    - Last 5 weeks Gross    weekly gross tax total for that country, from the logger.
+ *    - Last 5 weeks Nett     weekly nett tax retained total, from the logger.
  *
  *  Trend data comes from the tax_log.py daily snapshots:
  *    data/tax/current_week.json      — this week's days + running totals
@@ -178,7 +180,6 @@ const IrishTaxTool = (() => {
     setTrpcCache(true);
     nameById = {};
     weekLogs = null;
-    recentDays = null;
 
     try {
       // Kick off the log fetch in parallel with the live pipeline.
@@ -318,9 +319,10 @@ const IrishTaxTool = (() => {
   function menuHtml(countryId) {
     return `<div class="tax-menu-wrap">
       <button class="tax-menu-opt" data-action="workers" data-c="${countryId}">👷 View workers</button>
-      <button class="tax-menu-opt" data-action="days" data-c="${countryId}">📆 5 day trend</button>
-      <button class="tax-menu-opt" data-action="week" data-c="${countryId}">📅 This week's trend</button>
-      <button class="tax-menu-opt" data-action="weeks" data-c="${countryId}">📈 Last 5 weeks trend</button>
+      <button class="tax-menu-opt" data-action="week-gross" data-c="${countryId}">📅 This week's Gross</button>
+      <button class="tax-menu-opt" data-action="week-nett" data-c="${countryId}">💰 This week's Nett</button>
+      <button class="tax-menu-opt" data-action="weeks-gross" data-c="${countryId}">📈 Last 5 weeks Gross</button>
+      <button class="tax-menu-opt" data-action="weeks-nett" data-c="${countryId}">💵 Last 5 weeks Nett</button>
     </div>`;
   }
 
@@ -453,45 +455,20 @@ const IrishTaxTool = (() => {
     svg.addEventListener('mouseleave', () => { tt.style.opacity = 0; hl.style.display = 'none'; });
   }
 
-  async function weekTrendHtml(countryId) {
+  // This week's daily snapshots, either gross tax or the 70% nett retained.
+  async function weekTrendHtml(countryId, metric) {
     if (!currentLog || !currentLog.days) return { html: `<div class="wm-chart-empty">No tax log data yet.</div>`, labels: [], values: [] };
     const labels = currentLog.days.map(d => d.date.slice(5)); // MM-DD
     const values = currentLog.days.map(d => {
       const c = (d.countries || []).find(c => c.id === countryId);
-      return c ? c.tax : null;
+      if (!c) return null;
+      return metric === 'nett' ? (c.net_tax_retained ?? c.tax * 0.7) : c.tax;
     });
     return trendChartHtml(labels, values, 'No daily tax snapshots logged yet for this country this week.');
   }
 
-  // Last 5 daily snapshots of net tax retained (70% of tax), pulling from
-  // the previous archived week if the current week doesn't have 5 days yet.
-  let recentDays = null; // lazy-loaded, up to last 5 day entries { date, countries }
-  async function loadRecentDays() {
-    if (recentDays) return recentDays;
-    const days = currentLog?.days ? currentLog.days.slice() : [];
-    if (days.length < 5) {
-      const monday = currentLog ? new Date(currentLog.week_start) : thisMonday(new Date());
-      const prevMonday = new Date(monday); prevMonday.setUTCDate(prevMonday.getUTCDate() - 7);
-      const prevWeek = await fetchJson(`data/tax/weeks/${isoDate(prevMonday)}.json`);
-      if (prevWeek?.days) days.unshift(...prevWeek.days);
-    }
-    days.sort((a, b) => a.date.localeCompare(b.date));
-    recentDays = days.slice(-5);
-    return recentDays;
-  }
-
-  async function fiveDayTrendHtml(countryId) {
-    const days = await loadRecentDays();
-    if (!days.length) return { html: `<div class="wm-chart-empty">No daily tax snapshots logged yet.</div>`, labels: [], values: [] };
-    const labels = days.map(d => d.date.slice(5)); // MM-DD
-    const values = days.map(d => {
-      const c = (d.countries || []).find(c => c.id === countryId);
-      return c ? (c.net_tax_retained ?? c.tax * 0.7) : null;
-    });
-    return trendChartHtml(labels, values, 'No daily tax snapshots logged yet for this country.');
-  }
-
-  async function fiveWeekTrendHtml(countryId) {
+  // Last 5 weeks' totals, either gross tax or the 70% nett retained.
+  async function fiveWeekTrendHtml(countryId, metric) {
     const logs = await loadWeekLogs();
     if (!logs.length) return { html: `<div class="wm-chart-empty">No weekly tax log data yet.</div>`, labels: [], values: [] };
     const ordered = logs.slice().sort((a, b) => a.weekStart.localeCompare(b.weekStart));
@@ -499,7 +476,8 @@ const IrishTaxTool = (() => {
     const values = ordered.map(w => {
       const totals = w.data.totals || {};
       const c = totals[countryId];
-      return c ? c.tax : null;
+      if (!c) return null;
+      return metric === 'nett' ? (c.net_tax_retained ?? c.tax * 0.7) : c.tax;
     });
     return trendChartHtml(labels, values, 'No weekly tax log data yet for this country.');
   }
@@ -549,7 +527,7 @@ const IrishTaxTool = (() => {
           </tr>
           <tr class="tax-detail" data-detail="${r.id}"><td colspan="8"></td></tr>`).join('')}</tbody>
       </table></div>
-      <p class="tax-note">Tax is estimated: wage transactions carry no tax line, so each country's income-tax rate is applied to the wages its Irish-owned factories actually paid in the last 24h. Of that tax, 30% returns to each worker's home country and 70% is retained by the host country — the "Nett Tax Retained" column. "Logged this week" totals the daily tax snapshots the logger has recorded so far this week (resets each Monday). Click any country for options — workers, 5-day trend, this week's trend, or the last 5 weeks — sourced from the daily tax logger. Factories are matched to a country via their region.</p>`;
+      <p class="tax-note">Tax is estimated: wage transactions carry no tax line, so each country's income-tax rate is applied to the wages its Irish-owned factories actually paid in the last 24h. Of that tax, 30% returns to each worker's home country and 70% is retained by the host country — the "Nett Tax Retained" column. "Logged this week" totals the daily tax snapshots the logger has recorded so far this week (resets each Monday). Click any country for options — workers, this week's Gross/Nett, or the last 5 weeks' Gross/Nett — sourced from the daily tax logger. Factories are matched to a country via their region.</p>`;
 
     const byId = {};
     rows.forEach(r => { byId[r.id] = r; });
@@ -594,12 +572,14 @@ const IrishTaxTool = (() => {
       const action = opt.dataset.action;
       if (action === 'workers') {
         openDetail(cid, backHtml(cid) + workersHtml(country));
-      } else if (action === 'days') {
-        await showTrend(cid, 'Last 5 days, nett tax retained', fiveDayTrendHtml, 'Nett tax retained');
-      } else if (action === 'week') {
-        await showTrend(cid, 'This week’s tax, logged daily', weekTrendHtml, 'Tax');
-      } else if (action === 'weeks') {
-        await showTrend(cid, 'Last 5 weeks, logged tax total', fiveWeekTrendHtml, 'Tax');
+      } else if (action === 'week-gross') {
+        await showTrend(cid, "This week's Gross tax, logged daily", id => weekTrendHtml(id, 'gross'), 'Gross tax');
+      } else if (action === 'week-nett') {
+        await showTrend(cid, "This week's Nett tax retained, logged daily", id => weekTrendHtml(id, 'nett'), 'Nett tax retained');
+      } else if (action === 'weeks-gross') {
+        await showTrend(cid, 'Last 5 weeks, Gross tax total', id => fiveWeekTrendHtml(id, 'gross'), 'Gross tax');
+      } else if (action === 'weeks-nett') {
+        await showTrend(cid, 'Last 5 weeks, Nett tax retained total', id => fiveWeekTrendHtml(id, 'nett'), 'Nett tax retained');
       }
     });
 

@@ -295,11 +295,20 @@ def recalc_totals(days):
 def load_current_week():
     if not CURRENT_WEEK_FILE.exists():
         return None
+    with CURRENT_WEEK_FILE.open("r", encoding="utf-8") as f:
+        text = f.read()
     try:
-        with CURRENT_WEEK_FILE.open("r", encoding="utf-8") as f:
-            return json.load(f)
-    except (json.JSONDecodeError, OSError):
-        return None
+        return json.loads(text)
+    except json.JSONDecodeError as e:
+        # A corrupt file (e.g. leftover git conflict markers from a bad
+        # merge/stash) must NOT be treated as "no current week" — that used
+        # to silently discard every day already logged this week and start
+        # a blank file. Fail loudly instead so a human fixes the data.
+        raise RuntimeError(
+            f"{CURRENT_WEEK_FILE} exists but is not valid JSON ({e}). "
+            "Refusing to overwrite it with a fresh week — fix or restore "
+            "the file (check for git conflict markers) before rerunning."
+        ) from e
 
 
 def save_current_week(data):

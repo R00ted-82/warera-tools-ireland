@@ -501,6 +501,11 @@ const IrishTaxTool = (() => {
       </div>`;
 
     const loggedTax = (countryId) => currentLog?.totals?.[countryId]?.tax;
+    const loggedNett = (countryId) => {
+      const c = currentLog?.totals?.[countryId];
+      if (!c) return null;
+      return c.net_tax_retained ?? c.tax * 0.7;
+    };
 
     $table.innerHTML = `
       <div class="tax-table-wrap"><table class="tax-tbl">
@@ -511,8 +516,9 @@ const IrishTaxTool = (() => {
           <th title="Income-tax rate this country takes off wages">Tax rate</th>
           <th title="Wages these factories actually paid in the last 24h">Daily wages</th>
           <th title="Daily wages × tax rate">Tax / day</th>
-          <th title="70% of tax / day — the share the host country keeps. The other 30% returns to each worker's home country">Nett Tax Retained</th>
-          <th title="Sum of this country's daily tax snapshots so far this week, from the tax logger">Logged this week</th>
+          <th title="70% of tax / day — the share the host country keeps. The other 30% returns to each worker's home country">Nett Tax / day</th>
+          <th title="Sum of this country's daily gross tax snapshots so far this week, from the tax logger">Gross This Week</th>
+          <th title="70% of Gross This Week — the share the host country keeps">Nett this week</th>
         </tr></thead>
         <tbody>${rows.map(r => `
           <tr class="tax-row" data-c="${r.id}" title="Click for options">
@@ -524,10 +530,11 @@ const IrishTaxTool = (() => {
             <td><strong>₿${money(r.tax)}</strong></td>
             <td>₿${money(r.tax * 0.7)}</td>
             <td>₿${money(loggedTax(r.id))}</td>
+            <td>₿${money(loggedNett(r.id))}</td>
           </tr>
-          <tr class="tax-detail" data-detail="${r.id}"><td colspan="8"></td></tr>`).join('')}</tbody>
+          <tr class="tax-detail" data-detail="${r.id}"><td colspan="9"></td></tr>`).join('')}</tbody>
       </table></div>
-      <p class="tax-note">Tax is estimated: wage transactions carry no tax line, so each country's income-tax rate is applied to the wages its Irish-owned factories actually paid in the last 24h. Of that tax, 30% returns to each worker's home country and 70% is retained by the host country — the "Nett Tax Retained" column. "Logged this week" totals the daily tax snapshots the logger has recorded so far this week (resets each Monday). Click any country for options — workers, this week's Gross/Nett, or the last 5 weeks' Gross/Nett — sourced from the daily tax logger. Factories are matched to a country via their region.</p>`;
+      <p class="tax-note">Tax is estimated: wage transactions carry no tax line, so each country's income-tax rate is applied to the wages its Irish-owned factories actually paid in the last 24h. Of that tax, 30% returns to each worker's home country and 70% is retained by the host country — the "Nett Tax / day" and "Nett this week" columns. "Gross This Week" totals the daily tax snapshots the logger has recorded so far this week (resets each Monday). Click any country for options — workers, this week's Gross/Nett, or the last 5 weeks' Gross/Nett — sourced from the daily tax logger. Factories are matched to a country via their region.</p>`;
 
     const byId = {};
     rows.forEach(r => { byId[r.id] = r; });

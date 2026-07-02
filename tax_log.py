@@ -40,6 +40,10 @@ current_week.json shape:
 
 Tax figures are ESTIMATES: wage transactions carry no tax line, so we apply
 the factory-country's current income-tax rate to the wages actually paid.
+
+Of that tax, 30% is remitted back to each worker's home country and 70% is
+retained by the country the factory (and therefore the tax) is hosted in.
+Each country row/entry also carries "net_tax_retained" = tax * 0.7.
 """
 
 import json
@@ -68,6 +72,7 @@ WORKERS            = 8      # concurrent factory/wage fetches
 COUNTRY_WORKERS    = 20     # more parallelism for country lookups (cheap calls)
 WAGE_WINDOW_H      = 24
 WAGE_MAX_PAGES     = 5
+HOST_RETENTION     = 0.7   # share of tax the host (factory) country keeps; rest returns home
 
 
 # ── HTTP / tRPC helpers ───────────────────────────────────────────────────────
@@ -276,12 +281,14 @@ def recalc_totals(days):
                     "workers":   0,
                     "wages":     0.0,
                     "tax":       0.0,
+                    "net_tax_retained": 0.0,
                 }
             t = totals[cid]
             t["factories"] += c.get("factories", 0)
             t["workers"]   += c.get("workers", 0)
             t["wages"]      = round(t["wages"] + c.get("wages", 0.0), 2)
             t["tax"]        = round(t["tax"]   + c.get("tax",   0.0), 2)
+            t["net_tax_retained"] = round(t["tax"] * HOST_RETENTION, 2)
     return totals
 
 
@@ -467,6 +474,7 @@ def main():
                 "workers":   0,
                 "wages":     0.0,
                 "tax":       0.0,
+                "net_tax_retained": 0.0,
             }
         wages = float(comp_wages.get(comp_id, 0))
         a = agg[c_id]
@@ -474,6 +482,7 @@ def main():
         a["workers"]   += len(f["workers"])
         a["wages"]      = round(a["wages"] + wages, 2)
         a["tax"]        = round(a["tax"] + wages * (rate / 100), 2)
+        a["net_tax_retained"] = round(a["tax"] * HOST_RETENTION, 2)
 
     country_rows = sorted(agg.values(), key=lambda x: -x["tax"])
     total_tax = sum(r["tax"] for r in country_rows)

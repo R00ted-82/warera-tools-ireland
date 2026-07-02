@@ -178,6 +178,7 @@ const IrishTaxTool = (() => {
     setTrpcCache(true);
     nameById = {};
     weekLogs = null;
+    recentDays = null;
 
     try {
       // Kick off the log fetch in parallel with the live pipeline.
@@ -317,6 +318,7 @@ const IrishTaxTool = (() => {
   function menuHtml(countryId) {
     return `<div class="tax-menu-wrap">
       <button class="tax-menu-opt" data-action="workers" data-c="${countryId}">👷 View workers</button>
+      <button class="tax-menu-opt" data-action="days" data-c="${countryId}">📆 5 day trend</button>
       <button class="tax-menu-opt" data-action="week" data-c="${countryId}">📅 This week's trend</button>
       <button class="tax-menu-opt" data-action="weeks" data-c="${countryId}">📈 Last 5 weeks trend</button>
     </div>`;
@@ -357,15 +359,22 @@ const IrishTaxTool = (() => {
     return v.toFixed(dp);
   }
 
+  // Shared plot geometry between trendChartHtml (build) and wireTaxTrendHover
+  // (hover/touch), so the x(i) mapping used to locate the nearest point
+  // matches what was actually drawn.
+  const TREND_W = 860, TREND_H = 260, TREND_M = { top: 14, right: 14, bottom: 26, left: 52 };
+
   // Renders one gradient line chart (₿ tax on y, labels on x) — same visual
   // language as .wm-chart in js/wealth.js, sized to sit inside the drill-down.
+  // Returns { html, labels, values } so the caller can wire up a hover/touch
+  // tooltip (see wireTaxTrendHover) once the html is in the DOM.
   function trendChartHtml(labels, values, emptyMsg) {
     const n = labels.length;
     const have = values.filter(v => v != null).length;
-    if (!n || have === 0) return `<div class="wm-chart-empty">${escapeHtml(emptyMsg)}</div>`;
-    if (have === 1) return `<div class="wm-chart-empty">Only one data point logged so far — check back after another snapshot.</div>`;
+    if (!n || have === 0) return { html: `<div class="wm-chart-empty">${escapeHtml(emptyMsg)}</div>`, labels: [], values: [] };
+    if (have === 1) return { html: `<div class="wm-chart-empty">Only one data point logged so far — check back after another snapshot.</div>`, labels: [], values: [] };
 
-    const W = 860, H = 260, M = { top: 14, right: 14, bottom: 26, left: 52 };
+    const W = TREND_W, H = TREND_H, M = TREND_M;
     const PW = W - M.left - M.right, PH = H - M.top - M.bottom;
     const x = i => M.left + (n === 1 ? PW / 2 : (i / (n - 1)) * PW);
     const { min: yMin, max: yMax, step } = yDomain(values.filter(v => v != null));
@@ -399,11 +408,53 @@ const IrishTaxTool = (() => {
         + `<path d="${area}" fill="url(#taxg)" stroke="none"/>`
         + `<path class="wm-series-line" d="${line}" stroke="#4ade80"/>`;
     }
-    return `<svg class="wm-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${svg}</svg>`;
+    svg += `<line class="wm-hover-line" x1="0" y1="${M.top}" x2="0" y2="${M.top + PH}" style="display:none"/>`;
+    const html = `<svg class="wm-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${svg}</svg><div class="wm-tooltip"></div>`;
+    return { html, labels, values };
+  }
+
+  // Wires a hover (mouse) / touch tooltip onto a rendered trend chart,
+  // mirroring wireHover() in js/wealth.js for a single-series line chart.
+  function wireTaxTrendHover(container, labels, values, seriesLabel) {
+    const svg = container?.querySelector('svg.wm-chart');
+    const hl = container?.querySelector('.wm-hover-line');
+    const tt = container?.querySelector('.wm-tooltip');
+    if (!svg || !hl || !tt || !labels.length) return;
+
+    const n = labels.length;
+    const PW = TREND_W - TREND_M.left - TREND_M.right;
+    const x = i => TREND_M.left + (n === 1 ? PW / 2 : (i / (n - 1)) * PW);
+
+    function locate(clientX) {
+      const r = svg.getBoundingClientRect();
+      const sx = (clientX - r.left) / r.width * TREND_W;
+      let best = 0, bestD = Infinity;
+      for (let i = 0; i < n; i++) { const d = Math.abs(x(i) - sx); if (d < bestD) { bestD = d; best = i; } }
+      return best;
+    }
+    function show(clientX) {
+      const i = locate(clientX);
+      hl.setAttribute('x1', x(i)); hl.setAttribute('x2', x(i)); hl.style.display = '';
+      const v = values[i];
+      tt.innerHTML = v == null
+        ? `<div class="wm-tt-date">${escapeHtml(labels[i])} · no data</div>`
+        : `<div class="wm-tt-date">${escapeHtml(labels[i])}</div><div class="wm-tt-row"><span class="wm-dot" style="background:#4ade80"></span>${escapeHtml(seriesLabel)}<span class="wm-tt-val">₿${money(v)}</span></div>`;
+      positionTip(i);
+    }
+    function positionTip(i) {
+      const r = svg.getBoundingClientRect();
+      const px = x(i) / TREND_W * r.width;
+      const left = Math.min(Math.max(px + 12, 4), r.width - tt.offsetWidth - 4);
+      tt.style.left = `${left}px`; tt.style.top = `8px`; tt.style.opacity = 1;
+    }
+    svg.addEventListener('mousemove', e => show(e.clientX));
+    svg.addEventListener('touchstart', e => { if (e.touches[0]) show(e.touches[0].clientX); }, { passive: true });
+    svg.addEventListener('touchmove', e => { if (e.touches[0]) show(e.touches[0].clientX); }, { passive: true });
+    svg.addEventListener('mouseleave', () => { tt.style.opacity = 0; hl.style.display = 'none'; });
   }
 
   async function weekTrendHtml(countryId) {
-    if (!currentLog || !currentLog.days) return `<div class="wm-chart-empty">No tax log data yet.</div>`;
+    if (!currentLog || !currentLog.days) return { html: `<div class="wm-chart-empty">No tax log data yet.</div>`, labels: [], values: [] };
     const labels = currentLog.days.map(d => d.date.slice(5)); // MM-DD
     const values = currentLog.days.map(d => {
       const c = (d.countries || []).find(c => c.id === countryId);
@@ -412,9 +463,37 @@ const IrishTaxTool = (() => {
     return trendChartHtml(labels, values, 'No daily tax snapshots logged yet for this country this week.');
   }
 
+  // Last 5 daily snapshots of net tax retained (70% of tax), pulling from
+  // the previous archived week if the current week doesn't have 5 days yet.
+  let recentDays = null; // lazy-loaded, up to last 5 day entries { date, countries }
+  async function loadRecentDays() {
+    if (recentDays) return recentDays;
+    const days = currentLog?.days ? currentLog.days.slice() : [];
+    if (days.length < 5) {
+      const monday = currentLog ? new Date(currentLog.week_start) : thisMonday(new Date());
+      const prevMonday = new Date(monday); prevMonday.setUTCDate(prevMonday.getUTCDate() - 7);
+      const prevWeek = await fetchJson(`data/tax/weeks/${isoDate(prevMonday)}.json`);
+      if (prevWeek?.days) days.unshift(...prevWeek.days);
+    }
+    days.sort((a, b) => a.date.localeCompare(b.date));
+    recentDays = days.slice(-5);
+    return recentDays;
+  }
+
+  async function fiveDayTrendHtml(countryId) {
+    const days = await loadRecentDays();
+    if (!days.length) return { html: `<div class="wm-chart-empty">No daily tax snapshots logged yet.</div>`, labels: [], values: [] };
+    const labels = days.map(d => d.date.slice(5)); // MM-DD
+    const values = days.map(d => {
+      const c = (d.countries || []).find(c => c.id === countryId);
+      return c ? (c.net_tax_retained ?? c.tax * 0.7) : null;
+    });
+    return trendChartHtml(labels, values, 'No daily tax snapshots logged yet for this country.');
+  }
+
   async function fiveWeekTrendHtml(countryId) {
     const logs = await loadWeekLogs();
-    if (!logs.length) return `<div class="wm-chart-empty">No weekly tax log data yet.</div>`;
+    if (!logs.length) return { html: `<div class="wm-chart-empty">No weekly tax log data yet.</div>`, labels: [], values: [] };
     const ordered = logs.slice().sort((a, b) => a.weekStart.localeCompare(b.weekStart));
     const labels = ordered.map(w => w.weekStart.slice(5));
     const values = ordered.map(w => {
@@ -454,6 +533,7 @@ const IrishTaxTool = (() => {
           <th title="Income-tax rate this country takes off wages">Tax rate</th>
           <th title="Wages these factories actually paid in the last 24h">Daily wages</th>
           <th title="Daily wages × tax rate">Tax / day</th>
+          <th title="70% of tax / day — the share the host country keeps. The other 30% returns to each worker's home country">Nett Tax Retained</th>
           <th title="Sum of this country's daily tax snapshots so far this week, from the tax logger">Logged this week</th>
         </tr></thead>
         <tbody>${rows.map(r => `
@@ -464,11 +544,12 @@ const IrishTaxTool = (() => {
             <td>${r.rate}%</td>
             <td>₿${money(r.wages)}</td>
             <td><strong>₿${money(r.tax)}</strong></td>
+            <td>₿${money(r.tax * 0.7)}</td>
             <td>₿${money(loggedTax(r.id))}</td>
           </tr>
-          <tr class="tax-detail" data-detail="${r.id}"><td colspan="7"></td></tr>`).join('')}</tbody>
+          <tr class="tax-detail" data-detail="${r.id}"><td colspan="8"></td></tr>`).join('')}</tbody>
       </table></div>
-      <p class="tax-note">Tax is estimated: wage transactions carry no tax line, so each country's income-tax rate is applied to the wages its Irish-owned factories actually paid in the last 24h. "Logged this week" totals the daily tax snapshots the logger has recorded so far this week (resets each Monday). Click any country for options — workers, this week's trend, or the last 5 weeks — sourced from the daily tax logger. Factories are matched to a country via their region.</p>`;
+      <p class="tax-note">Tax is estimated: wage transactions carry no tax line, so each country's income-tax rate is applied to the wages its Irish-owned factories actually paid in the last 24h. Of that tax, 30% returns to each worker's home country and 70% is retained by the host country — the "Nett Tax Retained" column. "Logged this week" totals the daily tax snapshots the logger has recorded so far this week (resets each Monday). Click any country for options — workers, 5-day trend, this week's trend, or the last 5 weeks — sourced from the daily tax logger. Factories are matched to a country via their region.</p>`;
 
     const byId = {};
     rows.forEach(r => { byId[r.id] = r; });
@@ -476,10 +557,11 @@ const IrishTaxTool = (() => {
     function openDetail(countryId, html) {
       const row = $table.querySelector(`.tax-row[data-c="${countryId}"]`);
       const det = $table.querySelector(`.tax-detail[data-detail="${countryId}"] > td`);
-      if (!det) return;
+      if (!det) return null;
       det.innerHTML = html;
       det.closest('.tax-detail').classList.add('open');
       row?.classList.add('open');
+      return det;
     }
     function closeDetail(countryId) {
       const row = $table.querySelector(`.tax-row[data-c="${countryId}"]`);
@@ -512,16 +594,25 @@ const IrishTaxTool = (() => {
       const action = opt.dataset.action;
       if (action === 'workers') {
         openDetail(cid, backHtml(cid) + workersHtml(country));
+      } else if (action === 'days') {
+        await showTrend(cid, 'Last 5 days, nett tax retained', fiveDayTrendHtml, 'Nett tax retained');
       } else if (action === 'week') {
-        openDetail(cid, backHtml(cid) + '<div class="tax-chart-title">This week’s tax, logged daily</div>' + '<div class="wm-chart-box">Loading…</div>');
-        const html = await weekTrendHtml(cid);
-        openDetail(cid, backHtml(cid) + '<div class="tax-chart-title">This week’s tax, logged daily</div>' + `<div class="wm-chart-box">${html}</div>`);
+        await showTrend(cid, 'This week’s tax, logged daily', weekTrendHtml, 'Tax');
       } else if (action === 'weeks') {
-        openDetail(cid, backHtml(cid) + '<div class="tax-chart-title">Last 5 weeks, logged tax total</div>' + '<div class="wm-chart-box">Loading…</div>');
-        const html = await fiveWeekTrendHtml(cid);
-        openDetail(cid, backHtml(cid) + '<div class="tax-chart-title">Last 5 weeks, logged tax total</div>' + `<div class="wm-chart-box">${html}</div>`);
+        await showTrend(cid, 'Last 5 weeks, logged tax total', fiveWeekTrendHtml, 'Tax');
       }
     });
+
+    // Loads a trend chart, renders it, then wires up its hover/touch tooltip
+    // — each data point's value is shown on click/tap (mobile) as well as
+    // hover, mirroring the wealth-monitor chart in js/wealth.js.
+    async function showTrend(cid, title, loader, seriesLabel) {
+      openDetail(cid, backHtml(cid) + `<div class="tax-chart-title">${escapeHtml(title)}</div>` + '<div class="wm-chart-box">Loading…</div>');
+      const { html, labels, values } = await loader(cid);
+      const det = openDetail(cid, backHtml(cid) + `<div class="tax-chart-title">${escapeHtml(title)}</div>` + `<div class="wm-chart-box">${html}</div>`);
+      const box = det?.querySelector('.wm-chart-box');
+      if (box) wireTaxTrendHover(box, labels, values, seriesLabel);
+    }
   }
 
   $refresh.addEventListener('click', load);

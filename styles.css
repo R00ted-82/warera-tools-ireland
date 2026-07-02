@@ -2424,6 +2424,7 @@ table.rs-table {
 .tax-fac-workers a:hover { color: var(--link); border-color: var(--link); }
 .tax-sep { color: var(--border); margin: 0 6px; }
 .tax-dim { color: var(--muted); }
+.tax-worker-flag { font-size: 11px; margin-left: 1px; cursor: help; }
 
 /* Irish Factory Tax — table scrolls horizontally instead of overflowing the page */
 .tax-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -2px; }

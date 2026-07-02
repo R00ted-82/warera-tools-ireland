@@ -8,7 +8,11 @@
  *  Each country row, when clicked, opens a small options menu instead of
  *  jumping straight to a drill-down:
  *    - View workers          factory → owner → workers, every name linked
- *                             to its in-game profile.
+ *                             to its in-game profile, each worker tagged
+ *                             with a flag for their HOME country (resolved
+ *                             via user.getUserLite) — the country their 30%
+ *                             tax remittance actually goes to, distinct
+ *                             from the factory's (host) country.
  *    - This week's Gross     daily gross tax for that country, from the logger.
  *    - This week's Nett      daily nett tax retained (70% of gross), from the logger.
  *    - Last 5 weeks Gross    weekly gross tax total for that country, from the logger.
@@ -55,6 +59,8 @@ const IrishTaxTool = (() => {
 
   let loaded = false;
   let nameById = {};   // userId -> username (citizens free; workers resolved)
+  let homeCountryById = {};   // userId -> countryId (citizens = Ireland free; workers resolved) — this is who the 30% remittance actually goes to
+  let homeCountryInfoById = {};   // countryId -> { name, code }, for rendering the flags above
   let currentLog = null;      // parsed data/tax/current_week.json
   let weekLogs = null;        // [{ weekStart, data }], lazy-loaded
 
@@ -86,7 +92,7 @@ const IrishTaxTool = (() => {
       if (cursor) input.cursor = cursor;
       const page = await it_trpc('user.getUsersByCountry', input);
       const arr = page?.items ?? page?.data ?? (Array.isArray(page) ? page : []);
-      for (const u of arr) if (u?._id) { out.push(u._id); if (u.username) nameById[u._id] = u.username; }
+      for (const u of arr) if (u?._id) { out.push(u._id); if (u.username) nameById[u._id] = u.username; homeCountryById[u._id] = IRELAND_COUNTRY_ID; }
       onProgress?.(out.length);
       const next = page?.nextCursor ?? page?.cursor ?? null;
       if (!next || arr.length === 0) break;
@@ -179,6 +185,8 @@ const IrishTaxTool = (() => {
     steps.reset();
     setTrpcCache(true);
     nameById = {};
+    homeCountryById = {};
+    homeCountryInfoById = {};
     weekLogs = null;
 
     try {
@@ -264,10 +272,19 @@ const IrishTaxTool = (() => {
       await mapConcurrent(unknown, async (id) => {
         const u = await it_trpc('user.getUserLite', { userId: id }).catch(() => null);
         if (u?.username) nameById[id] = u.username;
+        const hc = u?.country ?? u?.countryId ?? null;
+        if (hc) homeCountryById[id] = hc;
         if (++dn % 20 === 0) steps.setStep(4, 'active', { count: `${dn}/${unknown.length}` });
       }, 20);
       steps.setStep(4, 'done', { count: `${owners.length} owners · ${workerIds.size} workers` });
       steps.fadeOut(400);
+
+      // Flag/name lookup for each distinct worker home country, used by the
+      // "View workers" drill-down to show where each worker's 30% goes.
+      for (const hcId of new Set(Object.values(homeCountryById))) {
+        const c = countryById[hcId];
+        if (c) homeCountryInfoById[hcId] = { name: c.name || '—', code: c.code || c.iso || null };
+      }
 
       // Aggregate per country (+ keep the factory list for the drill-down)
       const agg = {};
@@ -304,6 +321,15 @@ const IrishTaxTool = (() => {
     const n = nameById[id] || ('user ' + String(id).slice(-4));
     return `<a href="${GAME_BASE}/user/${escapeHtml(id)}" target="_blank" rel="noopener">${escapeHtml(n)}</a>`;
   }
+  // Each worker's HOME country — where their 30% tax remittance actually
+  // goes, as opposed to the factory's (host) country this whole table is
+  // grouped by. Shown as a small flag badge next to their name.
+  function workerLink(id) {
+    const hcId = homeCountryById[id];
+    const info = hcId ? homeCountryInfoById[hcId] : null;
+    if (!info) return userLink(id);
+    return `${userLink(id)} <span class="tax-worker-flag" title="Home: ${escapeHtml(info.name)}">${flagOf(info.code)}</span>`;
+  }
   function workersHtml(country) {
     const facs = country.facList.slice().sort((a, b) => b.workers.length - a.workers.length);
     return `<div class="tax-detail-wrap"><button class="tax-back" data-back="${country.id}">← back to options</button>${facs.map(f => `
@@ -312,7 +338,7 @@ const IrishTaxTool = (() => {
           <a class="tax-fac-name" href="${GAME_BASE}/company/${escapeHtml(f.id)}" target="_blank" rel="noopener">🏭 ${escapeHtml(f.name || f.itemCode || 'factory')}</a>
           <span class="tax-fac-meta">owner: ${userLink(f.ownerId)} · ${f.workers.length} worker${f.workers.length === 1 ? '' : 's'} · ₿${money(f.wages)}/day</span>
         </div>
-        <div class="tax-fac-workers">${f.workers.length ? f.workers.map(userLink).join('<span class="tax-sep">·</span>') : '<span class="tax-dim">no current workers</span>'}</div>
+        <div class="tax-fac-workers">${f.workers.length ? f.workers.map(workerLink).join('<span class="tax-sep">·</span>') : '<span class="tax-dim">no current workers</span>'}</div>
       </div>`).join('')}</div>`;
   }
 

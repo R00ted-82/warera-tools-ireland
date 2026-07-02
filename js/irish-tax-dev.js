@@ -103,6 +103,10 @@ const IrishTaxDevTool = (() => {
 .tax-audit-row.big b { color: var(--accent); }
 .tax-audit-note { font-size: 11px; color: var(--muted); line-height: 1.5; }
 
+.tax-src { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); margin: 2px 0 10px; line-height: 1.5; }
+.tax-src strong { color: var(--text); }
+.tax-src.live strong { color: var(--accent); }
+
 .tax-back {
   background: none; border: none; color: var(--link); font-size: 12px;
   cursor: pointer; font-family: inherit; padding: 10px 14px 0; margin: 0;
@@ -162,7 +166,7 @@ const IrishTaxDevTool = (() => {
 
   /* ── Inject controls (refresh button) into the header ──────────── */
   document.getElementById('taxdev-controls').innerHTML = `
-    <button id="taxdev-refresh">Refresh</button>
+    <button id="taxdev-refresh" title="Pull current figures live from the game (slower) and enable the per-worker drill-down">Refresh (live)</button>
   `;
 
   /* ── IrishTaxDevTool ────────────────────────────────────────────── */
@@ -483,7 +487,7 @@ const IrishTaxDevTool = (() => {
         .map(a => ({ ...a, hostRetained: a.tax * (1 - AUTO_REMIT) - a.rebate }))
         .sort((x, y) => y.rebate - x.rebate || y.tax - x.tax);
       await logPromise;
-      render(rows, { factories: companyIds.length });
+      render(rows, { factories: companyIds.length, source: 'live' });
     } catch (e) {
       steps.markActiveAsError(e.message);
       setStatus(`Error: ${e.message}`, true);
@@ -509,7 +513,13 @@ const IrishTaxDevTool = (() => {
     return `${userLink(id)} <span class="tax-worker-flag" title="Home: ${escapeHtml(info.name)}">${flagOf(info.code)}</span>`;
   }
   function workersHtml(country) {
-    const facs = country.facList.slice().sort((a, b) => b.workers.length - a.workers.length);
+    const facs = (country.facList || []).slice().sort((a, b) => b.workers.length - a.workers.length);
+    // Log-sourced rows carry no per-worker data (the logger stores only
+    // aggregates). Prompt for a live pull instead of showing an empty list.
+    if (!facs.length) {
+      return `<div class="tax-detail-wrap"><button class="tax-back" data-back="${country.id}">← back to options</button>
+        <div class="tax-dim" style="font-size:12.5px;padding:4px 0;line-height:1.6;">Worker-level detail isn't stored in the daily settlement log. Click <strong>Refresh (live)</strong> at the top to pull the current per-worker breakdown from the game.</div></div>`;
+    }
     return `<div class="tax-detail-wrap"><button class="tax-back" data-back="${country.id}">← back to options</button>${facs.map(f => `
       <div class="tax-fac">
         <div class="tax-fac-h">
@@ -688,8 +698,125 @@ const IrishTaxDevTool = (() => {
     return trendChartHtml(labels, values, 'No weekly tax log data yet for this country.');
   }
 
+  /* ── Detail panel (shared by the log render and the live render) ──────
+     These are module-scoped, and the single delegated table click handler
+     (onTableClick, wired exactly once at the bottom of the IIFE) reads the
+     current rows from `taxById`. render() can therefore run any number of
+     times — initial log render, then a live "Refresh" — without stacking
+     duplicate listeners. */
+  let taxById = {};   // countryId -> current row object (log- or live-sourced)
+
+  // This week's accrued settlement per country, from the daily logger totals.
+  function loggedRebate(countryId) { return currentLog?.totals?.[countryId]?.manual_rebate_due; }
+
+  function openDetail(countryId, html) {
+    const row = $table.querySelector(`.tax-row[data-c="${countryId}"]`);
+    const det = $table.querySelector(`.tax-detail[data-detail="${countryId}"] > td`);
+    if (!det) return null;
+    det.innerHTML = html;
+    det.closest('.tax-detail').classList.add('open');
+    row?.classList.add('open');
+    return det;
+  }
+  function closeDetail(countryId) {
+    const row = $table.querySelector(`.tax-row[data-c="${countryId}"]`);
+    const det = $table.querySelector(`.tax-detail[data-detail="${countryId}"]`);
+    det?.classList.remove('open');
+    row?.classList.remove('open');
+  }
+  // The country panel: the settlement audit (Irish vs non-Irish breakdown +
+  // today's/weekly settlement) followed by the options menu. This is the
+  // audit trail for how every value in the row was calculated.
+  function showCountry(countryId) {
+    const country = taxById[countryId];
+    if (!country) return;
+    openDetail(countryId, auditHtml(country) + menuHtml(countryId));
+  }
+
+  // Renders the per-country settlement audit. Splits the row's rebate back
+  // into the Irish-worker and non-Irish-worker components so every figure is
+  // traceable to the agreement's two rates.
+  function auditHtml(c) {
+    const deal = dealFor(c.code);
+    const irishRebate   = c.irishWorkerTax   * deal.irishRebate;
+    const foreignRebate = c.foreignWorkerTax * deal.foreignRebate;
+    const weekRebate = loggedRebate(c.id);
+    const pct = (x) => `${(x * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`;
+    return `<div class="tax-audit">
+      <div class="tax-audit-grid">
+        <div class="tax-audit-cat">
+          <div class="tax-audit-h">🇮🇪 Irish workers <span class="tax-audit-rate">rebate ${pct(deal.irishRebate)}</span></div>
+          <div class="tax-audit-row"><span>Workers</span><b>${c.irishWorkers}</b></div>
+          <div class="tax-audit-row"><span>Gross tax</span><b>₿${money(c.irishWorkerTax)}</b></div>
+          <div class="tax-audit-row"><span>Manual rebate</span><b>₿${money(irishRebate)}</b></div>
+        </div>
+        <div class="tax-audit-cat">
+          <div class="tax-audit-h">🌍 Non-Irish workers <span class="tax-audit-rate">rebate ${pct(deal.foreignRebate)}</span></div>
+          <div class="tax-audit-row"><span>Workers</span><b>${c.foreignWorkers}</b></div>
+          <div class="tax-audit-row"><span>Gross tax</span><b>₿${money(c.foreignWorkerTax)}</b></div>
+          <div class="tax-audit-row"><span>Manual rebate</span><b>₿${money(foreignRebate)}</b></div>
+        </div>
+      </div>
+      <div class="tax-audit-tot">
+        <div class="tax-audit-row big"><span>Today's settlement owed to Ireland</span><b>₿${money(c.rebate)}</b></div>
+        <div class="tax-audit-row big"><span>This week's settlement (logged)</span><b>₿${money(weekRebate)}</b></div>
+      </div>
+      <div class="tax-audit-note">Gross tax ₿${money(c.tax)}/day · income-tax rate ${c.rate}% · deals.json v${c.dealVersion}. Excludes the game's automatic 30% remittance (that returns to each worker's own country and is not part of the settlement). Host keeps ≈ ₿${money(c.hostRetained)}/day.</div>
+    </div>`;
+  }
+
+  // Loads a trend chart, renders it, then wires up its hover/touch tooltip
+  // — each data point's value is shown on click/tap (mobile) as well as
+  // hover, mirroring the wealth-monitor chart in js/wealth.js.
+  async function showTrend(cid, title, loader, seriesLabel) {
+    openDetail(cid, backHtml(cid) + `<div class="tax-chart-title">${escapeHtml(title)}</div>` + '<div class="wm-chart-box">Loading…</div>');
+    const { html, labels, values } = await loader(cid);
+    const det = openDetail(cid, backHtml(cid) + `<div class="tax-chart-title">${escapeHtml(title)}</div>` + `<div class="wm-chart-box">${html}</div>`);
+    const box = det?.querySelector('.wm-chart-box');
+    if (box) wireTaxTrendHover(box, labels, values, seriesLabel);
+  }
+
+  // The one and only table click handler (row toggle + menu options + back).
+  // Wired once — never inside render() — so repeated renders can't duplicate it.
+  async function onTableClick(e) {
+    const back = e.target.closest('[data-back]');
+    if (back) { e.stopPropagation(); showCountry(back.dataset.back); return; }
+
+    const opt = e.target.closest('.tax-menu-opt');
+    if (opt) {
+      e.stopPropagation();
+      const cid = opt.dataset.c;
+      const country = taxById[cid];
+      if (!country) return;
+      const action = opt.dataset.action;
+      if (action === 'workers') {
+        openDetail(cid, backHtml(cid) + workersHtml(country));
+      } else if (action === 'week-gross') {
+        await showTrend(cid, "This week's Gross tax, logged daily", id => weekTrendHtml(id, 'gross'), 'Gross tax');
+      } else if (action === 'week-rebate') {
+        await showTrend(cid, "This week's Settlement owed to Ireland, logged daily", id => weekTrendHtml(id, 'rebate'), 'Settlement');
+      } else if (action === 'weeks-gross') {
+        await showTrend(cid, 'Last 5 weeks, Gross tax total', id => fiveWeekTrendHtml(id, 'gross'), 'Gross tax');
+      } else if (action === 'weeks-rebate') {
+        await showTrend(cid, 'Last 5 weeks, Settlement total', id => fiveWeekTrendHtml(id, 'rebate'), 'Settlement');
+      }
+      return;
+    }
+
+    // Country row: open (and reset to) the audit + options panel, or close.
+    const row = e.target.closest('.tax-row');
+    if (row) {
+      const cid = row.dataset.c;
+      if (row.classList.contains('open')) closeDetail(cid);
+      else showCountry(cid);
+    }
+  }
+
+  // Renders the cards + main table from a set of country rows. `meta.source`
+  // is 'log' (daily snapshot) or 'live' (just-pulled), used only for the banner.
   function render(rows, meta) {
-    if (!rows.length) { setStatus('No located Irish-owned factories found.'); return; }
+    if (!rows.length) { setStatus('No settlement data to show.'); return; }
+    setStatus('');
 
     const ie = rows.find(r => r.id === IRELAND_COUNTRY_ID);
     const ieFactories = ie ? ie.factories : 0;
@@ -707,10 +834,14 @@ const IrishTaxDevTool = (() => {
         <div class="tax-card ok"><div class="tax-card-v">₿${moneyK(settlementWeek)}</div><div class="tax-card-l">settlement accrued this week<span>ready to transfer · from the logger</span></div></div>
       </div>`;
 
-    // This week's accrued settlement per country, from the daily logger totals.
-    const loggedRebate = (countryId) => currentLog?.totals?.[countryId]?.manual_rebate_due;
+    taxById = {};
+    rows.forEach(r => { taxById[r.id] = r; });
 
-    $table.innerHTML = `
+    const srcBanner = meta.source === 'live'
+      ? `<div class="tax-src live">🔴 <span><strong>Live</strong> — pulled just now (rolling last 24h). Worker drill-down available.</span></div>`
+      : `<div class="tax-src">📅 <span>Showing the latest daily snapshot (<strong>${escapeHtml(meta.date || '—')}</strong>) from the settlement log — no live API calls. Click <strong>Refresh (live)</strong> for current figures and the per-worker drill-down.</span></div>`;
+
+    $table.innerHTML = srcBanner + `
       <div class="tax-table-wrap"><table class="tax-tbl">
         <thead><tr>
           <th class="l">Country</th>
@@ -731,116 +862,57 @@ const IrishTaxDevTool = (() => {
           </tr>
           <tr class="tax-detail" data-detail="${r.id}"><td colspan="6"></td></tr>`).join('')}</tbody>
       </table></div>
-      <p class="tax-note">This is a settlement calculator: it shows how much each country owes Ireland under the negotiated rebate agreements in <code>data/tax/deals.json</code> (v${deals.version}). "Gross Tax / Day" is the wage tax those factories generated in the last 24h (estimated — wage transactions carry no tax line, so each country's income-tax rate is applied to wages actually paid). "Rebate Today" is the additional manual rebate owed to Ireland — the game already auto-remits 30% of every worker's tax to their citizenship country, and that automatic transfer is excluded here. "Settlement This Week" accrues the daily rebate snapshots the logger records (resets each Monday). Click any country for the full audit — Irish vs non-Irish worker breakdown, workers, and trend charts.</p>`;
-
-    const byId = {};
-    rows.forEach(r => { byId[r.id] = r; });
-
-    function openDetail(countryId, html) {
-      const row = $table.querySelector(`.tax-row[data-c="${countryId}"]`);
-      const det = $table.querySelector(`.tax-detail[data-detail="${countryId}"] > td`);
-      if (!det) return null;
-      det.innerHTML = html;
-      det.closest('.tax-detail').classList.add('open');
-      row?.classList.add('open');
-      return det;
-    }
-    function closeDetail(countryId) {
-      const row = $table.querySelector(`.tax-row[data-c="${countryId}"]`);
-      const det = $table.querySelector(`.tax-detail[data-detail="${countryId}"]`);
-      det?.classList.remove('open');
-      row?.classList.remove('open');
-    }
-    // The country panel: the settlement audit (Irish vs non-Irish breakdown +
-    // today's/weekly settlement) followed by the options menu. This is the
-    // audit trail for how every value in the row was calculated.
-    function showCountry(countryId) {
-      const country = byId[countryId];
-      if (!country) return;
-      openDetail(countryId, auditHtml(country) + menuHtml(countryId));
-    }
-
-    // Renders the per-country settlement audit. Splits the row's rebate back
-    // into the Irish-worker and non-Irish-worker components so every figure is
-    // traceable to the agreement's two rates.
-    function auditHtml(c) {
-      const deal = dealFor(c.code);
-      const irishRebate   = c.irishWorkerTax   * deal.irishRebate;
-      const foreignRebate = c.foreignWorkerTax * deal.foreignRebate;
-      const weekRebate = loggedRebate(c.id);
-      const pct = (x) => `${(x * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`;
-      return `<div class="tax-audit">
-        <div class="tax-audit-grid">
-          <div class="tax-audit-cat">
-            <div class="tax-audit-h">🇮🇪 Irish workers <span class="tax-audit-rate">rebate ${pct(deal.irishRebate)}</span></div>
-            <div class="tax-audit-row"><span>Workers</span><b>${c.irishWorkers}</b></div>
-            <div class="tax-audit-row"><span>Gross tax</span><b>₿${money(c.irishWorkerTax)}</b></div>
-            <div class="tax-audit-row"><span>Manual rebate</span><b>₿${money(irishRebate)}</b></div>
-          </div>
-          <div class="tax-audit-cat">
-            <div class="tax-audit-h">🌍 Non-Irish workers <span class="tax-audit-rate">rebate ${pct(deal.foreignRebate)}</span></div>
-            <div class="tax-audit-row"><span>Workers</span><b>${c.foreignWorkers}</b></div>
-            <div class="tax-audit-row"><span>Gross tax</span><b>₿${money(c.foreignWorkerTax)}</b></div>
-            <div class="tax-audit-row"><span>Manual rebate</span><b>₿${money(foreignRebate)}</b></div>
-          </div>
-        </div>
-        <div class="tax-audit-tot">
-          <div class="tax-audit-row big"><span>Today's settlement owed to Ireland</span><b>₿${money(c.rebate)}</b></div>
-          <div class="tax-audit-row big"><span>This week's settlement (logged)</span><b>₿${money(weekRebate)}</b></div>
-        </div>
-        <div class="tax-audit-note">Gross tax ₿${money(c.tax)}/day · income-tax rate ${c.rate}% · deals.json v${c.dealVersion}. Excludes the game's automatic 30% remittance (that returns to each worker's own country and is not part of the settlement). Host keeps ≈ ₿${money(c.hostRetained)}/day.</div>
-      </div>`;
-    }
-
-    // Country row: open (and reset to) the audit + options panel, or close.
-    $table.querySelectorAll('.tax-row').forEach(row => {
-      row.addEventListener('click', () => {
-        const cid = row.dataset.c;
-        if (row.classList.contains('open')) { closeDetail(cid); return; }
-        showCountry(cid);
-      });
-    });
-
-    // Menu options + back-to-panel, delegated on the table.
-    $table.addEventListener('click', async (e) => {
-      const back = e.target.closest('[data-back]');
-      if (back) { e.stopPropagation(); showCountry(back.dataset.back); return; }
-
-      const opt = e.target.closest('.tax-menu-opt');
-      if (!opt) return;
-      e.stopPropagation();
-      const cid = opt.dataset.c;
-      const country = byId[cid];
-      if (!country) return;
-      const action = opt.dataset.action;
-      if (action === 'workers') {
-        openDetail(cid, backHtml(cid) + workersHtml(country));
-      } else if (action === 'week-gross') {
-        await showTrend(cid, "This week's Gross tax, logged daily", id => weekTrendHtml(id, 'gross'), 'Gross tax');
-      } else if (action === 'week-rebate') {
-        await showTrend(cid, "This week's Settlement owed to Ireland, logged daily", id => weekTrendHtml(id, 'rebate'), 'Settlement');
-      } else if (action === 'weeks-gross') {
-        await showTrend(cid, 'Last 5 weeks, Gross tax total', id => fiveWeekTrendHtml(id, 'gross'), 'Gross tax');
-      } else if (action === 'weeks-rebate') {
-        await showTrend(cid, 'Last 5 weeks, Settlement total', id => fiveWeekTrendHtml(id, 'rebate'), 'Settlement');
-      }
-    });
-
-    // Loads a trend chart, renders it, then wires up its hover/touch tooltip
-    // — each data point's value is shown on click/tap (mobile) as well as
-    // hover, mirroring the wealth-monitor chart in js/wealth.js.
-    async function showTrend(cid, title, loader, seriesLabel) {
-      openDetail(cid, backHtml(cid) + `<div class="tax-chart-title">${escapeHtml(title)}</div>` + '<div class="wm-chart-box">Loading…</div>');
-      const { html, labels, values } = await loader(cid);
-      const det = openDetail(cid, backHtml(cid) + `<div class="tax-chart-title">${escapeHtml(title)}</div>` + `<div class="wm-chart-box">${html}</div>`);
-      const box = det?.querySelector('.wm-chart-box');
-      if (box) wireTaxTrendHover(box, labels, values, seriesLabel);
-    }
+      <p class="tax-note">This is a settlement calculator: it shows how much each country owes Ireland under the negotiated rebate agreements in <code>data/tax/deals.json</code> (v${deals.version}). "Gross Tax / Day" is the wage tax those factories generated in a day (estimated — wage transactions carry no tax line, so each country's income-tax rate is applied to wages actually paid). "Rebate Today" is the additional manual rebate owed to Ireland — the game already auto-remits 30% of every worker's tax to their citizenship country, and that automatic transfer is excluded here. "Settlement This Week" accrues the daily rebate snapshots the logger records (resets each Monday). Click any country for the full audit — Irish vs non-Irish worker breakdown, workers, and trend charts.</p>`;
   }
 
+  // Build rows straight from the latest daily snapshot in the settlement log —
+  // no live API calls. Every displayed value (gross, rebate, worker split, host
+  // retained) is stored per-day by tax_log.py; only the per-worker drill-down is
+  // absent (aggregates only), which the live Refresh fills in.
+  function renderFromLog() {
+    const day = currentLog?.days?.[currentLog.days.length - 1];
+    if (!currentLog || !day || !(day.countries || []).length) {
+      $table.innerHTML = '';
+      $summary.innerHTML = '';
+      setStatus('No settlement snapshots logged yet. Click “Refresh (live)” to pull current data from the game.');
+      return;
+    }
+    const rows = day.countries.map(c => ({
+      id: c.id, name: c.name, code: c.code, rate: c.rate,
+      factories: c.factories || 0, workers: c.workers || 0,
+      irishWorkers: c.irish_workers || 0, foreignWorkers: c.foreign_workers || 0,
+      wages: c.wages || 0, tax: c.tax || 0,
+      irishWorkerTax: c.irish_worker_tax || 0, foreignWorkerTax: c.foreign_worker_tax || 0,
+      rebate: c.manual_rebate_due || 0,
+      hostRetained: c.host_retained ?? (c.tax * (1 - AUTO_REMIT) - (c.manual_rebate_due || 0)),
+      dealVersion: c.deal_version ?? deals.version,
+      facList: [],   // aggregates only — the log doesn't store individual workers
+    })).sort((x, y) => y.rebate - x.rebate || y.tax - x.tax);
+    render(rows, {
+      factories: rows.reduce((s, r) => s + r.factories, 0),
+      source: 'log',
+      date: day.date,
+    });
+  }
+
+  // First open: render instantly from the settlement log (deals + current_week),
+  // no live API. The four-step live pipeline runs only when the user clicks
+  // "Refresh (live)" — for current-minute figures and the worker drill-down.
+  async function init() {
+    $summary.innerHTML = '';
+    $table.innerHTML = '';
+    $logReport.innerHTML = '';
+    setStatus('Loading settlement log…');
+    await Promise.all([loadDeals(), loadCurrentLog()]);
+    renderLogReport();
+    renderFromLog();
+  }
+
+  // Wire the single delegated table handler exactly once (not per render).
+  $table.addEventListener('click', onTableClick);
   $refresh.addEventListener('click', load);
 
   return {
-    activate() { if (!loaded) { loaded = true; load(); } },
+    activate() { if (!loaded) { loaded = true; init(); } },
   };
 })();

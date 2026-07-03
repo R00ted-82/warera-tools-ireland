@@ -26,6 +26,13 @@ const IrishTaxDevTool = (() => {
   // derive what the host country keeps (host_retained). Every rebate the tool
   // reports is the *additional* manually negotiated amount from data/tax/deals.json.
   const AUTO_REMIT     = 0.30;
+  // "Send money to country" law: a transfer tax paid in the *paper* resource on
+  // top of the amount sent — 50% of the amount (in paper units) to allies, 100%
+  // to everyone else. The recipient still gets the full amount; the paper is a
+  // pure cost to the sender. We price that paper at the current market rate to
+  // show what settling actually costs / nets.
+  const PAPER_RATE     = { ally: 0.5, other: 1.0 };
+  const PAPER_ITEM     = 'paper';
 
   /* ── Inject tax-specific CSS (same rules as tax-payload.js) ──────── */
   const styleEl = document.createElement('style');
@@ -107,6 +114,17 @@ const IrishTaxDevTool = (() => {
 .tax-src strong { color: var(--text); }
 .tax-src.live strong { color: var(--accent); }
 
+.tax-paperbar { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); line-height: 1.5;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; margin: 0 0 12px; }
+.tax-paperbar strong { color: var(--text); }
+.tax-paperbar em { color: var(--warn); font-style: normal; }
+.tax-ally { font-size: 10px; font-weight: 600; color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: 1px 6px; white-space: nowrap; }
+.tax-ally.yes { color: var(--accent); border-color: rgba(74,222,128,.4); }
+.taxdev-paper-lbl { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; color: var(--muted); margin-right: 8px; }
+.taxdev-paper-lbl input { width: 74px; padding: 5px 7px; font-size: 12.5px; font-family: inherit;
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: 7px; color: var(--text); }
+.taxdev-paper-lbl input:focus { outline: none; border-color: var(--link); }
+
 .tax-back {
   background: none; border: none; color: var(--link); font-size: 12px;
   cursor: pointer; font-family: inherit; padding: 10px 14px 0; margin: 0;
@@ -166,6 +184,7 @@ const IrishTaxDevTool = (() => {
 
   /* ── Inject controls (refresh button) into the header ──────────── */
   document.getElementById('taxdev-controls').innerHTML = `
+    <label class="taxdev-paper-lbl" title="Paper price used to cost the transfer tax. Leave blank to use the live market price; type a value to override (useful when paper isn't trading).">📄 ₿<input id="taxdev-paper-price" type="number" min="0" step="0.001" placeholder="market"></label>
     <button id="taxdev-refresh" title="Pull current figures live from the game (slower) and enable the per-worker drill-down">Refresh (live)</button>
   `;
 
@@ -187,6 +206,12 @@ const IrishTaxDevTool = (() => {
   // data-driven: no country-specific logic lives in the calc functions — adding
   // a country is a one-line edit to that JSON. See dealFor().
   let deals = { version: 0, byCode: {}, default: { irishRebate: 0, foreignRebate: 0 } };
+  // Paper transfer-tax state (see PAPER_RATE). All global, not per-factory, so
+  // they're cheap enough to fetch even in the lightweight log-first render.
+  let allies = new Set();     // Ireland's ally country IDs → 50% paper rate
+  let paperMarket = null;     // current market paper price (lowest ask), or null if untraded
+  let paperOverride = null;   // manual paper price the user typed (wins over market)
+  let lastRows = null, lastMeta = null;   // remembered so a paper-price edit can re-render
 
   const it_trpc = (ep, inp) => trpc(ep, inp, { retry: true, timeoutMs: 20000 });
   const money  = (v) => (v == null || !isFinite(v)) ? '–' : v.toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -222,6 +247,40 @@ const IrishTaxDevTool = (() => {
       };
     }
     deals = { version: Number(raw.version || 0), byCode, default: def };
+  }
+
+  // The paper price actually used: a manual override if set, else the market.
+  function paperPrice() { return paperOverride != null ? paperOverride : paperMarket; }
+  function isAlly(countryId) { return allies.has(countryId); }
+
+  // Paper transfer tax for moving `amount` money from Ireland's settlement out
+  // to / in from `countryId`. Returns the paper units required, the money cost
+  // to acquire them, and the amount net of that cost. cost/net are null when the
+  // paper price is unknown (untraded and no manual override).
+  function paperFor(countryId, amount) {
+    const ally = isAlly(countryId);
+    const rate = ally ? PAPER_RATE.ally : PAPER_RATE.other;
+    const units = (amount || 0) * rate;
+    const price = paperPrice();
+    const cost = price != null ? units * price : null;
+    const net  = cost != null ? (amount || 0) - cost : null;
+    return { ally, rate, units, price, cost, net };
+  }
+
+  // Ireland's current ally list (country IDs), for the 50% vs 100% paper rate.
+  async function loadAllies() {
+    const ie = await it_trpc('country.getCountryById', { countryId: IRELAND_COUNTRY_ID }).catch(() => null);
+    allies = new Set(Array.isArray(ie?.allies) ? ie.allies : []);
+  }
+
+  // Current market price of paper = the lowest sell order (what it costs to buy
+  // paper now). Null if paper isn't trading, in which case the user can type a
+  // manual price. Mirrors orderLowestOffer() in js/daily-profit.js.
+  async function loadPaperPrice() {
+    const ob = await it_trpc('tradingOrder.getTopOrders', { itemCode: PAPER_ITEM }).catch(() => null);
+    let ask = Infinity;
+    for (const o of (ob?.sellOrders || [])) if (typeof o.price === 'number' && o.price < ask) ask = o.price;
+    paperMarket = isFinite(ask) ? ask : null;
   }
 
   async function fetchJson(url) {
@@ -346,6 +405,7 @@ const IrishTaxDevTool = (() => {
       // Kick off the log + agreement fetches in parallel with the live pipeline.
       const logPromise = loadCurrentLog().then(renderLogReport);
       const dealsPromise = loadDeals();
+      const paperPromise = Promise.all([loadAllies(), loadPaperPrice()]);
 
       // 1) Irish citizens
       steps.setStep(1, 'active', { sub: 'Paginating the citizen list' });
@@ -486,7 +546,7 @@ const IrishTaxDevTool = (() => {
       const rows = Object.values(agg)
         .map(a => ({ ...a, hostRetained: a.tax * (1 - AUTO_REMIT) - a.rebate }))
         .sort((x, y) => y.rebate - x.rebate || y.tax - x.tax);
-      await logPromise;
+      await Promise.all([logPromise, paperPromise]);
       render(rows, { factories: companyIds.length, source: 'live' });
     } catch (e) {
       steps.markActiveAsError(e.message);
@@ -742,6 +802,22 @@ const IrishTaxDevTool = (() => {
     const foreignRebate = c.foreignWorkerTax * deal.foreignRebate;
     const weekRebate = loggedRebate(c.id);
     const pct = (x) => `${(x * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`;
+
+    // Paper transfer tax on paying the settlement (see PAPER_RATE). Ireland is
+    // the collector, so its own row never sends money out → no paper block.
+    const isHome = c.id === IRELAND_COUNTRY_ID;
+    const pToday = isHome ? null : paperFor(c.id, c.rebate);
+    const pWeek  = (isHome || weekRebate == null) ? null : paperFor(c.id, weekRebate);
+    const paperBlock = pToday ? `
+      <div class="tax-audit-tot">
+        <div class="tax-audit-h">📄 Paper transfer tax <span class="tax-ally ${pToday.ally ? 'yes' : ''}">${pToday.ally ? 'ally · 50%' : 'non-ally · 100%'}</span></div>
+        <div class="tax-audit-row"><span>Paper required (today's rebate)</span><b>${money(pToday.units)} 📄</b></div>
+        <div class="tax-audit-row"><span>Paper price</span><b>${pToday.price != null ? '₿' + money(pToday.price) + '/unit' : '—'}</b></div>
+        <div class="tax-audit-row"><span>Paper cost (today)</span><b>${pToday.cost != null ? '−₿' + money(pToday.cost) : '—'}</b></div>
+        <div class="tax-audit-row big"><span>Net owed today (after paper)</span><b>${pToday.net != null ? '₿' + money(pToday.net) : '—'}</b></div>
+        <div class="tax-audit-row"><span>Net this week (after paper)</span><b>${pWeek && pWeek.net != null ? '₿' + money(pWeek.net) : '—'}</b></div>
+      </div>` : '';
+
     return `<div class="tax-audit">
       <div class="tax-audit-grid">
         <div class="tax-audit-cat">
@@ -761,6 +837,7 @@ const IrishTaxDevTool = (() => {
         <div class="tax-audit-row big"><span>Today's settlement owed to Ireland</span><b>₿${money(c.rebate)}</b></div>
         <div class="tax-audit-row big"><span>This week's settlement (logged)</span><b>₿${money(weekRebate)}</b></div>
       </div>
+      ${paperBlock}
       <div class="tax-audit-note">Gross tax ₿${money(c.tax)}/day · income-tax rate ${c.rate}% · deals.json v${c.dealVersion}. Excludes the game's automatic 30% remittance (that returns to each worker's own country and is not part of the settlement). Host keeps ≈ ₿${money(c.hostRetained)}/day.</div>
     </div>`;
   }
@@ -817,6 +894,7 @@ const IrishTaxDevTool = (() => {
   function render(rows, meta) {
     if (!rows.length) { setStatus('No settlement data to show.'); return; }
     setStatus('');
+    lastRows = rows; lastMeta = meta;   // so editing the paper price can re-render
 
     const ie = rows.find(r => r.id === IRELAND_COUNTRY_ID);
     const ieFactories = ie ? ie.factories : 0;
@@ -841,7 +919,23 @@ const IrishTaxDevTool = (() => {
       ? `<div class="tax-src live">🔴 <span><strong>Live</strong> — pulled just now (rolling last 24h). Worker drill-down available.</span></div>`
       : `<div class="tax-src">📅 <span>Showing the latest daily snapshot (<strong>${escapeHtml(meta.date || '—')}</strong>) from the settlement log — no live API calls. Click <strong>Refresh (live)</strong> for current figures and the per-worker drill-down.</span></div>`;
 
-    $table.innerHTML = srcBanner + `
+    const pp = paperPrice();
+    const paperBar = `<div class="tax-paperbar">📄 <span><strong>Paper transfer tax</strong> on settlement payments — <strong>50%</strong> to allies · <strong>100%</strong> to others (paid in paper, on top of the amount). Paper price ${pp != null ? '₿' + money(pp) + '/unit' : '<em>untraded — set a price above</em>'} ${paperOverride != null ? '(manual)' : '(market)'} · ${allies.size} ${allies.size === 1 ? 'ally' : 'allies'} on file.</span></div>`;
+
+    // Per-row paper transfer tax on "Rebate Today". Ireland (home) collects the
+    // settlement, so it never sends money to itself — no paper tax there.
+    const paperCell = (r) => {
+      if (r.id === IRELAND_COUNTRY_ID) return { paper: '<span class="tax-dim">—</span>', net: '<span class="tax-dim">—</span>' };
+      const p = paperFor(r.id, r.rebate);
+      const badge = `<span class="tax-ally ${p.ally ? 'yes' : ''}">${p.ally ? 'ally 50%' : '100%'}</span>`;
+      const paper = p.cost != null
+        ? `₿${money(p.cost)} ${badge}`
+        : `${money(p.units)}📄 ${badge}`;
+      const net = p.net != null ? `₿${money(p.net)}` : '<span class="tax-dim">—</span>';
+      return { paper, net };
+    };
+
+    $table.innerHTML = srcBanner + paperBar + `
       <div class="tax-table-wrap"><table class="tax-tbl">
         <thead><tr>
           <th class="l">Country</th>
@@ -849,20 +943,24 @@ const IrishTaxDevTool = (() => {
           <th>Workers</th>
           <th title="Total wage tax generated today by this country's Irish-owned factories (Irish + non-Irish workers)">Gross Tax / Day</th>
           <th title="Manual rebate owed to Ireland today under the agreement — excludes the game's automatic 30% remittance">Rebate Today</th>
+          <th title="Paper transfer tax on paying today's rebate: 50% (ally) or 100% of the amount, in paper units, priced at the current market rate">Paper Tax</th>
+          <th title="Rebate Today minus the paper transfer cost — what settling today's amount nets after the paper tax">Net Owed</th>
           <th title="Settlement accrued so far this week (sum of daily rebate snapshots from the logger). Resets each Monday.">Settlement This Week</th>
         </tr></thead>
-        <tbody>${rows.map(r => `
+        <tbody>${rows.map(r => { const pc = paperCell(r); return `
           <tr class="tax-row" data-c="${r.id}" title="Click for the settlement audit">
             <td class="l"><span class="tax-caret">▸</span> ${flagOf(r.code)} ${escapeHtml(r.name)}${r.id === IRELAND_COUNTRY_ID ? ' <span class="tax-home-tag">home</span>' : ''}</td>
             <td>${r.factories}</td>
             <td>${r.workers}</td>
             <td>₿${money(r.tax)}</td>
             <td><strong>₿${money(r.rebate)}</strong></td>
+            <td>${pc.paper}</td>
+            <td>${pc.net}</td>
             <td>₿${money(loggedRebate(r.id))}</td>
           </tr>
-          <tr class="tax-detail" data-detail="${r.id}"><td colspan="6"></td></tr>`).join('')}</tbody>
+          <tr class="tax-detail" data-detail="${r.id}"><td colspan="8"></td></tr>`; }).join('')}</tbody>
       </table></div>
-      <p class="tax-note">This is a settlement calculator: it shows how much each country owes Ireland under the negotiated rebate agreements in <code>data/tax/deals.json</code> (v${deals.version}). "Gross Tax / Day" is the wage tax those factories generated in a day (estimated — wage transactions carry no tax line, so each country's income-tax rate is applied to wages actually paid). "Rebate Today" is the additional manual rebate owed to Ireland — the game already auto-remits 30% of every worker's tax to their citizenship country, and that automatic transfer is excluded here. "Settlement This Week" accrues the daily rebate snapshots the logger records (resets each Monday). Click any country for the full audit — Irish vs non-Irish worker breakdown, workers, and trend charts.</p>`;
+      <p class="tax-note">This is a settlement calculator: it shows how much each country owes Ireland under the negotiated rebate agreements in <code>data/tax/deals.json</code> (v${deals.version}). "Gross Tax / Day" is the wage tax those factories generated in a day (estimated — wage transactions carry no tax line, so each country's income-tax rate is applied to wages actually paid). "Rebate Today" is the additional manual rebate owed to Ireland — the game already auto-remits 30% of every worker's tax to their citizenship country, and that automatic transfer is excluded here. "Paper Tax" is the separate <em>Send money to country</em> transfer tax, paid in paper on top of the amount sent — 50% of the amount (in paper units) for allies, 100% for everyone else — priced here at the current paper market rate; "Net Owed" deducts that cost from the rebate. "Settlement This Week" accrues the daily rebate snapshots the logger records (resets each Monday). Click any country for the full audit.</p>`;
   }
 
   // Build rows straight from the latest daily snapshot in the settlement log —
@@ -903,10 +1001,24 @@ const IrishTaxDevTool = (() => {
     $table.innerHTML = '';
     $logReport.innerHTML = '';
     setStatus('Loading settlement log…');
+    // Static, same-origin JSON — fast and available even if the game API is down.
     await Promise.all([loadDeals(), loadCurrentLog()]);
     renderLogReport();
     renderFromLog();
+    // Paper price + allies are live market data. Fetch them in the background so
+    // the log view stays instant (and works during an API outage); re-render the
+    // paper columns once they arrive.
+    Promise.all([loadAllies(), loadPaperPrice()]).then(() => { if (lastRows) render(lastRows, lastMeta); });
   }
+
+  // Manual paper-price override: re-cost the transfer tax and re-render in place
+  // (the input lives in the header, so re-rendering the table won't drop focus).
+  const $paperPrice = document.getElementById('taxdev-paper-price');
+  $paperPrice.addEventListener('input', () => {
+    const v = $paperPrice.value.trim();
+    paperOverride = (v === '' || !isFinite(+v) || +v < 0) ? null : +v;
+    if (lastRows) render(lastRows, lastMeta);
+  });
 
   // Wire the single delegated table handler exactly once (not per render).
   $table.addEventListener('click', onTableClick);

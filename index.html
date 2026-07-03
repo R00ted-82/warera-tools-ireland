@@ -79,6 +79,7 @@
             <button class="stg-tab" data-stg-tab="clockin" role="tab">⏱ <span>Clock-In</span></button>
             <button class="stg-tab" data-stg-tab="buddy-finder" role="tab">🤝 <span>Buddy Finder</span></button>
             <button class="stg-tab" data-stg-tab="profit" role="tab">📈 <span>Daily Profit</span></button>
+            <a class="stg-tab" href="#factory-tax" role="tab">🧾 <span>Factory Tax</span></a>
             <button class="stg-tab" data-stg-tab="wealth" role="tab">💰 <span>Wealth tracker</span></button>
             <button class="stg-tab" data-stg-tab="mu" role="tab">🔫 <span>Military Units</span></button>
             <a class="stg-tab" href="#roster" role="tab">🛰️ <span>Battle Intel Ireland</span></a>
@@ -112,9 +113,9 @@
         <a class="tool-card" href="#tax">
           <div class="tool-card-icon">🧾</div>
           <div class="tool-card-body">
-            <h3>Irish Factory Tax</h3>
-            <p>Irish-owned factories grouped by the country they're based in, and the income tax that country takes off their workers' wages — surfacing tax leaking to foreign economies. Open to everyone.</p>
-            <span class="tool-link">Open Irish Factory Tax →</span>
+            <h3>Tax Settlement Tool <span class="lock-pill" title="Encrypted, minister-only access">🔒 minister only</span></h3>
+            <p>How much each country owes Ireland under the negotiated tax-rebate agreements — daily rebate and weekly settlement, per worker citizenship. Requires the minister password.</p>
+            <span class="tool-link">Open Tax Settlement Tool →</span>
           </div>
         </a>
         <a class="tool-card" href="#buddy">
@@ -1006,8 +1007,8 @@
   <section class="view" data-view="tax">
     <div class="tool-header">
       <div class="title-block">
-        <h2><span>🧾</span> Irish Factory Tax</h2>
-        <p>Irish-owned factories that employ workers, grouped by the country they're based in — and the income tax that country takes off those wages. Surfaces tax "leaking" to foreign economies.</p>
+        <h2><span>🧾</span> Tax Settlement Tool</h2>
+        <p>How much each country owes Ireland under the negotiated tax-rebate agreements — daily rebate and the weekly settlement ready to transfer, with a full per-country audit.</p>
       </div>
       <div class="controls" id="tax-controls">
         <!-- Refresh button injected here after unlock. -->
@@ -1046,6 +1047,24 @@
     </div>
 
     <div id="taxdev-content"></div>
+  </section>
+
+  <!-- ─── Irish Factory Tax — PUBLIC (the original 70/30 income-tax stats
+       tool). Unencrypted, open to everyone, surfaced from the Irish tools
+       nav. Powered by IrishFactoryTaxTool (js/irish-factory-tax.js). The
+       newer, encrypted settlement calculator is the separate #tax view. -->
+  <section class="view" data-view="factory-tax">
+    <div class="tool-header">
+      <div class="title-block">
+        <h2><span>🧾</span> Irish Factory Tax</h2>
+        <p>Irish-owned factories that employ workers, grouped by the country they're based in — and the income tax that country takes off those wages. Surfaces tax "leaking" to foreign economies.</p>
+      </div>
+      <div class="controls" id="factorytax-controls">
+        <!-- Refresh button injected here. -->
+      </div>
+    </div>
+
+    <div id="factorytax-content"></div>
   </section>
 
   <!-- ─── Buddy System view (encrypted; MoECON password required) ───── -->
@@ -1143,6 +1162,7 @@
 <script src="js/dashboard.js?v=20260623a"></script>
 <script src="js/irish-tax.js?v=20260702a"></script>
 <script src="js/irish-tax-dev.js?v=20260702a"></script>
+<script src="js/irish-factory-tax.js?v=20260703a"></script>
 <script src="js/buddy.js?v=20260617h"></script>
 <script src="js/battle-orders.js?v=20260617h"></script>
 <script src="js/beer.js?v=20260617h"></script>

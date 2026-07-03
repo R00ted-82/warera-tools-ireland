@@ -47882,5 +47882,423 @@
     "cc": "ne",
     "occ": "ne",
     "to": 3
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "ownership_changed",
+    "rid": "683ddd3f36dbc90b780475d1",
+    "code": "mg-toliara",
+    "name": "Toliara",
+    "cc": "mg",
+    "occ": "mg",
+    "from": "za",
+    "to": "mg"
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "battle_ended",
+    "rid": "683ddd3f36dbc90b780475d1",
+    "code": "mg-toliara",
+    "name": "Toliara",
+    "cc": "mg",
+    "occ": "mg"
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "came_online",
+    "rid": "683ddd3f36dbc90b780475a7",
+    "code": "za-free-state",
+    "name": "Free State",
+    "cc": "za",
+    "occ": "za",
+    "to": 3
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "resistance_full",
+    "rid": "6813b70b9403bc4170a5da9e",
+    "code": "gy-east",
+    "name": "East Guyana",
+    "cc": "br",
+    "occ": "gy",
+    "val": 450,
+    "max": 450
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "battle_started",
+    "rid": "683ddd3f36dbc90b78047577",
+    "code": "th-chiang-mai",
+    "name": "Chiang Mai",
+    "cc": "th",
+    "occ": "th"
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "battle_started",
+    "rid": "6873d11594e6b3b7989a4c50",
+    "code": "tl-timor-leste",
+    "name": "Timor-Leste",
+    "cc": "tl",
+    "occ": "tl"
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "level_changed",
+    "rid": "6813b70a9403bc4170a5da41",
+    "code": "sd-north",
+    "name": "Northern Sudan",
+    "cc": "sd",
+    "occ": "sd",
+    "from": 3,
+    "to": 4
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "resistance_full",
+    "rid": "6813b70c9403bc4170a5db22",
+    "code": "kg-naryn",
+    "name": "Naryn",
+    "cc": "lt",
+    "occ": "kg",
+    "val": 1825,
+    "max": 1825
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "went_offline",
+    "rid": "6813b70a9403bc4170a5da29",
+    "code": "ru-karelia",
+    "name": "Karelia",
+    "cc": "lt",
+    "occ": "ru",
+    "from": 4
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "came_online",
+    "rid": "683ddd3e36dbc90b78047537",
+    "code": "ng-lagos",
+    "name": "Lagos",
+    "cc": "ng",
+    "occ": "ng",
+    "to": 1
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b70a9403bc4170a5da32",
+    "code": "ke-rift-valley",
+    "name": "Rift Valley",
+    "cc": "dj",
+    "occ": "ke",
+    "from": "za",
+    "to": "dj"
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "battle_ended",
+    "rid": "6813b70a9403bc4170a5da32",
+    "code": "ke-rift-valley",
+    "name": "Rift Valley",
+    "cc": "dj",
+    "occ": "ke"
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "battle_started",
+    "rid": "6873d11694e6b3b7989a4c7a",
+    "code": "bw-north-west",
+    "name": "Northwestern Botswana",
+    "cc": "bw",
+    "occ": "bw"
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "came_online",
+    "rid": "6873d11894e6b3b7989a4d1a",
+    "code": "tz-north",
+    "name": "Northern Tanzania",
+    "cc": "tz",
+    "occ": "tz",
+    "to": 1
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "went_offline",
+    "rid": "6813b7089403bc4170a5d942",
+    "code": "pe-trujillo",
+    "name": "Trujillo",
+    "cc": "pe",
+    "occ": "pe",
+    "from": 2
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "battle_ended",
+    "rid": "6873d11494e6b3b7989a4c11",
+    "code": "ug-eastern-region",
+    "name": "Eastern Uganda",
+    "cc": "bi",
+    "occ": "ug"
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "came_online",
+    "rid": "6873d11894e6b3b7989a4d17",
+    "code": "tz-lakes",
+    "name": "Lakes Region",
+    "cc": "tz",
+    "occ": "tz",
+    "to": 1
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "battle_started",
+    "rid": "6813b70b9403bc4170a5da80",
+    "code": "uk-falkland-islands",
+    "name": "Falkland Islands",
+    "cc": "uk",
+    "occ": "uk"
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "came_online",
+    "rid": "683ddd3e36dbc90b7804753d",
+    "code": "om-al-wusta",
+    "name": "Al Wusta",
+    "cc": "ye",
+    "occ": "om",
+    "to": 1
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "came_online",
+    "rid": "683ddd3f36dbc90b78047549",
+    "code": "om-north",
+    "name": "Northern Oman",
+    "cc": "ye",
+    "occ": "om",
+    "to": 1
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "came_online",
+    "rid": "6813b7059403bc4170a5d78c",
+    "code": "hr-istria-kvarner",
+    "name": "Istria & Kvarner",
+    "cc": "me",
+    "occ": "hr",
+    "to": 1
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "battle_started",
+    "rid": "6873d11694e6b3b7989a4c9b",
+    "code": "cm-yaounde",
+    "name": "Yaound\u00e9",
+    "cc": "cm",
+    "occ": "cm"
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b70c9403bc4170a5daf5",
+    "code": "gt-north",
+    "name": "Northern Guatemala",
+    "cc": "gt",
+    "occ": "gt",
+    "from": "mx",
+    "to": "gt"
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "went_offline",
+    "rid": "6813b70c9403bc4170a5daf5",
+    "code": "gt-north",
+    "name": "Northern Guatemala",
+    "cc": "gt",
+    "occ": "gt",
+    "from": 1
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "came_online",
+    "rid": "6813b70b9403bc4170a5da6e",
+    "code": "au-queensland",
+    "name": "Queensland",
+    "cc": "au",
+    "occ": "au",
+    "to": 3
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "came_online",
+    "rid": "6813b7059403bc4170a5d7a7",
+    "code": "tr-mediterranean-coast",
+    "name": "Turkish Mediterranean Coast",
+    "cc": "rs",
+    "occ": "tr",
+    "to": 1
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "resistance_full",
+    "rid": "6813b7059403bc4170a5d7b0",
+    "code": "tr-marmara",
+    "name": "Marmara",
+    "cc": "rs",
+    "occ": "tr",
+    "val": 2082,
+    "max": 2082
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "ownership_changed",
+    "rid": "6873d11494e6b3b7989a4c0e",
+    "code": "ug-northern-region",
+    "name": "Northern Uganda",
+    "cc": "ug",
+    "occ": "ug",
+    "from": "za",
+    "to": "ug"
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "battle_ended",
+    "rid": "6873d11494e6b3b7989a4c0e",
+    "code": "ug-northern-region",
+    "name": "Northern Uganda",
+    "cc": "ug",
+    "occ": "ug"
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b7079403bc4170a5d89a",
+    "code": "cn-mongolia",
+    "name": "Inner mongolia",
+    "cc": "cn",
+    "occ": "cn",
+    "from": "lt",
+    "to": "cn"
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b70a9403bc4170a5da2f",
+    "code": "ke-center",
+    "name": "Central Kenya",
+    "cc": "ke",
+    "occ": "ke",
+    "from": "za",
+    "to": "ke"
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "went_offline",
+    "rid": "6813b70a9403bc4170a5da2f",
+    "code": "ke-center",
+    "name": "Central Kenya",
+    "cc": "ke",
+    "occ": "ke",
+    "from": 2
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "battle_ended",
+    "rid": "6813b70a9403bc4170a5da2f",
+    "code": "ke-center",
+    "name": "Central Kenya",
+    "cc": "ke",
+    "occ": "ke"
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "came_online",
+    "rid": "6873d11694e6b3b7989a4c92",
+    "code": "cm-north-cameroon",
+    "name": "Northern Cameroon",
+    "cc": "ng",
+    "occ": "cm",
+    "to": 1
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "came_online",
+    "rid": "6873d11694e6b3b7989a4ca7",
+    "code": "ga-center",
+    "name": "Central Gabon",
+    "cc": "ga",
+    "occ": "ga",
+    "to": 2
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "came_online",
+    "rid": "683ddd3e36dbc90b78047543",
+    "code": "om-musandam",
+    "name": "Musandam",
+    "cc": "ye",
+    "occ": "om",
+    "to": 1
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "came_online",
+    "rid": "683ddd3e36dbc90b780474b2",
+    "code": "jo-amman",
+    "name": "Amman",
+    "cc": "jo",
+    "occ": "jo",
+    "to": 2
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "ownership_changed",
+    "rid": "683ddd3f36dbc90b780475b3",
+    "code": "za-north-cape",
+    "name": "Northern Cape",
+    "cc": "na",
+    "occ": "za",
+    "from": "za",
+    "to": "na"
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "battle_ended",
+    "rid": "683ddd3f36dbc90b780475b3",
+    "code": "za-north-cape",
+    "name": "Northern Cape",
+    "cc": "na",
+    "occ": "za"
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "battle_started",
+    "rid": "6813b70b9403bc4170a5daad",
+    "code": "pr-center",
+    "name": "Puerto Rico",
+    "cc": "ve",
+    "occ": "pr"
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "battle_ended",
+    "rid": "683ddd3e36dbc90b78047531",
+    "code": "ng-kano",
+    "name": "Kano",
+    "cc": "ng",
+    "occ": "ng"
+  },
+  {
+    "at": "2026-07-03T04:10:40.567375+00:00",
+    "type": "went_offline",
+    "rid": "696a81f5882256e1db11821e",
+    "code": "ru-arctic-ural-northlands",
+    "name": "Arctic Ural Northlands",
+    "cc": "lt",
+    "occ": "ru",
+    "from": 3
   }
 ]

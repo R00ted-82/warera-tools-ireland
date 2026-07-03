@@ -354,7 +354,9 @@ const ToolkitShell = (() => {
   // Landing cards, grouped into sections (same style as the Community tab).
   const PREVIEW_CATS = [
     { title: '🏭 Production', tools: ['advisor', 'clockin'] },
-    { title: '💰 Profits',    tools: ['buddy-finder', 'profit', 'wealth'] },
+    { title: '💰 Profits',    tools: ['buddy-finder', 'profit', 'wealth'], links: [
+      { href: '#factory-tax', icon: '🧾', title: 'Factory Tax', desc: `Irish-owned factories that employ workers, grouped by the country they're based in — and the income tax that country takes off those wages.` },
+    ] },
     { title: '⚔️ Combat',   tools: ['mu'], links: [
       { href: '#roster', icon: '🛰️', title: 'Battle Intel Ireland', desc: `Live Irish citizen roster: build, pill status, health, hunger, MU and last-online time. Useful for war planning.` },
     ] },

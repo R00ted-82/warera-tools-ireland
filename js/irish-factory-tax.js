@@ -189,7 +189,7 @@ const IrishFactoryTaxTool = (function () {
 
   /* ── Inject controls (refresh button) into the header ──────────── */
   document.getElementById('factorytax-controls').innerHTML = `
-    <button id="factorytax-refresh">Refresh</button>
+    <button id="factorytax-refresh" title="Pull current figures live from the game (slower) and enable the per-worker drill-down">Refresh (live)</button>
   `;
 
   /* ── IrishFactoryTaxTool ────────────────────────────────────────── */
@@ -205,6 +205,7 @@ const IrishFactoryTaxTool = (function () {
   let homeCountryInfoById = {};   // countryId -> { name, code }, for rendering the flags above
   let currentLog = null;      // parsed data/tax/current_week.json
   let weekLogs = null;        // [{ weekStart, data }], lazy-loaded
+  let lastRows = null, lastMeta = null;   // last rendered rows/meta (log- or live-sourced)
 
   const it_trpc = (ep, inp) => trpc(ep, inp, { retry: true, timeoutMs: 20000 });
   const money  = (v) => (v == null || !isFinite(v)) ? '–' : v.toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -447,7 +448,7 @@ const IrishFactoryTaxTool = (function () {
         .map(a => ({ ...a, tax: a.wages * (a.rate / 100) }))
         .sort((x, y) => y.tax - x.tax || y.factories - x.factories);
       await logPromise;
-      render(rows, { factories: companyIds.length });
+      render(rows, { factories: companyIds.length, source: 'live' });
     } catch (e) {
       steps.markActiveAsError(e.message);
       setStatus(`Error: ${e.message}`, true);
@@ -473,7 +474,13 @@ const IrishFactoryTaxTool = (function () {
     return `${userLink(id)} <span class="tax-worker-flag" title="Home: ${escapeHtml(info.name)}">${flagOf(info.code)}</span>`;
   }
   function workersHtml(country) {
-    const facs = country.facList.slice().sort((a, b) => b.workers.length - a.workers.length);
+    const facs = (country.facList || []).slice().sort((a, b) => b.workers.length - a.workers.length);
+    // Log-sourced rows carry no per-worker data (the logger stores only
+    // aggregates). Prompt for a live pull instead of showing an empty list.
+    if (!facs.length) {
+      return `<div class="tax-detail-wrap"><button class="tax-back" data-back="${country.id}">← back to options</button>
+        <div class="tax-dim" style="font-size:12.5px;padding:4px 0;line-height:1.6;">Worker-level detail isn't stored in the daily tax log. Click <strong>Refresh (live)</strong> at the top to pull the current per-worker breakdown from the game.</div></div>`;
+    }
     return `<div class="tax-detail-wrap"><button class="tax-back" data-back="${country.id}">← back to options</button>${facs.map(f => `
       <div class="tax-fac">
         <div class="tax-fac-h">
@@ -650,8 +657,91 @@ const IrishFactoryTaxTool = (function () {
     return trendChartHtml(labels, values, 'No weekly tax log data yet for this country.');
   }
 
+  /* ── Detail panel (shared by the log render and the live render) ──────
+     Module-scoped, and the single delegated table click handler
+     (onTableClick, wired exactly once at the bottom of the IIFE) reads the
+     current rows from `taxById`. render() can therefore run any number of
+     times — initial log render, then a live "Refresh" — without stacking
+     duplicate listeners. */
+  let taxById = {};   // countryId -> current row object (log- or live-sourced)
+
+  const loggedTax = (countryId) => currentLog?.totals?.[countryId]?.tax;
+  const loggedNett = (countryId) => {
+    const c = currentLog?.totals?.[countryId];
+    if (!c) return null;
+    return c.net_tax_retained ?? c.tax * 0.7;
+  };
+
+  function openDetail(countryId, html) {
+    const row = $table.querySelector(`.tax-row[data-c="${countryId}"]`);
+    const det = $table.querySelector(`.tax-detail[data-detail="${countryId}"] > td`);
+    if (!det) return null;
+    det.innerHTML = html;
+    det.closest('.tax-detail').classList.add('open');
+    row?.classList.add('open');
+    return det;
+  }
+  function closeDetail(countryId) {
+    const row = $table.querySelector(`.tax-row[data-c="${countryId}"]`);
+    const det = $table.querySelector(`.tax-detail[data-detail="${countryId}"]`);
+    det?.classList.remove('open');
+    row?.classList.remove('open');
+  }
+  function showMenu(countryId) { openDetail(countryId, menuHtml(countryId)); }
+
+  // Loads a trend chart, renders it, then wires up its hover/touch tooltip
+  // — each data point's value is shown on click/tap (mobile) as well as
+  // hover, mirroring the wealth-monitor chart in js/wealth.js.
+  async function showTrend(cid, title, loader, seriesLabel) {
+    openDetail(cid, backHtml(cid) + `<div class="tax-chart-title">${escapeHtml(title)}</div>` + '<div class="wm-chart-box">Loading…</div>');
+    const { html, labels, values } = await loader(cid);
+    const det = openDetail(cid, backHtml(cid) + `<div class="tax-chart-title">${escapeHtml(title)}</div>` + `<div class="wm-chart-box">${html}</div>`);
+    const box = det?.querySelector('.wm-chart-box');
+    if (box) wireTaxTrendHover(box, labels, values, seriesLabel);
+  }
+
+  // The one and only table click handler (row toggle + menu options + back).
+  // Wired once — never inside render() — so repeated renders can't duplicate it.
+  async function onTableClick(e) {
+    const back = e.target.closest('[data-back]');
+    if (back) { e.stopPropagation(); showMenu(back.dataset.back); return; }
+
+    const opt = e.target.closest('.tax-menu-opt');
+    if (opt) {
+      e.stopPropagation();
+      const cid = opt.dataset.c;
+      const country = taxById[cid];
+      if (!country) return;
+      const action = opt.dataset.action;
+      if (action === 'workers') {
+        openDetail(cid, backHtml(cid) + workersHtml(country));
+      } else if (action === 'week-gross') {
+        await showTrend(cid, "This week's Gross tax, logged daily", id => weekTrendHtml(id, 'gross'), 'Gross tax');
+      } else if (action === 'week-nett') {
+        await showTrend(cid, "This week's Nett tax retained, logged daily", id => weekTrendHtml(id, 'nett'), 'Nett tax retained');
+      } else if (action === 'weeks-gross') {
+        await showTrend(cid, 'Last 5 weeks, Gross tax total', id => fiveWeekTrendHtml(id, 'gross'), 'Gross tax');
+      } else if (action === 'weeks-nett') {
+        await showTrend(cid, 'Last 5 weeks, Nett tax retained total', id => fiveWeekTrendHtml(id, 'nett'), 'Nett tax retained');
+      }
+      return;
+    }
+
+    // Country row: open (and reset to) the options menu, or close if already open.
+    const row = e.target.closest('.tax-row');
+    if (row) {
+      const cid = row.dataset.c;
+      if (row.classList.contains('open')) closeDetail(cid);
+      else showMenu(cid);
+    }
+  }
+
+  // Renders the cards + main table from a set of country rows. `meta.source`
+  // is 'log' (daily snapshot) or 'live' (just-pulled), used only for the banner.
   function render(rows, meta) {
     if (!rows.length) { setStatus('No located Irish-owned factories found.'); return; }
+    setStatus('');
+    lastRows = rows; lastMeta = meta;
 
     const ie = rows.find(r => r.id === IRELAND_COUNTRY_ID);
     const ieFactories = ie ? ie.factories : 0, ieTax = ie ? ie.tax : 0;
@@ -668,14 +758,14 @@ const IrishFactoryTaxTool = (function () {
         <div class="tax-card ok"><div class="tax-card-v">₿${moneyK(ieTax)}</div><div class="tax-card-l">daily wage tax staying in Ireland</div></div>
       </div>`;
 
-    const loggedTax = (countryId) => currentLog?.totals?.[countryId]?.tax;
-    const loggedNett = (countryId) => {
-      const c = currentLog?.totals?.[countryId];
-      if (!c) return null;
-      return c.net_tax_retained ?? c.tax * 0.7;
-    };
+    taxById = {};
+    rows.forEach(r => { taxById[r.id] = r; });
 
-    $table.innerHTML = `
+    const srcBanner = meta.source === 'live'
+      ? `<div class="tax-log-report">🔴 <span><strong>Live</strong> — pulled just now (rolling last 24h). Worker drill-down available.</span></div>`
+      : `<div class="tax-log-report">📅 <span>Showing the latest daily snapshot (<strong>${escapeHtml(meta.date || '—')}</strong>) from the tax log — no live API calls. Click <strong>Refresh (live)</strong> for current figures and the per-worker drill-down.</span></div>`;
+
+    $table.innerHTML = srcBanner + `
       <div class="tax-table-wrap"><table class="tax-tbl">
         <thead><tr>
           <th class="l">Factory country</th>
@@ -703,77 +793,53 @@ const IrishFactoryTaxTool = (function () {
           <tr class="tax-detail" data-detail="${r.id}"><td colspan="9"></td></tr>`).join('')}</tbody>
       </table></div>
       <p class="tax-note">Tax is estimated: wage transactions carry no tax line, so each country's income-tax rate is applied to the wages its Irish-owned factories actually paid in the last 24h. Of that tax, 30% returns to each worker's home country and 70% is retained by the host country — the "Nett Tax / day" and "Nett this week" columns. "Gross This Week" totals the daily tax snapshots the logger has recorded so far this week (resets each Monday). Click any country for options — workers, this week's Gross/Nett, or the last 5 weeks' Gross/Nett — sourced from the daily tax logger. Factories are matched to a country via their region.</p>`;
-
-    const byId = {};
-    rows.forEach(r => { byId[r.id] = r; });
-
-    function openDetail(countryId, html) {
-      const row = $table.querySelector(`.tax-row[data-c="${countryId}"]`);
-      const det = $table.querySelector(`.tax-detail[data-detail="${countryId}"] > td`);
-      if (!det) return null;
-      det.innerHTML = html;
-      det.closest('.tax-detail').classList.add('open');
-      row?.classList.add('open');
-      return det;
-    }
-    function closeDetail(countryId) {
-      const row = $table.querySelector(`.tax-row[data-c="${countryId}"]`);
-      const det = $table.querySelector(`.tax-detail[data-detail="${countryId}"]`);
-      det?.classList.remove('open');
-      row?.classList.remove('open');
-    }
-    function showMenu(countryId) { openDetail(countryId, menuHtml(countryId)); }
-
-    // Country row: open (and reset to) the options menu, or close if already open.
-    $table.querySelectorAll('.tax-row').forEach(row => {
-      row.addEventListener('click', () => {
-        const cid = row.dataset.c;
-        if (row.classList.contains('open')) { closeDetail(cid); return; }
-        showMenu(cid);
-      });
-    });
-
-    // Menu options + back-to-menu, delegated on the table.
-    $table.addEventListener('click', async (e) => {
-      const back = e.target.closest('[data-back]');
-      if (back) { e.stopPropagation(); showMenu(back.dataset.back); return; }
-
-      const opt = e.target.closest('.tax-menu-opt');
-      if (!opt) return;
-      e.stopPropagation();
-      const cid = opt.dataset.c;
-      const country = byId[cid];
-      if (!country) return;
-      const action = opt.dataset.action;
-      if (action === 'workers') {
-        openDetail(cid, backHtml(cid) + workersHtml(country));
-      } else if (action === 'week-gross') {
-        await showTrend(cid, "This week's Gross tax, logged daily", id => weekTrendHtml(id, 'gross'), 'Gross tax');
-      } else if (action === 'week-nett') {
-        await showTrend(cid, "This week's Nett tax retained, logged daily", id => weekTrendHtml(id, 'nett'), 'Nett tax retained');
-      } else if (action === 'weeks-gross') {
-        await showTrend(cid, 'Last 5 weeks, Gross tax total', id => fiveWeekTrendHtml(id, 'gross'), 'Gross tax');
-      } else if (action === 'weeks-nett') {
-        await showTrend(cid, 'Last 5 weeks, Nett tax retained total', id => fiveWeekTrendHtml(id, 'nett'), 'Nett tax retained');
-      }
-    });
-
-    // Loads a trend chart, renders it, then wires up its hover/touch tooltip
-    // — each data point's value is shown on click/tap (mobile) as well as
-    // hover, mirroring the wealth-monitor chart in js/wealth.js.
-    async function showTrend(cid, title, loader, seriesLabel) {
-      openDetail(cid, backHtml(cid) + `<div class="tax-chart-title">${escapeHtml(title)}</div>` + '<div class="wm-chart-box">Loading…</div>');
-      const { html, labels, values } = await loader(cid);
-      const det = openDetail(cid, backHtml(cid) + `<div class="tax-chart-title">${escapeHtml(title)}</div>` + `<div class="wm-chart-box">${html}</div>`);
-      const box = det?.querySelector('.wm-chart-box');
-      if (box) wireTaxTrendHover(box, labels, values, seriesLabel);
-    }
   }
 
+  // Build rows straight from the latest daily snapshot in the tax log — no
+  // live API calls. The logger stores per-country aggregates (factories,
+  // workers, wages, tax); only the per-worker drill-down is absent, which the
+  // live Refresh fills in.
+  function renderFromLog() {
+    const day = currentLog?.days?.[currentLog.days.length - 1];
+    if (!currentLog || !day || !(day.countries || []).length) {
+      $table.innerHTML = '';
+      $summary.innerHTML = '';
+      setStatus('No tax snapshots logged yet. Click “Refresh (live)” to pull current data from the game.');
+      return;
+    }
+    const rows = day.countries.map(c => ({
+      id: c.id, name: c.name, code: c.code, rate: c.rate,
+      factories: c.factories || 0, workers: c.workers || 0,
+      wages: c.wages || 0, tax: c.tax || 0,
+      facList: [],   // aggregates only — the log doesn't store individual workers
+    })).sort((x, y) => y.tax - x.tax || y.factories - x.factories);
+    render(rows, {
+      factories: rows.reduce((s, r) => s + r.factories, 0),
+      source: 'log',
+      date: day.date,
+    });
+  }
+
+  // First open: render instantly from the tax log (current_week.json), no live
+  // API. The four-step live pipeline runs only when the user clicks
+  // "Refresh (live)" — for current-minute figures and the worker drill-down.
+  async function init() {
+    $summary.innerHTML = '';
+    $table.innerHTML = '';
+    $logReport.innerHTML = '';
+    setStatus('Loading tax log…');
+    // Static, same-origin JSON — fast and available even if the game API is down.
+    await loadCurrentLog();
+    renderLogReport();
+    renderFromLog();
+  }
+
+  // Wire the single delegated table handler exactly once (not per render).
+  $table.addEventListener('click', onTableClick);
   $refresh.addEventListener('click', load);
 
   /* ── Router entry point ───────────────────────────────────────── */
   return {
-    activate() { if (!loaded) { loaded = true; load(); } },
+    activate() { if (!loaded) { loaded = true; init(); } },
   };
 })();

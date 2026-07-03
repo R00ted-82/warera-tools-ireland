@@ -312,7 +312,6 @@ const ToolkitShell = (() => {
     updateNavFade();
   }
   function gateTools() {
-    if (window.setFooterAuthor) window.setFooterAuthor('home');   // landing directory → both
     $nav.classList.add('hidden');
     $toolsHead.classList.add('hidden');
     $toolInfo.classList.add('hidden');
@@ -401,7 +400,6 @@ const ToolkitShell = (() => {
     if (state.active === tool) { if (run) driveActive(); writeStagingHash(); return; }
     if (state.active) restore(state.active);
     state.active = tool;
-    if (window.setFooterAuthor) window.setFooterAuthor(tool);   // footer credits the active tool
     host(tool);
     $nav.querySelectorAll('.stg-tab').forEach(b =>
       b.classList.toggle('active', b.dataset.stgTab === tool));

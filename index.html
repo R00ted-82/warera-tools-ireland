@@ -1049,6 +1049,26 @@
     <div id="taxdev-content"></div>
   </section>
 
+  <!-- ─── Tax Settlement — PARTNER VIEW (link-only; NOT in any nav) ────
+       Each partner country gets its own password (see js/irish-tax-partner.js)
+       that unlocks only that country's weekly settlement summary, read from
+       the already-public data/tax/current_week.json. Convenience gate, not
+       encryption — reachable only by going to #tax-partner directly. -->
+  <section class="view" data-view="tax-partner">
+    <div id="taxpartner-gate" class="bo-gate">
+      <div class="lock-icon">🔒</div>
+      <h3>Partner access</h3>
+      <p>Enter your partner password to view your country's settlement summary.</p>
+      <form id="taxpartner-gate-form" class="bo-gate-form">
+        <input id="taxpartner-gate-pw" type="password" placeholder="Password" autocomplete="current-password" />
+        <button id="taxpartner-gate-submit" type="submit" class="btn-primary">Unlock</button>
+        <div id="taxpartner-gate-error" class="bo-gate-error" aria-live="polite"></div>
+      </form>
+    </div>
+
+    <div id="taxpartner-content"></div>
+  </section>
+
   <!-- ─── Irish Factory Tax — PUBLIC (the original 70/30 income-tax stats
        tool). Unencrypted, open to everyone, surfaced from the Irish tools
        nav. Powered by IrishFactoryTaxTool (js/irish-factory-tax.js). The
@@ -1162,6 +1182,7 @@
 <script src="js/dashboard.js?v=20260623a"></script>
 <script src="js/irish-tax.js?v=20260702a"></script>
 <script src="js/irish-tax-dev.js?v=20260702a"></script>
+<script src="js/irish-tax-partner.js?v=20260703a"></script>
 <script src="js/irish-factory-tax.js?v=20260703a"></script>
 <script src="js/buddy.js?v=20260617h"></script>
 <script src="js/battle-orders.js?v=20260617h"></script>

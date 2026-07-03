@@ -41,7 +41,19 @@
   const views = document.querySelectorAll('.view');
   const $backLink = document.querySelector('.back-link');
   const $tabs = document.getElementById('tabs');
-  
+  const $footerAuthor = document.getElementById('footer-author');
+
+  // Footer credit per view. R00ted's tools credit R00ted; the shared landing
+  // pages credit both; everything else is toie's (the default).
+  const AUTHOR = {
+    roster: 'R00ted', 'sp-advisor': 'R00ted', tax: 'R00ted', 'tax-dev': 'R00ted',
+    home: 'toie & R00ted', gov: 'toie & R00ted', community: 'toie & R00ted',
+  };
+  // Exposed so the home shell can re-credit the footer as its sub-tool changes
+  // (e.g. Skill Point Advisor runs inside #home but is R00ted's).
+  function setFooterAuthor(key) { if ($footerAuthor) $footerAuthor.textContent = AUTHOR[key] || 'toie'; }
+  window.setFooterAuthor = setFooterAuthor;
+
 
   const tools = {
     home: ToolkitShell,
@@ -82,6 +94,9 @@
   function setView(name, { updateHash = true, params = new URLSearchParams() } = {}) {
     if (!VALID.has(name)) name = DEFAULT_VIEW;
     views.forEach(v => v.classList.toggle('active', v.dataset.view === name));
+
+    // Footer attribution follows the active view.
+    setFooterAuthor(name);
 
     // Tab bar on the two landing pages, back-link inside tools.
     const isLanding = LANDING.has(name);

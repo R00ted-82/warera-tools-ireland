@@ -46,7 +46,7 @@
   // Footer credit per view. R00ted's tools credit R00ted; the shared landing
   // pages credit both; everything else is toie's (the default).
   const AUTHOR = {
-    roster: 'R00ted', 'sp-advisor': 'R00ted', tax: 'R00ted', 'tax-dev': 'R00ted',
+    roster: 'R00ted', 'sp-advisor': 'R00ted', tax: 'R00ted', 'tax-dev': 'R00ted', 'factory-tax': 'R00ted',
     home: 'toie & R00ted', gov: 'toie & R00ted', community: 'toie & R00ted',
   };
   // Exposed so the home shell can re-credit the footer as its sub-tool changes

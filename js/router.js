@@ -33,7 +33,7 @@
 (() => {
   const VALID = new Set([
     'home', 'community', 'gov', 'mu', 'buddy-finder',
-    'advisor', 'clockin', 'profit', 'wealth', 'buddy', 'battle-orders',  'beer',
+    'advisor', 'clockin', 'profit', 'profit-dev', 'wealth', 'buddy', 'battle-orders',  'beer',
     'dashboard', 'roster', 'tax', 'tax-dev', 'tax-partner', 'factory-tax',
   ]);
   const LANDING = new Set(['dashboard', 'home', 'community', 'gov', 'beer']);
@@ -64,6 +64,7 @@
     advisor: AdvisorTool,
     clockin: ClockInTool,
     profit: DailyProfitTool,
+    'profit-dev': DailyProfitDevTool,
     wealth: WealthMonitorTool,
     buddy: BuddySystemGate,
     'battle-orders': BattleOrdersGate,

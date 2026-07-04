@@ -2061,6 +2061,15 @@ table.dp-table tr.dp-comp-total td { border-top: 2px solid var(--border); font-w
 /* Daily Profit — buddy chip in the employee panel */
 .dp-emp-buddy { font-size: 10.5px; color: var(--accent); border: 1px solid rgba(74,222,128,.4); border-radius: 999px; padding: 0 6px; margin-left: 6px; white-space: nowrap; }
 
+/* Daily Profit (dev) — sortable headers + profitable-worker indicator */
+table.dp-table th.dp-sortable { cursor: pointer; user-select: none; }
+table.dp-table th.dp-sortable:hover { color: var(--text); }
+table.dp-table th.dp-sortable .dp-sort-arrow { margin-left: 3px; opacity: .7; }
+.dp-lowwage-good { color: var(--accent); font-weight: 600; }
+.dp-lowwage-bad { color: var(--danger); font-weight: 600; }
+.dp-profit-yes { color: var(--accent); }
+.dp-profit-no { color: var(--danger); }
+
 /* ═══════════════════════════════════════════════════════════════════
  *  MY DASHBOARD (#dashboard) — single-column detailed cards
  *  Styled after the warera-toie personal dashboard.

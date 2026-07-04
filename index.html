@@ -975,6 +975,81 @@
     </details>
   </section>
 
+  <!-- ─── Daily Profit — DEV/TEST COPY (link-only; NOT in any nav) ─────
+       ⚠️ Duplicate of the #profit view above, for iterating on the table
+       layout (merged Product/Type, dropped Sale/Raw cost/Net-PP, sortable
+       headers, Profitable Worker column) without touching the live tool.
+       Reachable only by going to #profit-dev directly — no tab, tool-card,
+       or link points here. Powered by DailyProfitDevTool (js/daily-profit-dev.js). -->
+  <section class="view" data-view="profit-dev">
+    <div class="tool-header">
+      <div class="title-block">
+        <h2><span>📈</span> Daily Profit <span style="color:var(--warn)">— DEV COPY</span></h2>
+        <p style="color:var(--warn)">⚠️ Test copy, link-only access. Not linked from any nav — for local iteration, not for sharing.</p>
+      </div>
+    </div>
+
+    <div class="stg-idbar">
+      <div class="stg-idbar-row">
+        <input type="text" id="dpd-username" placeholder="In-game username" autocomplete="off" spellcheck="false" />
+        <button id="dpd-submit" class="btn-primary">Load</button>
+      </div>
+      <div class="stg-recent hidden" id="dpd-recent"></div>
+    </div>
+
+    <div id="dpd-steps" class="steps hidden">
+      <div class="step" data-state="pending" data-step="1">
+        <div class="step-icon"></div>
+        <div class="step-body"><div class="step-title">Find player</div><div class="step-sub"></div></div>
+        <div class="step-count"></div>
+      </div>
+      <div class="step" data-state="pending" data-step="2">
+        <div class="step-icon"></div>
+        <div class="step-body"><div class="step-title">Load companies &amp; workers</div><div class="step-sub"></div></div>
+        <div class="step-count"></div>
+      </div>
+      <div class="step" data-state="pending" data-step="3">
+        <div class="step-icon"></div>
+        <div class="step-body"><div class="step-title">Load market &amp; region bonuses</div><div class="step-sub"></div></div>
+        <div class="step-count"></div>
+      </div>
+    </div>
+
+    <div id="dpd-status" class="bf-inline-status hidden"></div>
+
+    <!-- Income summary + assumptions -->
+    <div class="bf-card hidden" id="dpd-stats-card">
+      <h3 id="dpd-stats-head">Projected income</h3>
+      <p class="bf-card-sub">Per day, at current market prices. Engine PP / Staff PP default to your real output — edit them to model a what-if and your company income scales live (zero them → zero).</p>
+      <div class="dp-assump" id="dpd-assump"></div>
+      <div class="dp-income" id="dpd-income"></div>
+    </div>
+
+    <!-- Per-product profitability table -->
+    <div class="bf-card hidden" id="dpd-table-card">
+      <h3>Profit by product</h3>
+      <p class="bf-card-sub">Click a column header to sort. <strong>Profitable worker</strong> = would hiring a fresh day-1 worker (571.2 base PP) at the lowest wage pay for itself on this product?</p>
+      <div class="dp-table-wrap">
+        <table class="dp-table" id="dpd-table"></table>
+      </div>
+      <p class="dp-note" id="dpd-table-note"></p>
+    </div>
+
+    <!-- Companies: automated-engine output -->
+    <div class="bf-card hidden" id="dpd-comp-card">
+      <h3>Companies</h3>
+      <p class="bf-card-sub">Automated-engine output per company, and the same with its region production bonus applied.</p>
+      <div class="dp-table-wrap"><table class="dp-table" id="dpd-companies"></table></div>
+    </div>
+
+    <!-- Employee profitability -->
+    <div class="bf-card hidden" id="dpd-emp-card">
+      <h3>Employees</h3>
+      <p class="bf-card-sub" id="dpd-emp-sub"></p>
+      <div class="dp-emp-list" id="dpd-employees"></div>
+    </div>
+  </section>
+
   <!-- ─── My Dashboard view (standalone; not linked from home) ─────────
        A single-glance overview of the main player tools as compact cards.
        Reached only via #dashboard or #dashboard?u=<name>. Powered by
@@ -1179,6 +1254,7 @@
 <script src="js/clockin.js?v=20260617h"></script>
 <script src="js/wealth.js?v=20260617h"></script>
 <script src="js/daily-profit.js?v=20260617h"></script>
+<script src="js/daily-profit-dev.js?v=20260704a"></script>
 <script src="js/dashboard.js?v=20260623a"></script>
 <script src="js/irish-tax.js?v=20260703a"></script>
 <script src="js/irish-tax-dev.js?v=20260702a"></script>

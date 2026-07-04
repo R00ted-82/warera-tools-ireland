@@ -735,7 +735,7 @@ const DailyProfitDevTool = (() => {
     empAssigned: r => r.empAssigned ?? -Infinity,
     actual: r => r.actual ?? -Infinity,
     lowWage: r => (r.lowWage != null && isFinite(r.lowWage)) ? r.lowWage : -Infinity,
-    profitable: r => r.employeeProfit ?? -Infinity,
+    profitable: r => r.employeeProfitDay5 ?? -Infinity,
     country: r => r.country ? r.country.name.toLowerCase() : '',
     deposit: r => r.deposit ? new Date(r.deposit.endsAt).getTime() : -Infinity,
   };
@@ -750,20 +750,25 @@ const DailyProfitDevTool = (() => {
     return rows;
   }
 
-  // A generic day-1 hire's value-add for this product: gross PP they'd
-  // generate at the lowest viable wage, converted to items made, valued at
-  // the product's net profit/item, minus what they'd cost to hire.
+  // A generic hire's value-add for this product: gross PP they'd generate at
+  // the lowest viable wage, converted to items made, valued at the product's
+  // net profit/item, minus what they'd cost to hire.
+  // Fidelity is a free rider on top of that: it grows 1%/day (day 0 → 0%,
+  // day 5 → 5%) and lifts OUTPUT only — the wage is still paid on the
+  // pre-fidelity base PP (same model as the Employees panel), so day 5 is
+  // strictly more profitable than day 0 for the same hire.
+  const FIDELITY_DAY5_PCT = 5;
   function workerProfitability(code, it, bonusPct, lowWage) {
     const ppPerItem = it?.productionPoints || 0;
-    if (!ppPerItem) return null;
+    if (!ppPerItem) return { day0: null, day5: null };
     const workerPP = GENERIC_BASE_PP / (1 + (bonusPct || 0) / 100);
-    const wageCost = workerPP * lowWage;
-    const itemsMade = workerPP / ppPerItem;
+    const wageCost = workerPP * lowWage;   // fidelity doesn't change what you pay
     const sale = price(code);
     const rc = rawCostOf(code);
-    if (sale == null || rc == null) return null;
-    const profitMade = itemsMade * (sale - rc);
-    return profitMade - wageCost;
+    if (sale == null || rc == null) return { day0: null, day5: null };
+    const netProfitPerItem = sale - rc;
+    const profitAt = (fidPct) => ((workerPP * (1 + fidPct / 100)) / ppPerItem) * netProfitPerItem - wageCost;
+    return { day0: profitAt(0), day5: profitAt(FIDELITY_DAY5_PCT) };
   }
 
   function buildRows() {
@@ -810,12 +815,13 @@ const DailyProfitDevTool = (() => {
       // floored at 0 (don't let unprofitable employees drag the company ceiling).
       const totalMax = (maxCompany != null && maxEmployee != null) ? maxCompany + Math.max(maxEmployee, 0) : null;
       const empAssigned = model.employees.filter(e => e.item === code).length;
-      const employeeProfit = workerProfitability(code, it, bb.total, lowWage);
+      const { day0: employeeProfitDay0, day5: employeeProfitDay5 } = workerProfitability(code, it, bb.total, lowWage);
 
       rows.push({ code, name: META[code].name, cat: META[code].cat, type: it.type,
                   netPP: npp, bonus: bb.total, region: bb.region, country: bb.country,
                   tax: bb.tax, deposit: bb.deposit,
-                  maxCompany, maxEmployee, totalMax, empAssigned, lowWage, employeeProfit,
+                  maxCompany, maxEmployee, totalMax, empAssigned, lowWage,
+                  employeeProfitDay0, employeeProfitDay5,
                   makesIt, actual: makesIt ? actual : null });
     }
     return sortRows(rows);
@@ -838,7 +844,7 @@ const DailyProfitDevTool = (() => {
     { key: 'empAssigned', label: 'Emp.',           title: 'Your employees currently producing this product' },
     { key: 'actual',      label: 'Actual / day' },
     { key: 'lowWage',     label: 'Lowest wage',    title: "Lowest wage to post so the worker nets 0.121 after this country's income tax" },
-    { key: 'profitable',  label: 'Profitable worker', title: 'Would hiring a fresh day-1 worker (571.2 base PP) at the lowest wage pay for itself on this product?' },
+    { key: 'profitable',  label: 'Profitable worker', title: 'Would hiring a fresh generic worker (571.2 base PP) at the lowest wage pay for itself on this product? Green = yes from day 0. Yellow = not yet, but yes by day 5 once their fidelity bonus (free extra output, same wage) kicks in. Red = no, even at day 5.' },
     { key: 'country',     label: 'Country · tax',  l: true, title: 'Country giving the best production bonus, and its income tax (Country › Account)' },
     { key: 'deposit',     label: 'Deposit',        title: 'Temporary regional deposit driving the bonus, and when it expires' },
   ];
@@ -854,9 +860,13 @@ const DailyProfitDevTool = (() => {
       <tbody>${rows.map(r => {
         const regionTip = r.region ? `${escapeHtml(r.region.name)}${r.country ? ' · ' + escapeHtml(r.country.name) : ''}` : 'no bonus region';
         const money = (v) => v == null ? '<span class="dp-na">–</span>' : fmtK(v);
-        const wageClass = r.employeeProfit == null ? '' : (r.employeeProfit > 0 ? 'dp-lowwage-good' : 'dp-lowwage-bad');
-        const profitCell = r.employeeProfit == null ? '<span class="dp-na">–</span>'
-          : (r.employeeProfit > 0 ? '<span class="dp-profit-yes">✅</span>' : '<span class="dp-profit-no">❌</span>');
+        // Green from day 0, yellow if day-0 fails but the free fidelity bonus by
+        // day 5 tips it into profit, red if not even by day 5.
+        const profitState = r.employeeProfitDay0 == null ? null
+          : (r.employeeProfitDay0 > 0 ? 'good' : (r.employeeProfitDay5 > 0 ? 'warn' : 'bad'));
+        const wageClass = profitState == null ? '' : { good: 'dp-lowwage-good', warn: 'dp-lowwage-warn', bad: 'dp-lowwage-bad' }[profitState];
+        const profitCell = profitState == null ? '<span class="dp-na">–</span>'
+          : { good: '<span class="dp-profit-yes">✅</span>', warn: '<span class="dp-profit-warn" title="Not profitable day 0, but turns profitable by day 5 once fidelity kicks in">🟡</span>', bad: '<span class="dp-profit-no">❌</span>' }[profitState];
         return `<tr class="${r.makesIt ? 'dp-owned' : ''}">
           <td class="dp-l"><span class="dp-prod">${iconHtml(r.code)}<span>${escapeHtml(r.name)}</span><span class="dp-pill ${r.type}">${r.type === 'product' ? 'Finished' : 'Raw'}</span><span class="dp-cat">· ${r.cat}</span></span></td>
           <td class="dp-bonus" title="${regionTip}">${r.bonus ? '+' + fmt2(r.bonus) + '%' : '<span class="dp-muted">0%</span>'}</td>

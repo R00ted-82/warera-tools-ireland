@@ -2066,8 +2066,10 @@ table.dp-table th.dp-sortable { cursor: pointer; user-select: none; }
 table.dp-table th.dp-sortable:hover { color: var(--text); }
 table.dp-table th.dp-sortable .dp-sort-arrow { margin-left: 3px; opacity: .7; }
 .dp-lowwage-good { color: var(--accent); font-weight: 600; }
+.dp-lowwage-warn { color: var(--warn); font-weight: 600; }
 .dp-lowwage-bad { color: var(--danger); font-weight: 600; }
 .dp-profit-yes { color: var(--accent); }
+.dp-profit-warn { color: var(--warn); }
 .dp-profit-no { color: var(--danger); }
 
 /* ═══════════════════════════════════════════════════════════════════

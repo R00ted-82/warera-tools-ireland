@@ -101,8 +101,8 @@ const IrishTaxPartnerTool = (() => {
       <div class="tax-audit-tot">
         <div class="tax-audit-h">📄 Paper transfer tax <span class="tax-ally ${pToday.ally ? 'yes' : ''}">${pToday.ally ? 'ally · 50%' : 'non-ally · 100%'}</span></div>
         <div class="tax-audit-row"><span>Paper price</span><b>${pToday.price != null ? '₿' + money(pToday.price) + '/unit' : '—'}</b></div>
-        <div class="tax-audit-row big"><span>Net owed today (after paper)</span><b>${pToday.net != null ? '₿' + money(pToday.net) : '—'}</b></div>
         <div class="tax-audit-row"><span>Paper cost (this week)</span><b>${pWeek && pWeek.cost != null ? '−₿' + money(pWeek.cost) : '—'}</b></div>
+        <div class="tax-audit-row"><span>Paper required (this week)</span><b>${pWeek && pWeek.units != null ? money(pWeek.units) + ' 📄' : '—'}</b></div>
         <div class="tax-audit-row"><span>Net this week (after paper)</span><b>${pWeek && pWeek.net != null ? '₿' + money(pWeek.net) : '—'}</b></div>
       </div>`;
 

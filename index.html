@@ -1144,6 +1144,57 @@
     <div id="taxpartner-content"></div>
   </section>
 
+  <!-- ─── Tax Deal Logger — generic, config-driven (link-only; NOT in any
+       nav). Unlike #tax-partner (Ireland-only, one shared log), any bilateral
+       deal defined in data/tax/deal_config.json gets its own daily log at
+       data/tax/deal_logs/<id>.json (see deal_log.py). Reachable only by
+       going to #tax-deals directly. Powered by js/tax-deal-dashboard.js. -->
+  <section class="view" data-view="tax-deals">
+    <div class="tool-header">
+      <div class="title-block">
+        <h2><span>🤝</span> Tax Deal Logger</h2>
+        <p>Pick your deal, enter its password, and view your own logged settlement data. Nothing else is exposed.</p>
+      </div>
+    </div>
+
+    <div id="taxdeals-gate" class="bo-gate">
+      <div class="lock-icon">🔒</div>
+      <h3>Deal access</h3>
+      <p>Select the home country, then the deal, then enter its password.</p>
+      <form id="taxdeals-gate-form" class="bo-gate-form">
+        <select id="taxdeals-home-select" required>
+          <option value="" disabled selected>Home country…</option>
+        </select>
+        <select id="taxdeals-deal-select" required disabled>
+          <option value="" disabled selected>Deal…</option>
+        </select>
+        <input id="taxdeals-gate-pw" type="password" placeholder="Password" autocomplete="current-password" />
+        <button id="taxdeals-gate-submit" type="submit" class="btn-primary">Unlock</button>
+        <div id="taxdeals-gate-error" class="bo-gate-error" aria-live="polite"></div>
+      </form>
+    </div>
+
+    <div id="taxdeals-content"></div>
+
+    <!-- ─── Propose a deal ───────────────────────────────────────────
+         Submissions are never auto-enabled — see deal-config-submit.yml.
+         A human flips "enabled": true after reviewing the proposal. -->
+    <div id="taxdeals-propose" class="taxdeals-propose">
+      <button id="taxdeals-propose-toggle" type="button" class="tax-back">+ Propose a new deal</button>
+      <form id="taxdeals-propose-form" class="bo-gate-form hidden">
+        <input id="taxdeals-propose-name" type="text" placeholder="Deal name (e.g. Ireland – Yemen Factory Tax Rebate)" maxlength="80" required />
+        <input id="taxdeals-propose-home" type="text" placeholder="Home country code (e.g. IE)" maxlength="3" required />
+        <input id="taxdeals-propose-host" type="text" placeholder="Host country code (e.g. YE)" maxlength="3" required />
+        <input id="taxdeals-propose-home-rebate" type="number" min="0" max="100" step="0.1" placeholder="Home-citizen rebate %" required />
+        <input id="taxdeals-propose-non-rebate" type="number" min="0" max="100" step="0.1" placeholder="Non-home-citizen rebate %" required />
+        <input id="taxdeals-propose-start" type="date" required />
+        <input id="taxdeals-propose-password" type="text" placeholder="Access password/code (4-64 chars)" minlength="4" maxlength="64" required />
+        <button id="taxdeals-propose-submit" type="submit" class="btn-primary">Submit for review</button>
+        <div id="taxdeals-propose-status" class="bo-gate-error" aria-live="polite"></div>
+      </form>
+    </div>
+  </section>
+
   <!-- ─── Irish Factory Tax — PUBLIC (the original 70/30 income-tax stats
        tool). Unencrypted, open to everyone, surfaced from the Irish tools
        nav. Powered by IrishFactoryTaxTool (js/irish-factory-tax.js). The
@@ -1260,6 +1311,7 @@
 <script src="js/irish-tax-dev.js?v=20260702a"></script>
 <script src="js/irish-tax-partner.js?v=20260703a"></script>
 <script src="js/irish-factory-tax.js?v=20260703a"></script>
+<script src="js/tax-deal-dashboard.js?v=20260706a"></script>
 <script src="js/buddy.js?v=20260617h"></script>
 <script src="js/battle-orders.js?v=20260617h"></script>
 <script src="js/beer.js?v=20260617h"></script>

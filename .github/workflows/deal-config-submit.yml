@@ -1,0 +1,174 @@
+# .github/workflows/deal-config-submit.yml
+#
+# Listens for repository_dispatch events from the tax-deal dashboard's
+# "Propose a deal" form (js/tax-deal-dashboard.js). Validates the payload,
+# resolves both country codes against the game API, and appends the deal to
+# data/tax/deal_config.json.
+#
+# Safety gate: because this directly determines money owed between real
+# countries, submitted deals are ALWAYS appended with "enabled": false. A
+# human must flip that flag to true (a one-line edit/PR) before deal_log.py
+# will ever start logging it — mirrors the manual-review step
+# data/tax/deals.json already relies on today, just scoped to one flag
+# instead of the whole file.
+#
+# Same pattern as .github/workflows/update-waitlist.yml: a Cloudflare Worker
+# route (not part of this repo) holds the GitHub PAT server-side and fires
+# this repository_dispatch; the client never sees the token. That Worker
+# route needs to be added separately (mirroring its existing
+# /waitlist-update route) — see js/tax-deal-dashboard.js for the exact
+# client payload shape this workflow expects.
+
+name: Deal config submit
+
+on:
+  repository_dispatch:
+    types: [deal-config-submit]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deal-config-write
+  cancel-in-progress: false
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate and append deal (disabled, pending review)
+        env:
+          NAME:                    ${{ github.event.client_payload.name }}
+          HOME_COUNTRY_CODE:       ${{ github.event.client_payload.homeCountryCode }}
+          HOST_COUNTRY_CODE:       ${{ github.event.client_payload.hostCountryCode }}
+          HOME_CITIZEN_REBATE_PCT: ${{ github.event.client_payload.homeCitizenRebatePct }}
+          NON_HOME_REBATE_PCT:     ${{ github.event.client_payload.nonHomeCitizenRebatePct }}
+          START_DATE:              ${{ github.event.client_payload.startDate }}
+          PASSWORD:                ${{ github.event.client_payload.password }}
+        run: |
+          set -e
+          python3 <<'PY'
+          import json, os, re, sys, urllib.request, urllib.parse
+          from datetime import date, datetime, timezone
+
+          ORIGIN = 'https://tools.we-ie.com'
+
+          def trpc(method, payload, timeout=20):
+              inp = urllib.parse.quote(json.dumps(payload))
+              url = f'https://warera-proxy.r00ted82.workers.dev/trpc/{method}?input={inp}'
+              req = urllib.request.Request(url, headers={
+                  'Origin': ORIGIN,
+                  'Accept': 'application/json',
+                  'User-Agent': 'warera-deal-config-submit-action/1.0',
+              })
+              with urllib.request.urlopen(req, timeout=timeout) as r:
+                  return json.load(r).get('result', {}).get('data')
+
+          name        = (os.environ.get('NAME') or '').strip()
+          home_code   = (os.environ.get('HOME_COUNTRY_CODE') or '').strip().upper()
+          host_code   = (os.environ.get('HOST_COUNTRY_CODE') or '').strip().upper()
+          start_date  = (os.environ.get('START_DATE') or '').strip()
+          password    = os.environ.get('PASSWORD') or ''
+
+          def fail(msg):
+              print(f'::error::{msg}')
+              sys.exit(1)
+
+          if not (1 <= len(name) <= 80):
+              fail(f'Invalid deal name length: {len(name)}')
+          if not re.fullmatch(r'[A-Za-z]{2,3}', home_code):
+              fail(f'Invalid homeCountryCode: {home_code!r}')
+          if not re.fullmatch(r'[A-Za-z]{2,3}', host_code):
+              fail(f'Invalid hostCountryCode: {host_code!r}')
+          if home_code == host_code:
+              fail('homeCountryCode and hostCountryCode must differ')
+          try:
+              start = date.fromisoformat(start_date)
+          except ValueError:
+              fail(f'Invalid startDate (want YYYY-MM-DD): {start_date!r}')
+          if not (4 <= len(password) <= 64):
+              fail(f'Password must be 4-64 chars, got {len(password)}')
+
+          try:
+              home_pct = float(os.environ.get('HOME_CITIZEN_REBATE_PCT'))
+              non_pct  = float(os.environ.get('NON_HOME_REBATE_PCT'))
+          except (TypeError, ValueError):
+              fail('Rebate percentages must be numbers')
+          if not (0 <= home_pct <= 100) or not (0 <= non_pct <= 100):
+              fail(f'Rebate percentages must be 0-100, got {home_pct!r}/{non_pct!r}')
+
+          # ── Resolve both country codes against the live game API ──────
+          all_countries_raw = trpc('country.getAllCountries', {}) or []
+          all_countries = (all_countries_raw if isinstance(all_countries_raw, list)
+                            else all_countries_raw.get('items', []))
+          by_code = {}
+          for c in all_countries:
+              if isinstance(c, dict) and c.get('_id'):
+                  code = (c.get('code') or c.get('iso') or '').upper()
+                  if code:
+                      by_code[code] = c
+
+          home_country = by_code.get(home_code)
+          host_country = by_code.get(host_code)
+          if not home_country:
+              fail(f'Unknown homeCountryCode: {home_code!r}')
+          if not host_country:
+              fail(f'Unknown hostCountryCode: {host_code!r}')
+
+          # ── Build the deal entry ───────────────────────────────────────
+          path = 'data/tax/deal_config.json'
+          try:
+              with open(path, 'r', encoding='utf-8') as f:
+                  cfg = json.load(f)
+          except (FileNotFoundError, json.JSONDecodeError):
+              cfg = {'version': 1, 'deals': []}
+          if 'deals' not in cfg or not isinstance(cfg['deals'], list):
+              cfg['deals'] = []
+
+          slug = re.sub(r'[^a-z0-9]+', '-', f'{home_code}-{host_code}-{start_date}'.lower()).strip('-')
+          deal_id = slug
+          n = 2
+          existing_ids = {d.get('id') for d in cfg['deals']}
+          while deal_id in existing_ids:
+              deal_id = f'{slug}-{n}'
+              n += 1
+
+          cfg['deals'].append({
+              'id': deal_id,
+              'name': name,
+              'homeCountry': {
+                  'id': home_country['_id'], 'code': home_code,
+                  'name': home_country.get('name', home_code),
+              },
+              'hostCountry': {'code': host_code, 'name': host_country.get('name', host_code)},
+              'coverage': {'type': 'country'},
+              'homeCitizenRebate': round(home_pct / 100, 4),
+              'nonHomeCitizenRebate': round(non_pct / 100, 4),
+              'startDate': start_date,
+              'password': password,
+              'enabled': False,
+              'dealVersion': 1,
+              'createdAt': datetime.now(timezone.utc).isoformat(),
+          })
+
+          with open(path, 'w', encoding='utf-8') as f:
+              json.dump(cfg, f, indent=2, ensure_ascii=False)
+              f.write('\n')
+
+          with open(os.environ['GITHUB_ENV'], 'a') as f:
+              f.write(f'COMMIT_MSG=Propose deal {deal_id} (pending review)\n')
+          PY
+
+      - name: Commit changes
+        run: |
+          git add data/tax/deal_config.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "${COMMIT_MSG:-Propose new tax deal (pending review)}"
+          git push

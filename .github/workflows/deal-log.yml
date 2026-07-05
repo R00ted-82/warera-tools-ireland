@@ -1,0 +1,48 @@
+name: Tax deal logger
+
+# Generic, config-driven deal logger (data/tax/deal_config.json ->
+# data/tax/deal_logs/<id>.json). Fully separate from the Ireland-only
+# taxlog.yml/tax_log.py — a change here can never affect that cron.
+
+on:
+  schedule:
+    # Same retry-window shape as taxlog.yml: one entry per day, only written
+    # when real data is seen. An outage run writes nothing and exits, so the
+    # next cron retries ~2h later.
+    - cron: "12 16 * * *"   # 16:12 UTC — first attempt
+    - cron: "12 18 * * *"   # 18:12 UTC — retry if 16:12 found no data
+    - cron: "12 20 * * *"   # 20:12 UTC — retry
+    - cron: "12 22 * * *"   # 22:12 UTC — last attempt before midnight
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deal-log
+  cancel-in-progress: false
+
+jobs:
+  log:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run deal logger
+        run: python deal_log.py
+
+      - name: Commit data
+        run: |
+          git config user.name "deal-log-bot"
+          git config user.email "deal-log-bot@users.noreply.github.com"
+          git add data/tax/deal_logs 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "no changes to commit"
+          else
+            git commit -m "deal-log: $(date -u +%FT%TZ)"
+            git push
+          fi

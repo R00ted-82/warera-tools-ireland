@@ -1,0 +1,51 @@
+{
+  "deal_id": "ie-ye-2026",
+  "deal_version": 1,
+  "home_country": {
+    "id": "6813b6d446e731854c7ac7fe",
+    "code": "IE",
+    "name": "Ireland"
+  },
+  "host_country": {
+    "code": "YE",
+    "name": "Yemen"
+  },
+  "home_citizen_rebate": 0.25,
+  "non_home_citizen_rebate": 0.375,
+  "current_week": {
+    "week_start": "2026-06-29",
+    "days": [
+      {
+        "date": "2026-07-05",
+        "row": {
+          "factories": 22,
+          "workers": 28,
+          "home_workers": 11,
+          "partner_workers": 17,
+          "wages": 1242.0,
+          "gross_tax": 49.68,
+          "home_worker_tax": 28.64,
+          "partner_worker_tax": 21.04,
+          "manual_rebate_due": 15.05,
+          "auto_remit_tax": 14.9,
+          "host_retained": 19.73
+        }
+      }
+    ],
+    "totals": {
+      "factories": 22,
+      "workers": 28,
+      "home_workers": 11,
+      "partner_workers": 17,
+      "wages": 1242.0,
+      "gross_tax": 49.68,
+      "home_worker_tax": 28.64,
+      "partner_worker_tax": 21.04,
+      "manual_rebate_due": 15.05,
+      "auto_remit_tax": 14.9,
+      "host_retained": 19.73
+    }
+  },
+  "previous_week": null,
+  "updated_at": "2026-07-05T13:29:56.618983+00:00"
+}

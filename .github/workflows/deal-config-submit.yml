@@ -13,12 +13,14 @@
 # js/tax-deal-dashboard.js). There is no separate per-deal password anymore —
 # this workflow only reads partner_access.json, never writes to it.
 #
-# Safety gate: because this directly determines money owed between real
-# countries, submitted deals are ALWAYS appended with "enabled": false. A
-# human must flip that flag to true (a one-line edit/PR) before deal_log.py
-# will ever start logging it — mirrors the manual-review step
-# data/tax/deals.json already relies on today, just scoped to one flag
-# instead of the whole file.
+# Auto-enable: once the password check + structural/API validation above
+# pass, the deal is appended with "enabled": true and starts logging
+# immediately — deal-log.yml is also wired to fire on any push to
+# data/tax/deal_config.json, so the very next run (right after this commit)
+# captures the deal's first daily snapshot. No human review step. The
+# password only proves the submitter represents the HOST country; it does
+# NOT prove the home country agreed to these exact rebate terms — that
+# trust is placed entirely in the password holder, by design choice.
 #
 # Same pattern as .github/workflows/update-waitlist.yml: a Cloudflare Worker
 # route (not part of this repo) holds the GitHub PAT server-side and fires
@@ -46,7 +48,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate and append deal (disabled, pending review)
+      - name: Validate and append deal (auto-enabled)
         env:
           NAME:                    ${{ github.event.client_payload.name }}
           HOME_COUNTRY_CODE:       ${{ github.event.client_payload.homeCountryCode }}
@@ -174,7 +176,7 @@ jobs:
               'homeCitizenRebate': round(home_pct / 100, 4),
               'nonHomeCitizenRebate': round(non_pct / 100, 4),
               'startDate': start_date,
-              'enabled': False,
+              'enabled': True,
               'dealVersion': 1,
               'createdAt': datetime.now(timezone.utc).isoformat(),
           })
@@ -184,7 +186,7 @@ jobs:
               f.write('\n')
 
           with open(os.environ['GITHUB_ENV'], 'a') as f:
-              f.write(f'COMMIT_MSG=Propose deal {deal_id} (pending review)\n')
+              f.write(f'COMMIT_MSG=Add deal {deal_id}\n')
           PY
 
       - name: Commit changes
@@ -196,5 +198,5 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "${COMMIT_MSG:-Propose new tax deal (pending review)}"
+          git commit -m "${COMMIT_MSG:-Add new tax deal}"
           git push

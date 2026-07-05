@@ -34,7 +34,7 @@
   const VALID = new Set([
     'home', 'community', 'gov', 'mu', 'buddy-finder',
     'advisor', 'clockin', 'profit', 'profit-dev', 'wealth', 'buddy', 'battle-orders',  'beer',
-    'dashboard', 'roster', 'tax', 'tax-dev', 'tax-partner', 'factory-tax', 'tax-deals', 'partners',
+    'dashboard', 'roster', 'tax', 'tax-dev', 'tax-partner', 'factory-tax', 'tax-deals', 'partners', 'partner-guide',
   ]);
   const LANDING = new Set(['dashboard', 'home', 'community', 'gov', 'beer', 'partners']);
   const DEFAULT_VIEW = 'dashboard';
@@ -47,7 +47,7 @@
   // pages credit both; everything else is toie's (the default).
   const AUTHOR = {
     roster: 'R00ted', 'sp-advisor': 'R00ted', tax: 'R00ted', 'tax-dev': 'R00ted', 'tax-partner': 'R00ted', 'factory-tax': 'R00ted', 'tax-deals': 'R00ted',
-    home: 'toie & R00ted', gov: 'toie & R00ted', community: 'toie & R00ted', partners: 'R00ted',
+    home: 'toie & R00ted', gov: 'toie & R00ted', community: 'toie & R00ted', partners: 'R00ted', 'partner-guide': 'R00ted',
   };
   // Exposed so the home shell can re-credit the footer as its sub-tool changes
   // (e.g. Skill Point Advisor runs inside #home but is R00ted's).
@@ -60,6 +60,7 @@
     community: null,
     gov: null,
     partners: null,
+    'partner-guide': null,
     mu: MUTool,
     'buddy-finder': BuddyFinderTool,
     advisor: AdvisorTool,
@@ -107,7 +108,7 @@
     $backLink.hidden = isLanding;
     $backLink.setAttribute('href',
       (name === 'buddy' || name === 'battle-orders') ? '#gov' :
-      (name === 'tax-deals') ? '#partners' : '#dashboard');
+      (name === 'tax-deals' || name === 'partner-guide') ? '#partners' : '#dashboard');
     if ($tabs) {
       $tabs.hidden = !isLanding;
       $tabs.querySelectorAll('.tab').forEach(t =>

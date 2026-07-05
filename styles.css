@@ -1647,6 +1647,26 @@ input[type="password"]:focus { outline: none; border-color: #3a4350; }
 }
 .community-cat:first-of-type { margin-top: 20px; }
 
+/* Partner guide (#partner-guide) — plain prose page, reuses .home/.lede/
+   .community-note/.community-cat from the rest of the site. */
+[data-view="partner-guide"] .home p,
+[data-view="partner-guide"] .home ul,
+[data-view="partner-guide"] .home ol {
+  color: var(--muted); font-size: 14px; line-height: 1.6; margin: 0 0 14px;
+}
+[data-view="partner-guide"] .home ul,
+[data-view="partner-guide"] .home ol { padding-left: 22px; }
+[data-view="partner-guide"] .home li { margin: 4px 0; }
+[data-view="partner-guide"] .home li ul { margin: 8px 0 0; }
+[data-view="partner-guide"] .home strong { color: var(--text); }
+[data-view="partner-guide"] .home h4 { font-size: 13.5px; margin: 16px 0 8px; }
+[data-view="partner-guide"] .home a { color: var(--accent); }
+.taxguide-report {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px 14px; font-size: 12.5px; line-height: 1.6; color: var(--text);
+  white-space: pre-wrap; margin: 8px 0 0;
+}
+
 
 /* ═══════════════════════════════════════════════════════════════════
  *  BEER — Bunker Monitor (encrypted tool)

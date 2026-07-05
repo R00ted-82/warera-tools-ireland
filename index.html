@@ -288,7 +288,7 @@
   <section class="view" data-view="partners">
     <div class="home">
       <p class="lede">
-        🤝 Tools for countries with a tax-rebate arrangement with Ireland.
+        🤝 Tools for Ireland's partners.
       </p>
       <div class="community-note">
         Each partner gets one password for their country — used to propose a deal and to view any/every deal that country is party to. See the guide below if you're new here.
@@ -302,10 +302,10 @@
             <span class="tool-link">Open Tax Rebate Calculation Tool →</span>
           </div>
         </a>
-        <a class="tool-card external" href="https://github.com/R00ted-82/warera-tools-ireland/blob/main/PARTNER_GUIDE.md" target="_blank" rel="noopener">
+        <a class="tool-card" href="#partner-guide">
           <div class="tool-card-icon">📖</div>
           <div class="tool-card-body">
-            <h3>How to use guide <span class="ext-icon">↗</span></h3>
+            <h3>How to use guide</h3>
             <p>Step-by-step: getting your country's password, proposing a deal, and reading your dashboard once it's live.</p>
             <span class="tool-link">Read the guide →</span>
           </div>
@@ -1186,17 +1186,17 @@
         <p>Pick your deal, enter your country's password, and view your own logged settlement data. Nothing else is exposed.</p>
       </div>
       <div class="controls">
-        <a href="https://github.com/R00ted-82/warera-tools-ireland/blob/main/PARTNER_GUIDE.md" target="_blank" rel="noopener" class="tax-back">📖 How to use guide</a>
+        <a href="#partner-guide" class="tax-back">📖 How to use guide</a>
       </div>
     </div>
 
     <div id="taxdeals-gate" class="bo-gate">
       <div class="lock-icon">🔒</div>
       <h3>Deal access</h3>
-      <p>Select the home country, then the deal, then enter your country's password.</p>
+      <p>Select your country, then the deal, then enter your country's password.</p>
       <form id="taxdeals-gate-form" class="bo-gate-form">
-        <select id="taxdeals-home-select" required>
-          <option value="" disabled selected>Home country…</option>
+        <select id="taxdeals-partner-select" required>
+          <option value="" disabled selected>Your country…</option>
         </select>
         <select id="taxdeals-deal-select" required disabled>
           <option value="" disabled selected>Deal…</option>
@@ -1228,9 +1228,98 @@
         <input id="taxdeals-propose-home-rebate" type="number" min="0" max="100" step="0.1" placeholder="Home-citizen rebate %" required />
         <input id="taxdeals-propose-non-rebate" type="number" min="0" max="100" step="0.1" placeholder="Non-home-citizen rebate %" required />
         <input id="taxdeals-propose-start" type="date" required />
-        <button id="taxdeals-propose-submit" type="submit" class="btn-primary">Submit for review</button>
+        <button id="taxdeals-propose-submit" type="submit" class="btn-primary">Create deal</button>
         <div id="taxdeals-propose-status" class="bo-gate-error" aria-live="polite"></div>
       </form>
+    </div>
+  </section>
+
+  <!-- ─── Tax Rebate Calculation Tool — how-to guide (link-only). Hosted
+       in-site rather than linking out to the GitHub repo, so partners never
+       land on the dev repo itself. Content mirrors PARTNER_GUIDE.md — keep
+       both in sync if either changes. -->
+  <section class="view" data-view="partner-guide">
+    <div class="home">
+      <p class="lede">📖 Tax Rebate Calculation Tool — Partner Guide</p>
+      <div class="community-note">
+        This is the guide for any country with a factory tax-rebate arrangement with Ireland. It explains how a deal gets set up, how it gets logged, and how you check your own numbers.
+      </div>
+
+      <h3 class="community-cat">What this actually does</h3>
+      <p>Every day, a script scans the relevant factories, works out how much tax they generated, and works out the rebate owed under your deal's terms. That gets logged automatically — nobody has to type numbers in by hand, and nobody has to trust anyone's word for it. You can go back and check any day's figures at any time.</p>
+      <p>It is <strong>not</strong> a live calculator you can query on demand — it's a daily settlement log. Today's figure appears once the daily scan has run (usually mid-afternoon UTC); it doesn't update in real time.</p>
+
+      <h3 class="community-cat">One-time setup: getting your country's password</h3>
+      <p>We give you <strong>one password for your country</strong>. It does two things:</p>
+      <ul>
+        <li>Proves you actually represent your country when proposing a deal (rather than letting anyone propose terms in your name).</li>
+        <li>Unlocks viewing <strong>every</strong> deal your country is a party to on the dashboard — you don't need a different password per deal.</li>
+      </ul>
+      <p>Keep it private; don't post it publicly. If you don't have one yet, ask us for one.</p>
+
+      <h3 class="community-cat">Proposing a deal</h3>
+      <ol>
+        <li>Go to the <a href="#tax-deals">Tax Rebate Calculation Tool</a> page.</li>
+        <li>Click <strong>"+ Propose a new deal"</strong>.</li>
+        <li>Fill in:
+          <ul>
+            <li><strong>Deal name</strong> — anything descriptive, e.g. "Ireland – Yemen Factory Tax Rebate".</li>
+            <li><strong>Home country</strong> — the country whose citizens own the factories (type the name, pick it from the dropdown).</li>
+            <li><strong>Host country</strong> — your country (type the name, pick it from the dropdown).</li>
+            <li><strong>Your country's password</strong> — the password we gave you (see above).</li>
+            <li><strong>Home-citizen rebate %</strong> and <strong>Non-home-citizen rebate %</strong> — the two rebate rates your deal agrees to. These can be different (e.g. a higher rebate for the home country's own citizens working in your factories, a lower one for everyone else).</li>
+            <li><strong>Start date</strong> — the first day the deal applies from. Anything before this date is never logged for the deal.</li>
+          </ul>
+        </li>
+        <li>Click <strong>Create deal</strong>.</li>
+      </ol>
+
+      <h3 class="community-cat">What happens next</h3>
+      <p>There's no manual review step — a valid submission goes live immediately, and the first daily snapshot is captured shortly after. Double-check the rebate percentages and start date before creating a deal; whoever holds a country's password can create real, immediately-live terms for it.</p>
+      <p>If a submission fails, you'll see an error explaining why (wrong password, dates in the wrong format, rebate percentages out of range, etc.) — just fix it and resubmit.</p>
+
+      <h3 class="community-cat">Viewing your data</h3>
+      <ol>
+        <li>Go to the <a href="#tax-deals">Tax Rebate Calculation Tool</a> page.</li>
+        <li>Select your country from the first dropdown.</li>
+        <li>Select the deal from the second dropdown.</li>
+        <li>Enter your country's password.</li>
+      </ol>
+      <p>The same password unlocks every deal your country is a party to — as the country that set it up, or as the other side of it — you don't need to remember a different one per deal. You'll only ever see your own deals' numbers — nothing about any other country's arrangement is shown or linked from this page.</p>
+
+      <h4>What the dashboard shows</h4>
+      <ul>
+        <li><strong>Today's rebate due</strong> — the manual rebate owed based on today's logged scan.</li>
+        <li><strong>This week's rebate due</strong> — accrued since Monday.</li>
+        <li><strong>Previous week's rebate due</strong> — last week's final total, once a new week has started.</li>
+        <li><strong>Gross tax generated</strong> — the total wage tax your factories generated this week, before any rebate.</li>
+        <li><strong>Workers</strong> — how many workers were counted in today's scan.</li>
+        <li><strong>Home-country vs. non-home-country citizens</strong> — the rebate is split by worker citizenship, shown side by side with each rate.</li>
+        <li><strong>Paper transfer tax</strong> — settling a rebate through the game's "Send money to country" mechanic costs paper (50% if allied, 100% if not). This section shows the current paper price, what it'll cost to pay this week's rebate, how much paper is needed, and the net amount after that cost.</li>
+        <li><strong>Settlement report</strong> — a ready-to-send summary with a Copy button. <strong>Please transfer</strong> is the rebate amount <em>after</em> deducting the paper cost your country pays to send it — not the gross rebate figure. Formatted like:
+          <pre class="taxguide-report">Yemen → Ireland Tax Rebate Settlement
+Period: 29 Jun – 5 Jul
+
+Gross tax generated: ₿X
+Manual rebate owed to Ireland: ₿X
+Automatic citizenship tax already handled by game: ₿X
+Yemen retained: ₿X
+Paper transfer cost (Yemen's responsibility): −₿X
+
+Please transfer: ₿X</pre>
+        </li>
+      </ul>
+
+      <h3 class="community-cat">A few things worth knowing</h3>
+      <ul>
+        <li><strong>The game's automatic 30% remittance is separate and already excluded.</strong> The rebate figure here is only the <em>additional</em> manual amount your deal adds on top of what the game already auto-remits to each worker's citizenship country.</li>
+        <li><strong>Passwords here are a convenience gate, not encryption.</strong> This site is fully public/static — the underlying data file for any deal is technically fetchable by URL by anyone who knows it. The password just controls what the page itself shows and links to; it doesn't add real cryptographic protection. Don't reuse a password you use anywhere sensitive.</li>
+        <li><strong>If a day is missing figures</strong>, it usually means the daily scan didn't see data (an API hiccup) — it retries automatically later the same day rather than logging a false zero.</li>
+        <li><strong>Rebate rates can change over time.</strong> If your deal's terms are renegotiated, let us know and we'll update it — historical days keep the rate that was in force when they were logged, so past settlements are never silently recalculated under new terms.</li>
+      </ul>
+
+      <h3 class="community-cat">Questions or issues</h3>
+      <p>Reach out to us directly (not through this page) if your password isn't working, a deal looks wrong, or you want to renegotiate terms.</p>
     </div>
   </section>
 

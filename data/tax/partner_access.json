@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "note": "One password per HOST country. Set here by the tool admin and shared privately with that country's representative, out-of-band. The same password does two jobs: (1) required to propose a new deal on behalf of that country (see .github/workflows/deal-config-submit.yml), proving the submitter actually represents it; (2) required on the #tax-deals dashboard to view any/every deal where that country is the host — no per-deal password. Add a country by adding one entry here — no code changes required. Rotating a country's password immediately changes both what unlocks proposing AND what unlocks viewing for it.",
+  "note": "One password per country (home OR host — any country that's a party to at least one deal needs an entry here to view it). Set here by the tool admin and shared privately with that country's representative, out-of-band. For a host country the password also authorizes proposing a new deal on its behalf (see .github/workflows/deal-config-submit.yml), proving the submitter actually represents it. Viewing a deal on the #tax-deals dashboard accepts EITHER party's password — no per-deal password. Add a country by adding one entry here — no code changes required. Rotating a country's password immediately changes what unlocks both proposing (if it's a host) AND viewing for it.",
   "passwords": {
     "YE": "Cameltoe",
     "IE": "StonksPlease"

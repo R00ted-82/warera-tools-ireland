@@ -30,22 +30,22 @@ Keep it private; don't post it publicly. If you don't have one yet, ask us for o
    - **Your country's password** — the password we gave you (see above).
    - **Home-citizen rebate %** and **Non-home-citizen rebate %** — the two rebate rates your deal agrees to. These can be different (e.g. a higher rebate for the home country's own citizens working in your factories, a lower one for everyone else).
    - **Start date** — the first day the deal applies from. Anything before this date is never logged for the deal.
-4. Click **Submit for review**.
+4. Click **Create deal**.
 
 ## What happens next
 
-Your proposal doesn't go live immediately. It's held for manual review — we check the numbers make sense before it starts logging real figures. Once approved, logging starts automatically from the next daily run, and you don't need to do anything further.
+There's no manual review step — a valid submission goes live immediately, and the first daily snapshot is captured shortly after. Double-check the rebate percentages and start date before creating a deal; whoever holds a country's password can create real, immediately-live terms for it.
 
 If a submission fails, you'll see an error explaining why (wrong password, dates in the wrong format, rebate percentages out of range, etc.) — just fix it and resubmit.
 
 ## Viewing your data
 
 1. Go to the [#tax-deals](https://tools.we-ie.com/#tax-deals) page.
-2. Select the home country of the deal you want to check.
+2. Select your country from the first dropdown.
 3. Select the deal from the second dropdown.
 4. Enter your country's password.
 
-The same password unlocks any deal your country is the host of — you don't need to remember a different one per deal. You'll only ever see your own deals' numbers — nothing about any other country's arrangement is shown or linked from this page.
+The same password unlocks every deal your country is a party to — as the country that set it up, or as the other side of it — you don't need to remember a different one per deal. You'll only ever see your own deals' numbers — nothing about any other country's arrangement is shown or linked from this page.
 
 ### What the dashboard shows
 
@@ -56,7 +56,7 @@ The same password unlocks any deal your country is the host of — you don't nee
 - **Workers** — how many workers were counted in today's scan.
 - **Home-country vs. non-home-country citizens** — the rebate is split by worker citizenship, shown side by side with each rate.
 - **Paper transfer tax** — settling a rebate through the game's "Send money to country" mechanic costs paper (50% if allied, 100% if not). This section shows the current paper price, what it'll cost to pay this week's rebate, how much paper is needed, and the net amount after that cost.
-- **Settlement report** — a ready-to-send summary with a **Copy** button, formatted like:
+- **Settlement report** — a ready-to-send summary with a **Copy** button. **Please transfer** is the rebate amount *after* deducting the paper cost your country pays to send it — not the gross rebate figure. Formatted like:
   ```
   Yemen → Ireland Tax Rebate Settlement
   Period: 29 Jun – 5 Jul
@@ -65,6 +65,7 @@ The same password unlocks any deal your country is the host of — you don't nee
   Manual rebate owed to Ireland: ₿X
   Automatic citizenship tax already handled by game: ₿X
   Yemen retained: ₿X
+  Paper transfer cost (Yemen's responsibility): −₿X
 
   Please transfer: ₿X
   ```

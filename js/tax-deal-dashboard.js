@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════
- *  TAX DEAL DASHBOARD (#tax-deals, link-only, no nav entry)
+ *  TAX DEAL DASHBOARD (#tax-deals, linked from the Partner tools tab)
  *
  *  Generic, config-driven counterpart to #tax-partner. Where #tax-partner
  *  is Ireland-only (one shared data/tax/current_week.json, filtered by a
@@ -7,8 +7,10 @@
  *  data/tax/deal_config.json gets its own daily log at
  *  data/tax/deal_logs/<id>.json (see deal_log.py + tax_engine.py).
  *
- *  Flow: pick the home country -> pick the deal (host country) -> enter
- *  that deal's password -> fetch and render ONLY that deal's log file.
+ *  Flow: pick your country -> pick the deal -> enter your country's
+ *  password -> fetch and render ONLY that deal's log file. Either party to
+ *  a deal can view it this way (e.g. both Ireland's AND Yemen's password
+ *  unlock an Ireland<->Yemen deal), regardless of which one proposed it.
  *  The country/deal list (names only, not their logged data) is public —
  *  the password gate is a UI convenience, not encryption, same documented
  *  model as js/irish-tax-partner.js: this is fully static hosting, so the
@@ -17,8 +19,10 @@
  *
  *  Deal creation ("Propose a deal") posts to a repository_dispatch-backed
  *  Worker route, mirroring js/buddy-finder.js's waitlist-update pattern.
- *  Submissions always land disabled — see .github/workflows/
- *  deal-config-submit.yml — a human must flip them on after review.
+ *  Once the host country's password checks out (see
+ *  .github/workflows/deal-config-submit.yml), the deal is auto-enabled
+ *  and deal-log.yml's push trigger captures its first daily snapshot
+ *  immediately — no manual review step.
  * ═══════════════════════════════════════════════════════════════════ */
 const TaxDealDashboardTool = (() => {
   const money = (v) => (v == null || !isFinite(v)) ? '–' : v.toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -298,10 +302,10 @@ const TaxDealDashboardTool = (() => {
     return { ally, rate, units, price: paper.paperPrice, cost, net };
   }
 
-  const $gate       = document.getElementById('taxdeals-gate');
-  const $gateForm   = document.getElementById('taxdeals-gate-form');
-  const $homeSelect = document.getElementById('taxdeals-home-select');
-  const $dealSelect = document.getElementById('taxdeals-deal-select');
+  const $gate          = document.getElementById('taxdeals-gate');
+  const $gateForm      = document.getElementById('taxdeals-gate-form');
+  const $partnerSelect = document.getElementById('taxdeals-partner-select');
+  const $dealSelect    = document.getElementById('taxdeals-deal-select');
   const $gatePw     = document.getElementById('taxdeals-gate-pw');
   const $gateError  = document.getElementById('taxdeals-gate-error');
   const $gateBtn    = document.getElementById('taxdeals-gate-submit');
@@ -361,41 +365,56 @@ const TaxDealDashboardTool = (() => {
     return dealConfig;
   }
 
-  // One password per HOST country (data/tax/partner_access.json) — the same
-  // password that authorizes proposing a deal for that country also unlocks
-  // viewing every deal where it's the host. No per-deal password anymore.
+  // One password per country (data/tax/partner_access.json), regardless of
+  // whether that country plays home or host on any given deal. A country's
+  // password authorizes proposing a deal where it's the host, AND unlocks
+  // viewing every deal it's a party to (as either home or host) — both
+  // sides of a deal can see it, not just whichever one set it up.
   async function loadPartnerAccess() {
     if (partnerAccess) return partnerAccess;
     partnerAccess = await fetchJson('data/tax/partner_access.json');
     return partnerAccess;
   }
 
-  function countryPasswordFor(hostCode) {
-    return partnerAccess?.passwords?.[hostCode];
+  function countryPasswordFor(code) {
+    return partnerAccess?.passwords?.[code];
   }
 
   function enabledDeals() {
     return (dealConfig?.deals || []).filter(d => d.enabled);
   }
 
-  function populateHomeSelect() {
-    const homes = new Map(); // code -> name
-    for (const d of enabledDeals()) homes.set(d.homeCountry.code, d.homeCountry.name);
-    $homeSelect.innerHTML = `<option value="" disabled selected>Home country…</option>` +
-      [...homes.entries()]
+  // Either side of a deal can view it — Ireland and Yemen both count as
+  // "a country party to this deal", regardless of which one initiated it.
+  // So the first dropdown lists every country that's either the home or
+  // the host on at least one enabled deal.
+  function populatePartnerSelect() {
+    const countries = new Map(); // code -> name
+    for (const d of enabledDeals()) {
+      countries.set(d.homeCountry.code, d.homeCountry.name);
+      countries.set(d.hostCountry.code, d.hostCountry.name);
+    }
+    $partnerSelect.innerHTML = `<option value="" disabled selected>Your country…</option>` +
+      [...countries.entries()]
         .sort((a, b) => a[1].localeCompare(b[1]))
         .map(([code, name]) => `<option value="${escapeHtml(code)}">${flagOf(code)} ${escapeHtml(name)}</option>`)
         .join('');
   }
 
-  function populateDealSelect(homeCode) {
-    const deals = enabledDeals().filter(d => d.homeCountry.code === homeCode);
+  // Deals where the selected country is either party — shows the OTHER
+  // party's flag/name in the option, since that's the useful distinguishing
+  // detail once you've already picked your own country.
+  function populateDealSelect(code) {
+    const deals = enabledDeals().filter(d => d.hostCountry.code === code || d.homeCountry.code === code);
     $dealSelect.disabled = deals.length === 0;
     $dealSelect.innerHTML = `<option value="" disabled selected>Deal…</option>` +
-      deals.map(d => `<option value="${escapeHtml(d.id)}">${flagOf(d.hostCountry.code)} ${escapeHtml(d.name)}</option>`).join('');
+      deals.map(d => {
+        const other = d.hostCountry.code === code ? d.homeCountry : d.hostCountry;
+        return `<option value="${escapeHtml(d.id)}">${flagOf(other.code)} ${escapeHtml(d.name)}</option>`;
+      }).join('');
   }
 
-  $homeSelect.addEventListener('change', () => populateDealSelect($homeSelect.value));
+  $partnerSelect.addEventListener('change', () => populateDealSelect($partnerSelect.value));
 
   /* ── Settlement report text (copy-button target) ─────────────────── */
   function periodLabel(weekStart) {
@@ -406,11 +425,18 @@ const TaxDealDashboardTool = (() => {
     return `${fmt(start)} – ${fmt(end)}`;
   }
 
-  function buildReport(dealLog) {
+  // `pWeek` (see paperFor()) is passed in so the report and the "Paper
+  // transfer tax" panel always agree on the same figure. "Please transfer"
+  // is the NET amount after paper cost — the host country pays for the
+  // paper needed to send the money, and that cost comes off what actually
+  // gets transferred, rather than being an extra cost on top. Falls back to
+  // the gross rebate if paper cost can't be priced (no market data yet).
+  function buildReport(dealLog, pWeek) {
     const totals = dealLog.current_week?.totals || {};
     const home = dealLog.home_country.name;
     const host = dealLog.host_country.name;
-    return [
+    const toTransfer = pWeek?.net ?? totals.manual_rebate_due;
+    const lines = [
       `${host} → ${home} Tax Rebate Settlement`,
       `Period: ${periodLabel(dealLog.current_week.week_start)}`,
       '',
@@ -418,9 +444,12 @@ const TaxDealDashboardTool = (() => {
       `Manual rebate owed to ${home}: ₿${money(totals.manual_rebate_due)}`,
       `Automatic citizenship tax already handled by game: ₿${money(totals.auto_remit_tax)}`,
       `${host} retained: ₿${money(totals.host_retained)}`,
-      '',
-      `Please transfer: ₿${money(totals.manual_rebate_due)}`,
-    ].join('\n');
+    ];
+    if (pWeek?.cost != null) {
+      lines.push(`Paper transfer cost (${host}'s responsibility): −₿${money(pWeek.cost)}`);
+    }
+    lines.push('', `Please transfer: ₿${money(toTransfer)}`);
+    return lines.join('\n');
   }
 
   /* ── Render ───────────────────────────────────────────────────────── */
@@ -429,7 +458,6 @@ const TaxDealDashboardTool = (() => {
     const today = days.length ? days[days.length - 1].row : null;
     const weekTotals = dealLog.current_week?.totals || {};
     const prevTotals = dealLog.previous_week?.totals || null;
-    const report = buildReport(dealLog);
 
     // Paper transfer tax on paying this week's rebate (see PAPER_RATE).
     // host_country.id is only present for "country" coverage deals logged
@@ -437,6 +465,7 @@ const TaxDealDashboardTool = (() => {
     const pWeek = dealLog.host_country.id
       ? paperFor(dealLog.host_country.id, weekTotals.manual_rebate_due, paper)
       : null;
+    const report = buildReport(dealLog, pWeek);
     const paperBlock = pWeek ? `
       <div class="tax-audit-tot">
         <div class="tax-audit-h">📄 Paper transfer tax <span class="tax-ally ${pWeek.ally ? 'yes' : ''}">${pWeek.ally ? 'ally · 50%' : 'non-ally · 100%'}</span></div>
@@ -526,8 +555,11 @@ const TaxDealDashboardTool = (() => {
     const dealId = $dealSelect.value;
     const pw = $gatePw.value;
     const deal = enabledDeals().find(d => d.id === dealId);
-    const expectedPw = deal && countryPasswordFor(deal.hostCountry.code);
-    if (!deal || !pw || !expectedPw || expectedPw !== pw) {
+    // Either party's password unlocks the deal — whichever country you are,
+    // regardless of which one actually proposed it.
+    const matches = deal && pw && [deal.hostCountry.code, deal.homeCountry.code]
+      .some(code => { const expected = countryPasswordFor(code); return expected && expected === pw; });
+    if (!matches) {
       $gateError.textContent = 'Incorrect selection or password.';
       $gatePw.select();
       $gateBtn.disabled = false;
@@ -656,7 +688,7 @@ const TaxDealDashboardTool = (() => {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       $proposeStatus.style.color = 'var(--accent)';
-      $proposeStatus.textContent = 'Submitted — pending manual review before it starts logging.';
+      $proposeStatus.textContent = 'Deal created — the first daily snapshot will be captured shortly.';
       $proposeForm.reset();
       homePicker.reset();
       hostPicker.reset();
@@ -670,7 +702,7 @@ const TaxDealDashboardTool = (() => {
   return {
     async activate() {
       await Promise.all([loadDealConfig(), loadPartnerAccess()]);
-      populateHomeSelect();
+      populatePartnerSelect();
       if (unlockedDeal) { renderUnlockedDeal(); return; } // DOM persists across nav; just refresh.
       $gate.style.display = '';
       $dealSelect.innerHTML = `<option value="" disabled selected>Deal…</option>`;

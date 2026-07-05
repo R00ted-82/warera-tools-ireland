@@ -1,7 +1,7 @@
 {
-  "version": 1,
-  "note": "Pre-shared access codes, one per HOST country, required when proposing a new deal for that country (see .github/workflows/deal-config-submit.yml). This proves the submitter actually represents that country, rather than letting anyone propose deals in someone else's name. Codes are set here by the tool admin and shared privately with that country's representative, out-of-band (the same way the initial deal password itself would be shared). This is a SEPARATE concept from a deal's own `password` field in deal_config.json, which only gates *viewing* that one deal's logged data on the dashboard — a country may reuse the same string for both if they want one thing to remember, but they protect different actions (proposing deals vs. viewing a deal's numbers). Add a country by adding one entry here — no code changes required.",
-  "codes": {
+  "version": 2,
+  "note": "One password per HOST country. Set here by the tool admin and shared privately with that country's representative, out-of-band. The same password does two jobs: (1) required to propose a new deal on behalf of that country (see .github/workflows/deal-config-submit.yml), proving the submitter actually represents it; (2) required on the #tax-deals dashboard to view any/every deal where that country is the host — no per-deal password. Add a country by adding one entry here — no code changes required. Rotating a country's password immediately changes both what unlocks proposing AND what unlocks viewing for it.",
+  "passwords": {
     "YE": "Cameltoe"
   }
 }

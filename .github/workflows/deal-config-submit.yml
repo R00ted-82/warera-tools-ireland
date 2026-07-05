@@ -5,11 +5,13 @@
 # resolves both country codes against the game API, and appends the deal to
 # data/tax/deal_config.json.
 #
-# Access gate: the submitter must supply the HOST country's pre-shared code
-# from data/tax/partner_access.json, proving they actually represent that
-# country rather than proposing terms on someone else's behalf. That file
-# is only ever edited by a human (out-of-band, same way a partner password
-# is shared today) — this workflow only reads it, never writes to it.
+# Access gate: one password per HOST country (data/tax/partner_access.json),
+# set by a human admin and shared privately, out-of-band. That same password
+# does two jobs: proves the submitter represents the host country when
+# proposing a deal (checked here), and later unlocks viewing every deal for
+# that host country on the dashboard (checked client-side in
+# js/tax-deal-dashboard.js). There is no separate per-deal password anymore —
+# this workflow only reads partner_access.json, never writes to it.
 #
 # Safety gate: because this directly determines money owed between real
 # countries, submitted deals are ALWAYS appended with "enabled": false. A
@@ -49,11 +51,10 @@ jobs:
           NAME:                    ${{ github.event.client_payload.name }}
           HOME_COUNTRY_CODE:       ${{ github.event.client_payload.homeCountryCode }}
           HOST_COUNTRY_CODE:       ${{ github.event.client_payload.hostCountryCode }}
-          PARTNER_ACCESS_CODE:     ${{ github.event.client_payload.partnerAccessCode }}
+          COUNTRY_PASSWORD:        ${{ github.event.client_payload.countryPassword }}
           HOME_CITIZEN_REBATE_PCT: ${{ github.event.client_payload.homeCitizenRebatePct }}
           NON_HOME_REBATE_PCT:     ${{ github.event.client_payload.nonHomeCitizenRebatePct }}
           START_DATE:              ${{ github.event.client_payload.startDate }}
-          PASSWORD:                ${{ github.event.client_payload.password }}
         run: |
           set -e
           python3 <<'PY'
@@ -73,12 +74,11 @@ jobs:
               with urllib.request.urlopen(req, timeout=timeout) as r:
                   return json.load(r).get('result', {}).get('data')
 
-          name         = (os.environ.get('NAME') or '').strip()
-          home_code    = (os.environ.get('HOME_COUNTRY_CODE') or '').strip().upper()
-          host_code    = (os.environ.get('HOST_COUNTRY_CODE') or '').strip().upper()
-          access_code  = os.environ.get('PARTNER_ACCESS_CODE') or ''
-          start_date   = (os.environ.get('START_DATE') or '').strip()
-          password     = os.environ.get('PASSWORD') or ''
+          name        = (os.environ.get('NAME') or '').strip()
+          home_code   = (os.environ.get('HOME_COUNTRY_CODE') or '').strip().upper()
+          host_code   = (os.environ.get('HOST_COUNTRY_CODE') or '').strip().upper()
+          country_pw  = os.environ.get('COUNTRY_PASSWORD') or ''
+          start_date  = (os.environ.get('START_DATE') or '').strip()
 
           def fail(msg):
               print(f'::error::{msg}')
@@ -96,25 +96,24 @@ jobs:
               start = date.fromisoformat(start_date)
           except ValueError:
               fail(f'Invalid startDate (want YYYY-MM-DD): {start_date!r}')
-          if not (4 <= len(password) <= 64):
-              fail(f'Password must be 4-64 chars, got {len(password)}')
 
-          # ── Partner access code: proves the submitter represents the HOST
-          # country, not just anyone proposing terms in that country's name.
-          # Codes are pre-shared out-of-band by a human admin — see
-          # data/tax/partner_access.json. No entry for a country means no
-          # one has been authorized to propose deals for it yet.
+          # ── Host country's password: proves the submitter represents the
+          # HOST country, not just anyone proposing terms in that country's
+          # name. Passwords are pre-shared out-of-band by a human admin —
+          # see data/tax/partner_access.json. No entry for a country means
+          # no one has been given a password for it yet. This SAME password
+          # is what later unlocks viewing the deal on the dashboard.
           try:
               with open('data/tax/partner_access.json', 'r', encoding='utf-8') as f:
-                  access_codes = (json.load(f).get('codes') or {})
+                  passwords = (json.load(f).get('passwords') or {})
           except (FileNotFoundError, json.JSONDecodeError):
-              access_codes = {}
-          expected_code = access_codes.get(host_code)
-          if not expected_code:
-              fail(f'No partner access code on file for {host_code!r} — '
+              passwords = {}
+          expected_pw = passwords.get(host_code)
+          if not expected_pw:
+              fail(f'No password on file for {host_code!r} — '
                    'ask the tool admin to register one before proposing this deal')
-          if access_code != expected_code:
-              fail(f'Incorrect partner access code for {host_code!r}')
+          if country_pw != expected_pw:
+              fail(f'Incorrect password for {host_code!r}')
 
           try:
               home_pct = float(os.environ.get('HOME_CITIZEN_REBATE_PCT'))
@@ -143,6 +142,9 @@ jobs:
               fail(f'Unknown hostCountryCode: {host_code!r}')
 
           # ── Build the deal entry ───────────────────────────────────────
+          # No `password` field on the deal itself anymore — viewing is
+          # gated by the host country's shared password in
+          # partner_access.json instead (see js/tax-deal-dashboard.js).
           path = 'data/tax/deal_config.json'
           try:
               with open(path, 'r', encoding='utf-8') as f:
@@ -172,7 +174,6 @@ jobs:
               'homeCitizenRebate': round(home_pct / 100, 4),
               'nonHomeCitizenRebate': round(non_pct / 100, 4),
               'startDate': start_date,
-              'password': password,
               'enabled': False,
               'dealVersion': 1,
               'createdAt': datetime.now(timezone.utc).isoformat(),

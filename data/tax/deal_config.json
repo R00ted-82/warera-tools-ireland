@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "note": "Generic, config-driven tax-rebate deals. Unlike data/tax/deals.json (Ireland-only, keyed by host country code), a deal here fully specifies BOTH sides: a homeCountry (whose citizens' factories are scanned) and a hostCountry/coverage (which of those factories count). Add a deal by adding an entry here — no code changes required. Each deal logs independently once/day via deal_log.py into data/tax/deal_logs/<id>.json. `enabled: false` deals are held for review and never logged.",
+  "note": "Generic, config-driven tax-rebate deals. Unlike data/tax/deals.json (Ireland-only, keyed by host country code), a deal here fully specifies BOTH sides: a homeCountry (whose citizens' factories are scanned) and a hostCountry/coverage (which of those factories count). Add a deal by adding an entry here — no code changes required. Each deal logs independently once/day via deal_log.py into data/tax/deal_logs/<id>.json. `enabled: false` deals are held for review and never logged. There is no per-deal password here — viewing is gated by the host country's shared password in data/tax/partner_access.json instead, so one password unlocks every deal for that country.",
   "deals": [
     {
       "id": "ie-ye-2026",
@@ -11,7 +11,6 @@
       "homeCitizenRebate": 0.25,
       "nonHomeCitizenRebate": 0.375,
       "startDate": "2026-07-04",
-      "password": "Cameltoe",
       "enabled": true,
       "dealVersion": 1,
       "createdAt": "2026-07-06T00:00:00Z"

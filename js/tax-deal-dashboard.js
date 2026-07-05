@@ -312,8 +312,9 @@ const TaxDealDashboardTool = (() => {
   const $proposeStatus  = document.getElementById('taxdeals-propose-status');
   const $proposeSubmit  = document.getElementById('taxdeals-propose-submit');
 
-  let dealConfig = null;   // { version, deals: [...] } — fetched once
-  let unlockedDeal = null; // the deal entry (with password) once unlocked
+  let dealConfig = null;    // { version, deals: [...] } — fetched once
+  let partnerAccess = null; // { version, passwords: { CODE: password } } — fetched once
+  let unlockedDeal = null;  // the deal entry once unlocked
 
   /* ── One-time CSS (selects/number/date inputs inside .bo-gate-form don't
      get the input[type=password] styling, so match it explicitly) ──── */
@@ -358,6 +359,19 @@ const TaxDealDashboardTool = (() => {
     if (dealConfig) return dealConfig;
     dealConfig = await fetchJson('data/tax/deal_config.json');
     return dealConfig;
+  }
+
+  // One password per HOST country (data/tax/partner_access.json) — the same
+  // password that authorizes proposing a deal for that country also unlocks
+  // viewing every deal where it's the host. No per-deal password anymore.
+  async function loadPartnerAccess() {
+    if (partnerAccess) return partnerAccess;
+    partnerAccess = await fetchJson('data/tax/partner_access.json');
+    return partnerAccess;
+  }
+
+  function countryPasswordFor(hostCode) {
+    return partnerAccess?.passwords?.[hostCode];
   }
 
   function enabledDeals() {
@@ -512,7 +526,8 @@ const TaxDealDashboardTool = (() => {
     const dealId = $dealSelect.value;
     const pw = $gatePw.value;
     const deal = enabledDeals().find(d => d.id === dealId);
-    if (!deal || !pw || deal.password !== pw) {
+    const expectedPw = deal && countryPasswordFor(deal.hostCountry.code);
+    if (!deal || !pw || !expectedPw || expectedPw !== pw) {
       $gateError.textContent = 'Incorrect selection or password.';
       $gatePw.select();
       $gateBtn.disabled = false;
@@ -618,15 +633,15 @@ const TaxDealDashboardTool = (() => {
       name: document.getElementById('taxdeals-propose-name').value.trim(),
       homeCountryCode: homePicker.selected.code.toUpperCase(),
       hostCountryCode: hostPicker.selected.code.toUpperCase(),
-      // Proves the submitter actually represents the host country — checked
-      // against data/tax/partner_access.json server-side (deal-config-submit.yml).
-      // Separate from `password` below, which only gates viewing this one
-      // deal's data once it's live.
-      partnerAccessCode: document.getElementById('taxdeals-propose-access-code').value,
+      // The host country's ONE password — proves the submitter actually
+      // represents it (checked against data/tax/partner_access.json
+      // server-side, deal-config-submit.yml). This same password is what
+      // later unlocks viewing every deal for that country on this
+      // dashboard; there's no separate per-deal password anymore.
+      countryPassword: document.getElementById('taxdeals-propose-country-password').value,
       homeCitizenRebatePct: Number(document.getElementById('taxdeals-propose-home-rebate').value),
       nonHomeCitizenRebatePct: Number(document.getElementById('taxdeals-propose-non-rebate').value),
       startDate: document.getElementById('taxdeals-propose-start').value,
-      password: document.getElementById('taxdeals-propose-password').value,
     };
 
     try {
@@ -654,7 +669,7 @@ const TaxDealDashboardTool = (() => {
 
   return {
     async activate() {
-      await loadDealConfig();
+      await Promise.all([loadDealConfig(), loadPartnerAccess()]);
       populateHomeSelect();
       if (unlockedDeal) { renderUnlockedDeal(); return; } // DOM persists across nav; just refresh.
       $gate.style.display = '';

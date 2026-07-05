@@ -14,6 +14,14 @@ on:
     - cron: "12 20 * * *"   # 20:12 UTC — retry
     - cron: "12 22 * * *"   # 22:12 UTC — last attempt before midnight
   workflow_dispatch:
+  # A deal shouldn't sit idle until the next scheduled tick just because it
+  # was newly enabled (or edited) — react immediately to any change to the
+  # deal registry itself. This never self-triggers a loop: this workflow
+  # only ever commits to data/tax/deal_logs/**, never deal_config.json.
+  push:
+    branches: [main]
+    paths:
+      - 'data/tax/deal_config.json'
 
 permissions:
   contents: write

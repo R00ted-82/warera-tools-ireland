@@ -1183,12 +1183,19 @@
       <button id="taxdeals-propose-toggle" type="button" class="tax-back">+ Propose a new deal</button>
       <form id="taxdeals-propose-form" class="bo-gate-form hidden">
         <input id="taxdeals-propose-name" type="text" placeholder="Deal name (e.g. Ireland – Yemen Factory Tax Rebate)" maxlength="80" required />
-        <input id="taxdeals-propose-home" type="text" placeholder="Home country code (e.g. IE)" maxlength="3" required />
-        <input id="taxdeals-propose-host" type="text" placeholder="Host country code (e.g. YE)" maxlength="3" required />
+        <div class="taxdeals-country-field">
+          <input type="text" id="taxdeals-propose-home-search" placeholder="Home country…" autocomplete="off" spellcheck="false" required />
+          <div id="taxdeals-propose-home-dropdown" class="rs-country-dropdown hidden"></div>
+        </div>
+        <div class="taxdeals-country-field">
+          <input type="text" id="taxdeals-propose-host-search" placeholder="Host country…" autocomplete="off" spellcheck="false" required />
+          <div id="taxdeals-propose-host-dropdown" class="rs-country-dropdown hidden"></div>
+        </div>
+        <input id="taxdeals-propose-access-code" type="text" placeholder="Host country's access code (given to you privately)" minlength="1" maxlength="64" required />
         <input id="taxdeals-propose-home-rebate" type="number" min="0" max="100" step="0.1" placeholder="Home-citizen rebate %" required />
         <input id="taxdeals-propose-non-rebate" type="number" min="0" max="100" step="0.1" placeholder="Non-home-citizen rebate %" required />
         <input id="taxdeals-propose-start" type="date" required />
-        <input id="taxdeals-propose-password" type="text" placeholder="Access password/code (4-64 chars)" minlength="4" maxlength="64" required />
+        <input id="taxdeals-propose-password" type="text" placeholder="Viewing password for this deal (4-64 chars)" minlength="4" maxlength="64" required />
         <button id="taxdeals-propose-submit" type="submit" class="btn-primary">Submit for review</button>
         <div id="taxdeals-propose-status" class="bo-gate-error" aria-live="polite"></div>
       </form>

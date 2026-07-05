@@ -141,7 +141,7 @@ def recalc_week_totals(days):
     return totals
 
 
-def upsert_deal_day(deal, today_iso, today, row):
+def upsert_deal_day(deal, today_iso, today, row, host_country_id=None):
     """Load/create the deal's log file, upsert today's row, roll the week if needed."""
     existing = load_deal_log(deal["id"])
     monday_iso = this_weeks_monday(today).isoformat()
@@ -151,7 +151,10 @@ def upsert_deal_day(deal, today_iso, today, row):
             "deal_id":               deal["id"],
             "deal_version":          deal.get("dealVersion", 1),
             "home_country":          deal["homeCountry"],
-            "host_country":          deal["hostCountry"],
+            # host_country.id is included (when resolvable) so the dashboard
+            # can look up the home country's ally list client-side, for the
+            # paper transfer-tax cost — see js/tax-deal-dashboard.js.
+            "host_country":          {**deal["hostCountry"], "id": host_country_id},
             "home_citizen_rebate":   deal["homeCitizenRebate"],
             "non_home_citizen_rebate": deal["nonHomeCitizenRebate"],
             "current_week":          {"week_start": monday_iso, "days": [], "totals": {}},
@@ -164,6 +167,8 @@ def upsert_deal_day(deal, today_iso, today, row):
     existing["deal_version"]            = deal.get("dealVersion", existing.get("deal_version", 1))
     existing["home_citizen_rebate"]      = deal["homeCitizenRebate"]
     existing["non_home_citizen_rebate"]  = deal["nonHomeCitizenRebate"]
+    if host_country_id and not existing.get("host_country", {}).get("id"):
+        existing["host_country"] = {**existing.get("host_country", deal["hostCountry"]), "id": host_country_id}
 
     cur = existing["current_week"]
     if cur.get("week_start") != monday_iso:
@@ -250,7 +255,7 @@ def process_home_country_group(home_country_id, deals, today_iso, today):
         log(f"  {deal['id']}: factories={row['factories']} workers={row['workers']} "
             f"gross={row['gross_tax']:.2f} rebate_due={row['manual_rebate_due']:.2f}")
 
-        updated = upsert_deal_day(deal, today_iso, today, row)
+        updated = upsert_deal_day(deal, today_iso, today, row, host_country_id)
         save_deal_log(deal["id"], updated)
 
 

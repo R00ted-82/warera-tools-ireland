@@ -8,7 +8,8 @@
   },
   "host_country": {
     "code": "YE",
-    "name": "Yemen"
+    "name": "Yemen",
+    "id": "683ddd2c24b5a2e114af160f"
   },
   "home_citizen_rebate": 0.25,
   "non_home_citizen_rebate": 0.375,
@@ -19,33 +20,33 @@
         "date": "2026-07-05",
         "row": {
           "factories": 22,
-          "workers": 28,
+          "workers": 31,
           "home_workers": 11,
-          "partner_workers": 17,
-          "wages": 1242.0,
-          "gross_tax": 49.68,
-          "home_worker_tax": 28.64,
-          "partner_worker_tax": 21.04,
-          "manual_rebate_due": 15.05,
-          "auto_remit_tax": 14.9,
-          "host_retained": 19.73
+          "partner_workers": 20,
+          "wages": 1279.46,
+          "gross_tax": 51.18,
+          "home_worker_tax": 28.33,
+          "partner_worker_tax": 22.84,
+          "manual_rebate_due": 15.65,
+          "auto_remit_tax": 15.35,
+          "host_retained": 20.17
         }
       }
     ],
     "totals": {
       "factories": 22,
-      "workers": 28,
+      "workers": 31,
       "home_workers": 11,
-      "partner_workers": 17,
-      "wages": 1242.0,
-      "gross_tax": 49.68,
-      "home_worker_tax": 28.64,
-      "partner_worker_tax": 21.04,
-      "manual_rebate_due": 15.05,
-      "auto_remit_tax": 14.9,
-      "host_retained": 19.73
+      "partner_workers": 20,
+      "wages": 1279.46,
+      "gross_tax": 51.18,
+      "home_worker_tax": 28.33,
+      "partner_worker_tax": 22.84,
+      "manual_rebate_due": 15.65,
+      "auto_remit_tax": 15.35,
+      "host_retained": 20.17
     }
   },
   "previous_week": null,
-  "updated_at": "2026-07-05T13:29:56.618983+00:00"
+  "updated_at": "2026-07-05T14:11:11.811690+00:00"
 }

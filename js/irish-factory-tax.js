@@ -152,6 +152,7 @@ const IrishFactoryTaxTool = (function () {
   .tax-tbl th { font-size: 11px; }
   .tax-fac-workers { font-size: 12px; line-height: 1.9; }
   .tax-note { font-size: 11px; }
+  .tax-audit { width: calc(100vw - 40px); box-sizing: border-box; }
 }
 `;
   document.head.appendChild(styleEl);

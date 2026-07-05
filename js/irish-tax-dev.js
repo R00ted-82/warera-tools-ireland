@@ -108,7 +108,7 @@ const IrishTaxDevTool = (() => {
 .tax-audit-tot { border-top: 1px solid var(--border); padding-top: 8px; display: flex; flex-direction: column; gap: 2px; }
 .tax-audit-row.big { font-size: 13.5px; }
 .tax-audit-row.big b { color: var(--accent); }
-.tax-audit-note { font-size: 11px; color: var(--muted); line-height: 1.5; }
+.tax-audit-note { font-size: 11px; color: var(--muted); line-height: 1.5; white-space: normal; }
 
 .tax-src { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); margin: 2px 0 10px; line-height: 1.5; }
 .tax-src strong { color: var(--text); }
@@ -144,6 +144,11 @@ const IrishTaxDevTool = (() => {
   .tax-tbl th { font-size: 11px; }
   .tax-fac-workers { font-size: 12px; line-height: 1.9; }
   .tax-note { font-size: 11px; }
+  /* The per-row audit panel sits in a <td colspan> that spans the whole
+     (wide, horizontally-scrollable) table, so it inherits that width and
+     its text never needs to wrap. Cap it to the viewport instead so the
+     "Gross tax .../day · ..." note and other audit text wrap normally. */
+  .tax-audit { width: calc(100vw - 40px); box-sizing: border-box; }
 }
 `;
   document.head.appendChild(styleEl);
@@ -811,10 +816,9 @@ const IrishTaxDevTool = (() => {
     const paperBlock = pToday ? `
       <div class="tax-audit-tot">
         <div class="tax-audit-h">📄 Paper transfer tax <span class="tax-ally ${pToday.ally ? 'yes' : ''}">${pToday.ally ? 'ally · 50%' : 'non-ally · 100%'}</span></div>
-        <div class="tax-audit-row"><span>Paper required (today's rebate)</span><b>${money(pToday.units)} 📄</b></div>
         <div class="tax-audit-row"><span>Paper price</span><b>${pToday.price != null ? '₿' + money(pToday.price) + '/unit' : '—'}</b></div>
-        <div class="tax-audit-row"><span>Paper cost (today)</span><b>${pToday.cost != null ? '−₿' + money(pToday.cost) : '—'}</b></div>
         <div class="tax-audit-row big"><span>Net owed today (after paper)</span><b>${pToday.net != null ? '₿' + money(pToday.net) : '—'}</b></div>
+        <div class="tax-audit-row"><span>Paper cost (this week)</span><b>${pWeek && pWeek.cost != null ? '−₿' + money(pWeek.cost) : '—'}</b></div>
         <div class="tax-audit-row"><span>Net this week (after paper)</span><b>${pWeek && pWeek.net != null ? '₿' + money(pWeek.net) : '—'}</b></div>
       </div>` : '';
 

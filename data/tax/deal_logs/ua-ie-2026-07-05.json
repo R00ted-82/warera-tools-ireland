@@ -14,10 +14,10 @@
   "home_citizen_rebate": 0.3,
   "non_home_citizen_rebate": 0.3,
   "current_week": {
-    "week_start": "2026-06-29",
+    "week_start": "2026-07-06",
     "days": [
       {
-        "date": "2026-07-05",
+        "date": "2026-07-06",
         "row": {
           "factories": 0,
           "workers": 0,
@@ -47,6 +47,21 @@
       "host_retained": 0.0
     }
   },
-  "previous_week": null,
-  "updated_at": "2026-07-05T23:24:25.649643+00:00"
+  "previous_week": {
+    "week_start": "2026-06-29",
+    "totals": {
+      "factories": 0,
+      "workers": 0,
+      "home_workers": 0,
+      "partner_workers": 0,
+      "wages": 0.0,
+      "gross_tax": 0.0,
+      "home_worker_tax": 0.0,
+      "partner_worker_tax": 0.0,
+      "manual_rebate_due": 0.0,
+      "auto_remit_tax": 0.0,
+      "host_retained": 0.0
+    }
+  },
+  "updated_at": "2026-07-06T18:30:15.849936+00:00"
 }

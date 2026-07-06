@@ -1,50 +1,5 @@
 {
   "version": 1,
   "note": "Generic, config-driven tax-rebate deals. Unlike data/tax/deals.json (Ireland-only, keyed by host country code), a deal here fully specifies BOTH sides: a homeCountry (whose citizens' factories are scanned) and a hostCountry/coverage (which of those factories count). Add a deal by adding an entry here — no code changes required. Each deal logs independently once/day via deal_log.py into data/tax/deal_logs/<id>.json. Deals submitted via the dashboard's 'Propose a deal' form (.github/workflows/deal-config-submit.yml) are auto-enabled once the host country's password checks out — there is no manual-review step; `enabled: false` only exists for a deal a human wants to pause/retire without deleting it. There is no per-deal password here — viewing is gated by the host country's shared password in data/tax/partner_access.json instead, so one password unlocks every deal for that country.",
-  "deals": [
-    {
-      "id": "ie-ye-2026",
-      "name": "Ireland – Yemen Factory Tax Rebate",
-      "homeCountry": {
-        "id": "6813b6d446e731854c7ac7fe",
-        "code": "IE",
-        "name": "Ireland"
-      },
-      "hostCountry": {
-        "code": "YE",
-        "name": "Yemen"
-      },
-      "coverage": {
-        "type": "country"
-      },
-      "homeCitizenRebate": 0.25,
-      "nonHomeCitizenRebate": 0.375,
-      "startDate": "2026-07-04",
-      "enabled": true,
-      "dealVersion": 1,
-      "createdAt": "2026-07-06T00:00:00Z"
-    },
-    {
-      "id": "ua-ie-2026-07-05",
-      "name": "Ireland Test",
-      "homeCountry": {
-        "id": "6813b6d546e731854c7ac865",
-        "code": "UA",
-        "name": "Ukraine"
-      },
-      "hostCountry": {
-        "code": "IE",
-        "name": "Ireland"
-      },
-      "coverage": {
-        "type": "country"
-      },
-      "homeCitizenRebate": 0.3,
-      "nonHomeCitizenRebate": 0.3,
-      "startDate": "2026-07-05",
-      "enabled": true,
-      "dealVersion": 1,
-      "createdAt": "2026-07-05T17:16:46.619602+00:00"
-    }
-  ]
+  "deals": []
 }

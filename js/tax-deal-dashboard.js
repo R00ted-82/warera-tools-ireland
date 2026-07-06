@@ -477,6 +477,7 @@ const TaxDealDashboardTool = (() => {
 
     $content.innerHTML = `
       <div class="tax-src">📅 <span>Showing <strong>${escapeHtml(dealLog.host_country.name)}</strong> → <strong>${escapeHtml(dealLog.home_country.name)}</strong> under deal v${dealLog.deal_version}. Nothing about any other deal is shown here.</span></div>
+      <button id="taxdeals-switch" type="button" class="tax-back" style="padding-left:0;">🔒 Switch deal</button>
 
       <div class="tax-cards">
         <div class="tax-card ok">
@@ -522,6 +523,8 @@ const TaxDealDashboardTool = (() => {
         <span id="taxdeals-report-copied" class="tax-dim" style="margin-left:8px;"></span>
       </div>`;
 
+    document.getElementById('taxdeals-switch').addEventListener('click', lockGate);
+
     const $copyBtn = document.getElementById('taxdeals-report-copy');
     const $copied = document.getElementById('taxdeals-report-copied');
     $copyBtn.addEventListener('click', async () => {
@@ -549,6 +552,18 @@ const TaxDealDashboardTool = (() => {
   }
 
   /* ── Gate ─────────────────────────────────────────────────────────── */
+  // Re-shows the gate so a different deal/country can be picked, without
+  // navigating away and back. The deal + country selects keep their last
+  // values (harmless — the password still has to match to unlock again).
+  function lockGate() {
+    unlockedDeal = null;
+    $content.innerHTML = '';
+    $gate.style.display = '';
+    $gatePw.value = '';
+    $gateError.textContent = '';
+    $gatePw.focus();
+  }
+
   async function tryUnlock() {
     $gateBtn.disabled = true;
     $gateError.textContent = '';

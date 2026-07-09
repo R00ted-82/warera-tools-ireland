@@ -45,6 +45,28 @@
       "enabled": true,
       "dealVersion": 1,
       "createdAt": "2026-07-09T14:42:55.376045+00:00"
+    },
+    {
+      "id": "de-ye-2026-07-08-2",
+      "name": "Germany - Yemen, Tax arrangement v2",
+      "homeCountry": {
+        "id": "6813b6d446e731854c7ac79c",
+        "code": "DE",
+        "name": "Germany"
+      },
+      "hostCountry": {
+        "code": "YE",
+        "name": "Yemen"
+      },
+      "coverage": {
+        "type": "country"
+      },
+      "homeCitizenRebate": 0.35,
+      "nonHomeCitizenRebate": 0.35,
+      "startDate": "2026-07-08",
+      "enabled": true,
+      "dealVersion": 1,
+      "createdAt": "2026-07-09T14:46:21.211743+00:00"
     }
   ]
 }

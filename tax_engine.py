@@ -193,26 +193,26 @@ def resolve_factory_locations(factories):
 
 
 def fetch_all_countries():
-    """country.getAllCountries + country.getCountryById per stub -> {id: full_dict}."""
+    """{id: country_dict} from the single country.getAllCountries call.
+
+    country.getAllCountries already returns FULL country objects (taxes, code,
+    allies, name, ...) for all ~180 countries in ~1s. We deliberately do NOT
+    re-fetch each country via country.getCountryById. That was ~180 extra calls
+    at high parallelism that, under proxy load, would fail/retry/time out and
+    then get SILENTLY dropped from the map — and a dropped country is a real
+    correctness bug, not just slowness:
+      * drop the host country (e.g. Yemen) -> resolve_host_country_id() returns
+        None -> the deal is skipped entirely ("could not resolve hostCountry").
+      * drop a factory country -> aggregate() finds no tax rate -> those
+        factories silently contribute zero, corrupting the settlement figure.
+    The only fields consumed off these objects are taxes.income and code, both
+    present on the getAllCountries payload. One call, no drops.
+    """
     all_countries_raw = trpc("country.getAllCountries", {})
     all_countries = (all_countries_raw if isinstance(all_countries_raw, list)
                      else (all_countries_raw or {}).get("items", []))
-    stubs = [c for c in all_countries if isinstance(c, dict) and c.get("_id")]
-
-    def fetch_one(stub):
-        cid = stub.get("_id")
-        try:
-            full = trpc("country.getCountryById", {"countryId": cid})
-            return cid, (full if isinstance(full, dict) else None)
-        except Exception:
-            return cid, None
-
-    country_by_id = {}
-    with ThreadPoolExecutor(max_workers=COUNTRY_WORKERS) as ex:
-        for cid, full in ex.map(fetch_one, stubs):
-            if cid and full:
-                country_by_id[cid] = full
-    return country_by_id
+    return {c["_id"]: c for c in all_countries
+            if isinstance(c, dict) and c.get("_id")}
 
 
 # ── Step 4: wages paid, bucketed per worker ──────────────────────────────────

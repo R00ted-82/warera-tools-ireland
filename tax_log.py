@@ -241,18 +241,6 @@ def fetch_company_country(comp_id, regions_obj):
     return comp_id, (region.get("country") if isinstance(region, dict) else None)
 
 
-def fetch_country_full(country_stub):
-    """country.getCountryById for a stub {_id}.  Returns (_id, full_dict|None)."""
-    cid = country_stub.get("_id") if isinstance(country_stub, dict) else None
-    if not cid:
-        return None, None
-    try:
-        full = trpc("country.getCountryById", {"countryId": cid})
-        return cid, (full if isinstance(full, dict) else None)
-    except Exception:
-        return cid, None
-
-
 def fetch_wages_paid(owner_id, worker_to_comp):
     """
     Scan owner's wage transactions for the last 24h.
@@ -497,16 +485,18 @@ def main():
 
     regions_obj = trpc("region.getRegionsObject", {}) or {}
 
+    # country.getAllCountries already returns FULL country objects (taxes,
+    # code, ...) for all ~180 countries in one ~1s call. We build the map
+    # straight from it — NOT via a country.getCountryById per stub. Those ~180
+    # extra parallel calls would, under proxy load, fail/retry/time out and get
+    # silently dropped, and a dropped country here silently zeroes that
+    # country's factories (no tax rate) — corrupting the settlement, not just
+    # slowing it. The only field read below is taxes.income, present already.
     all_countries_raw = trpc("country.getAllCountries", {})
     all_countries = (all_countries_raw if isinstance(all_countries_raw, list)
                      else (all_countries_raw or {}).get("items", []))
-    country_stubs = [c for c in all_countries if isinstance(c, dict) and c.get("_id")]
-
-    country_by_id = {}
-    with ThreadPoolExecutor(max_workers=COUNTRY_WORKERS) as ex:
-        for cid_k, full in ex.map(fetch_country_full, country_stubs):
-            if cid_k and full:
-                country_by_id[cid_k] = full
+    country_by_id = {c["_id"]: c for c in all_countries
+                     if isinstance(c, dict) and c.get("_id")}
     log(f"  loaded {len(country_by_id)} countries")
 
     with ThreadPoolExecutor(max_workers=COUNTRY_WORKERS) as ex:

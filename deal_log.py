@@ -214,7 +214,7 @@ def process_home_country_group(home_country_id, deals, today_iso, today):
         log("  no citizens returned — skipping this home country (likely API outage)")
         return
 
-    factories, owner_wmap = eng.fetch_factories_and_workers(citizen_ids)
+    factories, _owner_wmap = eng.fetch_factories_and_workers(citizen_ids)
     if not factories:
         log("  no owned factories found — skipping this home country (likely API outage)")
         return
@@ -222,15 +222,16 @@ def process_home_country_group(home_country_id, deals, today_iso, today):
 
     country_by_id = eng.fetch_all_countries()
 
-    owners = list(owner_wmap.keys())
-    worker_wages = eng.fetch_wages_per_worker(owners, owner_wmap)
-    if sum(worker_wages.values()) <= 0:
-        log("  no wage data observed — skipping this home country (likely API outage)")
-        return
-
-    all_worker_ids = sorted({wid for f in factories.values() for wid in f["workers"]})
-    worker_citizenship = eng.resolve_worker_citizenship(all_worker_ids)
-
+    # Resolve every deal's coverage BEFORE the two per-worker call storms
+    # (wages + citizenship). The home country may own factories all over the
+    # world, but these deals only settle factories in their host country — so
+    # we fetch wages/citizenship for just the UNION of covered factories, not
+    # the whole global footprint. Aggregate() only ever reads workers that live
+    # in covered factories, so the numbers written are identical; we just stop
+    # paying for data no deal will use. host ids are cached here and reused in
+    # the aggregation loop below (no second resolve pass).
+    deal_plans = []          # [(deal, host_country_id, covered_factories)]
+    covered_comp_ids = set()
     for deal in deals:
         if already_logged_today(deal["id"], today_iso):
             log(f"  {deal['id']}: {today_iso} already logged — skipping")
@@ -248,6 +249,37 @@ def process_home_country_group(home_country_id, deals, today_iso, today):
                 continue
 
         covered = eng.filter_factories(factories, coverage, host_country_id)
+        deal_plans.append((deal, host_country_id, covered))
+        covered_comp_ids.update(covered.keys())
+
+    if not deal_plans:
+        log("  nothing left to log for this home country")
+        return
+
+    # Restrict wages + citizenship to workers in the covered factories only.
+    covered_worker_ids = sorted(
+        {wid for cid in covered_comp_ids for wid in factories[cid]["workers"]}
+    )
+    covered_owner_wmap = {}
+    for cid in covered_comp_ids:
+        owner_id = factories[cid]["ownerId"]
+        wmap = covered_owner_wmap.setdefault(owner_id, {})
+        for wid in factories[cid]["workers"]:
+            wmap[wid] = cid
+    covered_owners = list(covered_owner_wmap.keys())
+
+    worker_wages = eng.fetch_wages_per_worker(covered_owners, covered_owner_wmap)
+    if sum(worker_wages.values()) <= 0:
+        # Same guard shape as before, now scoped to the covered factories: an
+        # API outage OR a genuine zero-wage day both write nothing and let a
+        # later cron retry, rather than recording a (possibly misleading) zero.
+        log("  no wage data observed for covered factories — skipping "
+            "(outage or a genuine zero-wage day; a later cron retries)")
+        return
+
+    worker_citizenship = eng.resolve_worker_citizenship(covered_worker_ids)
+
+    for deal, host_country_id, covered in deal_plans:
         row = eng.aggregate(
             covered, worker_wages, worker_citizenship, country_by_id,
             home_country_id, deal["homeCitizenRebate"], deal["nonHomeCitizenRebate"],

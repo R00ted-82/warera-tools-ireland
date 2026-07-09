@@ -15,9 +15,12 @@
 #
 # Auto-enable: once the password check + structural/API validation above
 # pass, the deal is appended with "enabled": true and starts logging
-# immediately — deal-log.yml is also wired to fire on any push to
-# data/tax/deal_config.json, so the very next run (right after this commit)
-# captures the deal's first daily snapshot. No human review step. The
+# immediately — after committing, this workflow explicitly dispatches
+# deal-log.yml (see the "Trigger deal logger" step) so the deal's first
+# daily snapshot is captured right away. NOTE: we can't rely on
+# deal-log.yml's own `push` trigger here, because the commit is pushed with
+# the automatic GITHUB_TOKEN and GitHub does not fire push-triggered
+# workflows for GITHUB_TOKEN pushes. No human review step. The
 # password only proves the submitter represents the HOST country; it does
 # NOT prove the home country agreed to these exact rebate terms — that
 # trust is placed entirely in the password holder, by design choice.
@@ -37,6 +40,7 @@ on:
 
 permissions:
   contents: write
+  actions: write   # needed to dispatch deal-log.yml after the commit
 
 concurrency:
   group: deal-config-write
@@ -190,13 +194,27 @@ jobs:
           PY
 
       - name: Commit changes
+        id: commit
         run: |
           git add data/tax/deal_config.json
           if git diff --cached --quiet; then
             echo "No changes to commit"
+            echo "committed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "${COMMIT_MSG:-Add new tax deal}"
           git push
+          echo "committed=true" >> "$GITHUB_OUTPUT"
+
+      # The commit above is pushed with GITHUB_TOKEN, and GitHub deliberately
+      # does NOT fire push-triggered workflows for such pushes — so
+      # deal-log.yml's `push` trigger never runs for a freshly-submitted deal.
+      # workflow_dispatch via the API is the documented exception, so dispatch
+      # the logger explicitly to capture the deal's first snapshot immediately.
+      - name: Trigger deal logger
+        if: steps.commit.outputs.committed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deal-log.yml --ref "${{ github.ref_name }}"

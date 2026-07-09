@@ -1,5 +1,28 @@
 {
   "version": 1,
   "note": "Generic, config-driven tax-rebate deals. Unlike data/tax/deals.json (Ireland-only, keyed by host country code), a deal here fully specifies BOTH sides: a homeCountry (whose citizens' factories are scanned) and a hostCountry/coverage (which of those factories count). Add a deal by adding an entry here — no code changes required. Each deal logs independently once/day via deal_log.py into data/tax/deal_logs/<id>.json. Deals submitted via the dashboard's 'Propose a deal' form (.github/workflows/deal-config-submit.yml) are auto-enabled once the host country's password checks out — there is no manual-review step; `enabled: false` only exists for a deal a human wants to pause/retire without deleting it. There is no per-deal password here — viewing is gated by the host country's shared password in data/tax/partner_access.json instead, so one password unlocks every deal for that country.",
-  "deals": []
+  "deals": [
+    {
+      "id": "de-ye-2026-07-08",
+      "name": "Germany - Yemen, Tax arrangement",
+      "homeCountry": {
+        "id": "6813b6d446e731854c7ac79c",
+        "code": "DE",
+        "name": "Germany"
+      },
+      "hostCountry": {
+        "code": "YE",
+        "name": "Yemen"
+      },
+      "coverage": {
+        "type": "country"
+      },
+      "homeCitizenRebate": 0.5,
+      "nonHomeCitizenRebate": 0.5,
+      "startDate": "2026-07-08",
+      "enabled": true,
+      "dealVersion": 1,
+      "createdAt": "2026-07-09T14:38:32.981072+00:00"
+    }
+  ]
 }

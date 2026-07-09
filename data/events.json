@@ -57595,5 +57595,160 @@
     "cc": "ma",
     "occ": "ma",
     "from": 3
+  },
+  {
+    "at": "2026-07-09T18:11:52.964798+00:00",
+    "type": "went_offline",
+    "rid": "6813b70c9403bc4170a5db4c",
+    "code": "sa-al-quassim",
+    "name": "Al Quassim",
+    "cc": "sa",
+    "occ": "sa",
+    "from": 1
+  },
+  {
+    "at": "2026-07-09T18:11:52.964798+00:00",
+    "type": "resistance_full",
+    "rid": "683ddd3f36dbc90b780475dd",
+    "code": "mg-antsiranana",
+    "name": "Antsiranana",
+    "cc": "km",
+    "occ": "mg",
+    "val": 1025,
+    "max": 1025
+  },
+  {
+    "at": "2026-07-09T18:11:52.964798+00:00",
+    "type": "battle_started",
+    "rid": "6873d11494e6b3b7989a4c11",
+    "code": "ug-eastern-region",
+    "name": "Eastern Uganda",
+    "cc": "ug",
+    "occ": "ug"
+  },
+  {
+    "at": "2026-07-09T18:11:52.964798+00:00",
+    "type": "came_online",
+    "rid": "6813b70b9403bc4170a5da68",
+    "code": "au-northern-territory",
+    "name": "Northern Territory",
+    "cc": "au",
+    "occ": "au",
+    "to": 2
+  },
+  {
+    "at": "2026-07-09T18:11:52.964798+00:00",
+    "type": "level_changed",
+    "rid": "6813b7059403bc4170a5d792",
+    "code": "hr-continental-croatia",
+    "name": "Continental Croatia",
+    "cc": "rs",
+    "occ": "hr",
+    "from": 2,
+    "to": 3
+  },
+  {
+    "at": "2026-07-09T18:11:52.964798+00:00",
+    "type": "went_offline",
+    "rid": "6813b7069403bc4170a5d81c",
+    "code": "mx-baja-california",
+    "name": "Baja California",
+    "cc": "mx",
+    "occ": "mx",
+    "from": 3
+  },
+  {
+    "at": "2026-07-09T18:11:52.964798+00:00",
+    "type": "resistance_full",
+    "rid": "6813b70b9403bc4170a5daa1",
+    "code": "gy-west",
+    "name": "West Guyana",
+    "cc": "ve",
+    "occ": "gy",
+    "val": 486,
+    "max": 486
+  },
+  {
+    "at": "2026-07-09T18:11:52.964798+00:00",
+    "type": "resistance_full",
+    "rid": "683ddd3d36dbc90b7804747c",
+    "code": "et-hawassa",
+    "name": "Sidama",
+    "cc": "dj",
+    "occ": "et",
+    "val": 300,
+    "max": 300
+  },
+  {
+    "at": "2026-07-09T18:11:52.964798+00:00",
+    "type": "went_offline",
+    "rid": "6813b70c9403bc4170a5db49",
+    "code": "sa-ar-riyad",
+    "name": "Ar Riyad",
+    "cc": "sa",
+    "occ": "sa",
+    "from": 3
+  },
+  {
+    "at": "2026-07-09T18:11:52.964798+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b7089403bc4170a5d921",
+    "code": "ar-mendoza",
+    "name": "Mendoza",
+    "cc": "cl",
+    "occ": "ar",
+    "from": "ar",
+    "to": "cl"
+  },
+  {
+    "at": "2026-07-09T18:11:52.964798+00:00",
+    "type": "resistance_full",
+    "rid": "683ddd3f36dbc90b78047556",
+    "code": "so-bakool-and-hiraan",
+    "name": "Bakool and Hiraan",
+    "cc": "dj",
+    "occ": "so",
+    "val": 153,
+    "max": 153
+  },
+  {
+    "at": "2026-07-09T18:11:52.964798+00:00",
+    "type": "ownership_changed",
+    "rid": "696a81f5882256e1db11821e",
+    "code": "ru-arctic-ural-northlands",
+    "name": "Arctic Ural Northlands",
+    "cc": "ir",
+    "occ": "ru",
+    "from": "lt",
+    "to": "ir"
+  },
+  {
+    "at": "2026-07-09T18:11:52.964798+00:00",
+    "type": "battle_ended",
+    "rid": "696a81f5882256e1db11821e",
+    "code": "ru-arctic-ural-northlands",
+    "name": "Arctic Ural Northlands",
+    "cc": "ir",
+    "occ": "ru"
+  },
+  {
+    "at": "2026-07-09T18:11:52.964798+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b70d9403bc4170a5db6a",
+    "code": "kz-turkistan",
+    "name": "Turkistan",
+    "cc": "kz",
+    "occ": "kz",
+    "from": "lt",
+    "to": "kz"
+  },
+  {
+    "at": "2026-07-09T18:11:52.964798+00:00",
+    "type": "battle_ended",
+    "rid": "6813b70d9403bc4170a5db6a",
+    "code": "kz-turkistan",
+    "name": "Turkistan",
+    "cc": "kz",
+    "occ": "kz"
   }
 ]

@@ -23,6 +23,28 @@
       "enabled": true,
       "dealVersion": 1,
       "createdAt": "2026-07-09T14:38:32.981072+00:00"
+    },
+    {
+      "id": "de-ye-0006-07-09",
+      "name": "Test 1",
+      "homeCountry": {
+        "id": "6813b6d446e731854c7ac79c",
+        "code": "DE",
+        "name": "Germany"
+      },
+      "hostCountry": {
+        "code": "YE",
+        "name": "Yemen"
+      },
+      "coverage": {
+        "type": "country"
+      },
+      "homeCitizenRebate": 0.35,
+      "nonHomeCitizenRebate": 0.35,
+      "startDate": "0006-07-09",
+      "enabled": true,
+      "dealVersion": 1,
+      "createdAt": "2026-07-09T14:42:55.376045+00:00"
     }
   ]
 }

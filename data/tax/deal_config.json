@@ -155,6 +155,28 @@
       "enabled": true,
       "dealVersion": 1,
       "createdAt": "2026-07-10T15:09:29.076492+00:00"
+    },
+    {
+      "id": "rs-ye-2026-07-10",
+      "name": "Serbia- Yemen, Tax arrangement",
+      "homeCountry": {
+        "id": "6813b6d446e731854c7ac7ba",
+        "code": "RS",
+        "name": "Serbia"
+      },
+      "hostCountry": {
+        "code": "YE",
+        "name": "Yemen"
+      },
+      "coverage": {
+        "type": "country"
+      },
+      "homeCitizenRebate": 0.35,
+      "nonHomeCitizenRebate": 0.35,
+      "startDate": "2026-07-10",
+      "enabled": true,
+      "dealVersion": 1,
+      "createdAt": "2026-07-10T15:09:53.557724+00:00"
     }
   ]
 }

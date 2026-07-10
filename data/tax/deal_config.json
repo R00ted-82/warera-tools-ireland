@@ -133,6 +133,28 @@
       "enabled": true,
       "dealVersion": 1,
       "createdAt": "2026-07-10T15:09:03.623520+00:00"
+    },
+    {
+      "id": "ua-ye-2026-07-10",
+      "name": "Ukraine- Yemen, Tax arrangement",
+      "homeCountry": {
+        "id": "6813b6d546e731854c7ac865",
+        "code": "UA",
+        "name": "Ukraine"
+      },
+      "hostCountry": {
+        "code": "YE",
+        "name": "Yemen"
+      },
+      "coverage": {
+        "type": "country"
+      },
+      "homeCitizenRebate": 0.35,
+      "nonHomeCitizenRebate": 0.35,
+      "startDate": "2026-07-10",
+      "enabled": true,
+      "dealVersion": 1,
+      "createdAt": "2026-07-10T15:09:29.076492+00:00"
     }
   ]
 }

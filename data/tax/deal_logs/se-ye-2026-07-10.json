@@ -1,0 +1,52 @@
+{
+  "deal_id": "se-ye-2026-07-10",
+  "deal_version": 1,
+  "home_country": {
+    "id": "6813b6d446e731854c7ac7f2",
+    "code": "SE",
+    "name": "Sweden"
+  },
+  "host_country": {
+    "code": "YE",
+    "name": "Yemen",
+    "id": "683ddd2c24b5a2e114af160f"
+  },
+  "home_citizen_rebate": 0.35,
+  "non_home_citizen_rebate": 0.35,
+  "current_week": {
+    "week_start": "2026-07-06",
+    "days": [
+      {
+        "date": "2026-07-10",
+        "row": {
+          "factories": 56,
+          "workers": 91,
+          "home_workers": 59,
+          "partner_workers": 32,
+          "wages": 1607.49,
+          "gross_tax": 80.37,
+          "home_worker_tax": 53.84,
+          "partner_worker_tax": 26.53,
+          "manual_rebate_due": 28.13,
+          "auto_remit_tax": 24.11,
+          "host_retained": 28.13
+        }
+      }
+    ],
+    "totals": {
+      "factories": 56,
+      "workers": 91,
+      "home_workers": 59,
+      "partner_workers": 32,
+      "wages": 1607.49,
+      "gross_tax": 80.37,
+      "home_worker_tax": 53.84,
+      "partner_worker_tax": 26.53,
+      "manual_rebate_due": 28.13,
+      "auto_remit_tax": 24.11,
+      "host_retained": 28.13
+    }
+  },
+  "previous_week": null,
+  "updated_at": "2026-07-10T14:52:51.486969+00:00"
+}

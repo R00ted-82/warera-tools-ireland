@@ -111,6 +111,28 @@
       "enabled": true,
       "dealVersion": 1,
       "createdAt": "2026-07-10T14:42:42.253952+00:00"
+    },
+    {
+      "id": "ro-ye-2026-07-10",
+      "name": "Romania - Yemen, Tax arrangement",
+      "homeCountry": {
+        "id": "6813b6d446e731854c7ac7b6",
+        "code": "RO",
+        "name": "Romania"
+      },
+      "hostCountry": {
+        "code": "YE",
+        "name": "Yemen"
+      },
+      "coverage": {
+        "type": "country"
+      },
+      "homeCitizenRebate": 0.35,
+      "nonHomeCitizenRebate": 0.35,
+      "startDate": "2026-07-10",
+      "enabled": true,
+      "dealVersion": 1,
+      "createdAt": "2026-07-10T15:09:03.623520+00:00"
     }
   ]
 }

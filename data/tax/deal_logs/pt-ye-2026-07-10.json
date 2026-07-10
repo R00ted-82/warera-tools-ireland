@@ -1,0 +1,52 @@
+{
+  "deal_id": "pt-ye-2026-07-10",
+  "deal_version": 1,
+  "home_country": {
+    "id": "6813b6d446e731854c7ac7aa",
+    "code": "PT",
+    "name": "Portugal"
+  },
+  "host_country": {
+    "code": "YE",
+    "name": "Yemen",
+    "id": "683ddd2c24b5a2e114af160f"
+  },
+  "home_citizen_rebate": 0.35,
+  "non_home_citizen_rebate": 0.35,
+  "current_week": {
+    "week_start": "2026-07-06",
+    "days": [
+      {
+        "date": "2026-07-10",
+        "row": {
+          "factories": 36,
+          "workers": 52,
+          "home_workers": 12,
+          "partner_workers": 40,
+          "wages": 911.23,
+          "gross_tax": 45.56,
+          "home_worker_tax": 17.53,
+          "partner_worker_tax": 28.03,
+          "manual_rebate_due": 15.95,
+          "auto_remit_tax": 13.67,
+          "host_retained": 15.95
+        }
+      }
+    ],
+    "totals": {
+      "factories": 36,
+      "workers": 52,
+      "home_workers": 12,
+      "partner_workers": 40,
+      "wages": 911.23,
+      "gross_tax": 45.56,
+      "home_worker_tax": 17.53,
+      "partner_worker_tax": 28.03,
+      "manual_rebate_due": 15.95,
+      "auto_remit_tax": 13.67,
+      "host_retained": 15.95
+    }
+  },
+  "previous_week": null,
+  "updated_at": "2026-07-10T13:41:14.361978+00:00"
+}

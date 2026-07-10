@@ -1,0 +1,52 @@
+{
+  "deal_id": "ua-ye-2026-07-10",
+  "deal_version": 1,
+  "home_country": {
+    "id": "6813b6d546e731854c7ac865",
+    "code": "UA",
+    "name": "Ukraine"
+  },
+  "host_country": {
+    "code": "YE",
+    "name": "Yemen",
+    "id": "683ddd2c24b5a2e114af160f"
+  },
+  "home_citizen_rebate": 0.35,
+  "non_home_citizen_rebate": 0.35,
+  "current_week": {
+    "week_start": "2026-07-06",
+    "days": [
+      {
+        "date": "2026-07-10",
+        "row": {
+          "factories": 25,
+          "workers": 30,
+          "home_workers": 6,
+          "partner_workers": 24,
+          "wages": 740.21,
+          "gross_tax": 37.01,
+          "home_worker_tax": 15.55,
+          "partner_worker_tax": 21.46,
+          "manual_rebate_due": 12.95,
+          "auto_remit_tax": 11.1,
+          "host_retained": 12.95
+        }
+      }
+    ],
+    "totals": {
+      "factories": 25,
+      "workers": 30,
+      "home_workers": 6,
+      "partner_workers": 24,
+      "wages": 740.21,
+      "gross_tax": 37.01,
+      "home_worker_tax": 15.55,
+      "partner_worker_tax": 21.46,
+      "manual_rebate_due": 12.95,
+      "auto_remit_tax": 11.1,
+      "host_retained": 12.95
+    }
+  },
+  "previous_week": null,
+  "updated_at": "2026-07-10T15:25:10.634617+00:00"
+}

@@ -1,0 +1,52 @@
+{
+  "deal_id": "ro-ye-2026-07-10",
+  "deal_version": 1,
+  "home_country": {
+    "id": "6813b6d446e731854c7ac7b6",
+    "code": "RO",
+    "name": "Romania"
+  },
+  "host_country": {
+    "code": "YE",
+    "name": "Yemen",
+    "id": "683ddd2c24b5a2e114af160f"
+  },
+  "home_citizen_rebate": 0.35,
+  "non_home_citizen_rebate": 0.35,
+  "current_week": {
+    "week_start": "2026-07-06",
+    "days": [
+      {
+        "date": "2026-07-10",
+        "row": {
+          "factories": 11,
+          "workers": 11,
+          "home_workers": 3,
+          "partner_workers": 8,
+          "wages": 542.01,
+          "gross_tax": 27.1,
+          "home_worker_tax": 9.09,
+          "partner_worker_tax": 18.01,
+          "manual_rebate_due": 9.49,
+          "auto_remit_tax": 8.13,
+          "host_retained": 9.49
+        }
+      }
+    ],
+    "totals": {
+      "factories": 11,
+      "workers": 11,
+      "home_workers": 3,
+      "partner_workers": 8,
+      "wages": 542.01,
+      "gross_tax": 27.1,
+      "home_worker_tax": 9.09,
+      "partner_worker_tax": 18.01,
+      "manual_rebate_due": 9.49,
+      "auto_remit_tax": 8.13,
+      "host_retained": 9.49
+    }
+  },
+  "previous_week": null,
+  "updated_at": "2026-07-10T15:22:05.342603+00:00"
+}

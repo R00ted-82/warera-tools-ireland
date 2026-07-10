@@ -67,6 +67,28 @@
       "enabled": true,
       "dealVersion": 1,
       "createdAt": "2026-07-09T14:46:21.211743+00:00"
+    },
+    {
+      "id": "pt-ye-2026-07-10",
+      "name": "Portugal - Yemen, Tax arrangement",
+      "homeCountry": {
+        "id": "6813b6d446e731854c7ac7aa",
+        "code": "PT",
+        "name": "Portugal"
+      },
+      "hostCountry": {
+        "code": "YE",
+        "name": "Yemen"
+      },
+      "coverage": {
+        "type": "country"
+      },
+      "homeCitizenRebate": 0.35,
+      "nonHomeCitizenRebate": 0.35,
+      "startDate": "2026-07-10",
+      "enabled": true,
+      "dealVersion": 1,
+      "createdAt": "2026-07-10T13:28:43.345475+00:00"
     }
   ]
 }

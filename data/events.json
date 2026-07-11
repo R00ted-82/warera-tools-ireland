@@ -58282,5 +58282,183 @@
     "cc": "mx",
     "occ": "mx",
     "to": 2
+  },
+  {
+    "at": "2026-07-11T09:49:25.018737+00:00",
+    "type": "went_offline",
+    "rid": "6813b7059403bc4170a5d798",
+    "code": "rs-east",
+    "name": "Eastern Serbia",
+    "cc": "rs",
+    "occ": "rs",
+    "from": 3
+  },
+  {
+    "at": "2026-07-11T09:49:25.018737+00:00",
+    "type": "went_offline",
+    "rid": "683ddd3f36dbc90b780475e3",
+    "code": "na-east",
+    "name": "Eastern Namibia",
+    "cc": "na",
+    "occ": "na",
+    "from": 3
+  },
+  {
+    "at": "2026-07-11T09:49:25.018737+00:00",
+    "type": "came_online",
+    "rid": "6813b7059403bc4170a5d747",
+    "code": "ro-oltenia",
+    "name": "Oltenia",
+    "cc": "ro",
+    "occ": "ro",
+    "to": 1
+  },
+  {
+    "at": "2026-07-11T09:49:25.018737+00:00",
+    "type": "came_online",
+    "rid": "6813b7079403bc4170a5d88e",
+    "code": "jp-chugoku",
+    "name": "Chugoku",
+    "cc": "jp",
+    "occ": "jp",
+    "to": 1
+  },
+  {
+    "at": "2026-07-11T09:49:25.018737+00:00",
+    "type": "battle_started",
+    "rid": "696a81f5882256e1db11821a",
+    "code": "ru-tver-and-smolensk",
+    "name": "Tver & Smolensk",
+    "cc": "lt",
+    "occ": "ru"
+  },
+  {
+    "at": "2026-07-11T09:49:25.018737+00:00",
+    "type": "battle_started",
+    "rid": "6813b7099403bc4170a5d9a5",
+    "code": "co-andes",
+    "name": "Colombian Andes",
+    "cc": "co",
+    "occ": "co"
+  },
+  {
+    "at": "2026-07-11T09:49:25.018737+00:00",
+    "type": "resistance_full",
+    "rid": "6813b7059403bc4170a5d7a1",
+    "code": "tr-aegan-region",
+    "name": "Aegean Region",
+    "cc": "cy",
+    "occ": "tr",
+    "val": 2328,
+    "max": 2328
+  },
+  {
+    "at": "2026-07-11T09:49:25.018737+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b7059403bc4170a5d7bc",
+    "code": "gr-epirus",
+    "name": "Epirus",
+    "cc": "mk",
+    "occ": "gr",
+    "from": "gr",
+    "to": "mk"
+  },
+  {
+    "at": "2026-07-11T09:49:25.018737+00:00",
+    "type": "battle_ended",
+    "rid": "6813b7059403bc4170a5d7bc",
+    "code": "gr-epirus",
+    "name": "Epirus",
+    "cc": "mk",
+    "occ": "gr"
+  },
+  {
+    "at": "2026-07-11T09:49:25.018737+00:00",
+    "type": "battle_started",
+    "rid": "6873d11694e6b3b7989a4ca4",
+    "code": "er-red-sea-region",
+    "name": "Red Sea Region",
+    "cc": "er",
+    "occ": "er"
+  },
+  {
+    "at": "2026-07-11T09:49:25.018737+00:00",
+    "type": "went_offline",
+    "rid": "6873d11694e6b3b7989a4c9e",
+    "code": "dj-djibouti",
+    "name": "Djibouti",
+    "cc": "dj",
+    "occ": "dj",
+    "from": 4
+  },
+  {
+    "at": "2026-07-11T09:49:25.018737+00:00",
+    "type": "resistance_full",
+    "rid": "6813b70b9403bc4170a5da92",
+    "code": "do-center",
+    "name": "Dominican Republic",
+    "cc": "ve",
+    "occ": "do",
+    "val": 1273,
+    "max": 1273
+  },
+  {
+    "at": "2026-07-11T09:49:25.018737+00:00",
+    "type": "battle_started",
+    "rid": "6813b7059403bc4170a5d7c2",
+    "code": "gr-thessaly",
+    "name": "Thessaly",
+    "cc": "gr",
+    "occ": "gr"
+  },
+  {
+    "at": "2026-07-11T09:49:25.018737+00:00",
+    "type": "went_offline",
+    "rid": "683ddd3f36dbc90b780475e0",
+    "code": "na-north",
+    "name": "Northern Namibia",
+    "cc": "na",
+    "occ": "na",
+    "from": 1
+  },
+  {
+    "at": "2026-07-11T09:49:25.018737+00:00",
+    "type": "battle_started",
+    "rid": "6813b7059403bc4170a5d783",
+    "code": "bg-razgrad-varna",
+    "name": "Razgrad & Varna",
+    "cc": "rs",
+    "occ": "bg"
+  },
+  {
+    "at": "2026-07-11T09:49:25.018737+00:00",
+    "type": "came_online",
+    "rid": "6873d11894e6b3b7989a4d38",
+    "code": "zw-west-mashonaland",
+    "name": "Western Mashonaland",
+    "cc": "zw",
+    "occ": "zw",
+    "to": 4
+  },
+  {
+    "at": "2026-07-11T09:49:25.018737+00:00",
+    "type": "level_changed",
+    "rid": "6813b7039403bc4170a5d690",
+    "code": "it-center",
+    "name": "Lazio",
+    "cc": "va",
+    "occ": "it",
+    "from": 2,
+    "to": 1
+  },
+  {
+    "at": "2026-07-11T09:49:25.018737+00:00",
+    "type": "went_offline",
+    "rid": "6813b7039403bc4170a5d69c",
+    "code": "it-sicily",
+    "name": "Sicily",
+    "cc": "rs",
+    "occ": "it",
+    "from": 3
   }
 ]

@@ -584,15 +584,15 @@
       <summary>How this works</summary>
       <div class="howto-body">
         <ul>
-          <li><strong>Production bonus</strong> has up to four components. Strategic resources and regional deposits are flat country/region facts; the two +30% bonuses are gated by the country's <strong>industrialism</strong> lean, a signed integer the game exposes via the warerastats data feed (range −2…+2 in current data, with 0 = neutral). The gating is asymmetric: <em>industrialist-leaning</em> (ind &gt; 0) countries grant the +30 on their specialised item; <em>agrarian-leaning</em> (ind &lt; 0) countries grant the +30 on matching regional deposits; <em>neutral</em> (ind = 0) countries grant neither. Each lean grants exactly one type of +30%, never both.
+          <li><strong>Production bonus</strong> has up to four components. Strategic resources and regional deposits are country/region facts; the other components come from the country's exact <strong>Industrialism</strong> tier in the warerastats data feed. Industrialist (+1) grants +10% and Fanatic Industrialist (+2) grants +30% on an eligible specialised industrial good. Agrarian (−1) grants +10% and Fanatic Agrarian (−2) grants +30% on an eligible matching regional deposit. Neutral (0), missing, and unknown tiers grant neither modifier.
             <ul style="margin-top: 4px;">
-              <li><strong>Strategic resources:</strong> the country's <code>productionPercent</code>, fires when the item matches the country's <code>specializedItem</code>. Independent of industrialism.</li>
-              <li><strong>+30% Industrialism (specialisation):</strong> fires alongside strategic resources only when the country is industrialist-leaning AND specialises in the item.</li>
-              <li><strong>Regional deposit</strong> (the deposit's <code>bonusPercent</code>, typically +30%): fires when the country does NOT specialise in this item AND the region has an active matching deposit.</li>
-              <li><strong>+30% Industrialism (deposit):</strong> fires alongside a regional deposit only when the country is agrarian-leaning.</li>
+              <li><strong>Strategic Resource Bonus:</strong> the country's <code>productionPercent</code>, applied when the item matches the country's <code>specializedItem</code>. Fanatic Agrarian disables specialisation benefits.</li>
+              <li><strong>Industrialist specialisation:</strong> the tier-specific +10% or +30% modifier applies only to eligible specialised industrial goods.</li>
+              <li><strong>Deposit Bonus:</strong> the active matching deposit's own <code>bonusPercent</code>. The existing edge-case suppression is preserved when a country both specialises in the item and has a positive Industrialism tier.</li>
+              <li><strong>Agrarian deposit:</strong> the tier-specific +10% or +30% modifier stacks with the base Deposit Bonus only for coca, grain, livestock, or fish.</li>
             </ul>
           </li>
-          <li><strong>Industrialism is read directly,</strong> not inferred. The signed integer comes from the warerastats companion endpoint. If warerastats is unreachable, the tool degrades gracefully: industrialism defaults to 0 for all countries.</li>
+          <li><strong>Industrialism is read directly,</strong> not inferred. If warerastats is unreachable, the tool degrades gracefully: Industrialism defaults to 0 for all countries.</li>
           <li><strong>Income tax</strong> is deducted from <em>workers'</em> wages, not from the owner's share of production. So whether tax directly affects you depends on whether you actually work in the company.</li>
           <li><strong>You work here</strong> (badge shown on the card): ranking uses your take-home, <code>(1 + bonus%) × (1 − income tax%)</code>.</li>
           <li><strong>No badge:</strong> you own the company but don't work in it. Ranking uses raw output, <code>1 + bonus%</code>.</li>
@@ -1428,12 +1428,12 @@ Please transfer: ₿X</pre>
 <script src="js/shared.js?v=20260617h"></script>
 <script src="js/mu.js?v=20260617h"></script>
 <script src="js/buddy-finder.js?v=20260617h"></script>
-<script src="js/advisor.js?v=20260617h"></script>
+<script src="js/advisor.js?v=20260719a"></script>
 <script src="js/clockin.js?v=20260617h"></script>
 <script src="js/wealth.js?v=20260617h"></script>
-<script src="js/daily-profit.js?v=20260617h"></script>
+<script src="js/daily-profit.js?v=20260719a"></script>
 <script src="js/daily-profit-dev.js?v=20260704a"></script>
-<script src="js/dashboard.js?v=20260623a"></script>
+<script src="js/dashboard.js?v=20260719a"></script>
 <script src="js/irish-tax.js?v=20260703a"></script>
 <script src="js/irish-tax-dev.js?v=20260702a"></script>
 <script src="js/irish-tax-partner.js?v=20260703a"></script>

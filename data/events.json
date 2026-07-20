@@ -1,364 +1,5 @@
 [
   {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "battle_started",
-    "rid": "6813b7059403bc4170a5d7bf",
-    "code": "gr-macedonia",
-    "name": "Macedonia",
-    "cc": "gr",
-    "occ": "gr"
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "went_offline",
-    "rid": "6813b70a9403bc4170a5da0b",
-    "code": "ru-western-siberia",
-    "name": "Western Siberia",
-    "cc": "lt",
-    "occ": "ru",
-    "from": 3
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "went_offline",
-    "rid": "6813b70a9403bc4170a5da29",
-    "code": "ru-karelia",
-    "name": "Karelia",
-    "cc": "lt",
-    "occ": "ru",
-    "from": 3
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "battle_ended",
-    "rid": "6813b70b9403bc4170a5da8f",
-    "code": "bs-center",
-    "name": "Bahamas",
-    "cc": "us",
-    "occ": "bs"
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "came_online",
-    "rid": "6873d11494e6b3b7989a4c0b",
-    "code": "ne-agadez",
-    "name": "Agadez",
-    "cc": "eg",
-    "occ": "ne",
-    "to": 2
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "went_offline",
-    "rid": "6813b70a9403bc4170a5da20",
-    "code": "ru-transural-gate",
-    "name": "Transural Gate",
-    "cc": "lt",
-    "occ": "ru",
-    "from": 4
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "went_offline",
-    "rid": "696a81f5882256e1db118222",
-    "code": "ru-baikal-highlands",
-    "name": "Baikal Highlands",
-    "cc": "lt",
-    "occ": "ru",
-    "from": 3
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "went_offline",
-    "rid": "6813b7079403bc4170a5d85b",
-    "code": "fi-south",
-    "name": "Southern Finland",
-    "cc": "lt",
-    "occ": "fi",
-    "from": 4
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "bunker_activating",
-    "rid": "6813b7079403bc4170a5d85b",
-    "code": "fi-south",
-    "name": "Southern Finland",
-    "cc": "lt",
-    "occ": "fi",
-    "active_at": "2026-06-20T23:59:59.999Z",
-    "level": 4
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "ownership_changed",
-    "rid": "687eab418fc7f0dfa1d2b985",
-    "code": "ad-andorra",
-    "name": "Andorra",
-    "cc": "ad",
-    "occ": "ad",
-    "from": "fr",
-    "to": "ad"
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "resistance_full",
-    "rid": "683ddd3f36dbc90b7804755c",
-    "code": "so-mudug-and-nugaal",
-    "name": "Mudug and Nugaal",
-    "cc": "et",
-    "occ": "so",
-    "val": 151,
-    "max": 151
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "battle_started",
-    "rid": "683ddd3f36dbc90b78047583",
-    "code": "vn-da-nang",
-    "name": "Da Nang",
-    "cc": "ph",
-    "occ": "vn"
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "resistance_full",
-    "rid": "683ddd3d36dbc90b7804748b",
-    "code": "ge-guria-and-ajaria",
-    "name": "Guria and Ajaria",
-    "cc": "tr",
-    "occ": "ge",
-    "val": 181,
-    "max": 181
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "went_offline",
-    "rid": "6813b70d9403bc4170a5db70",
-    "code": "az-genca",
-    "name": "Genca",
-    "cc": "ua",
-    "occ": "az",
-    "from": 1
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "went_offline",
-    "rid": "683ddd3f36dbc90b780475a4",
-    "code": "za-south-cape",
-    "name": "Southern Cape",
-    "cc": "za",
-    "occ": "za",
-    "from": 4
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "level_changed",
-    "rid": "6813b7059403bc4170a5d7b0",
-    "code": "tr-marmara",
-    "name": "Marmara",
-    "cc": "ro",
-    "occ": "tr",
-    "from": 3,
-    "to": 2
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "battle_ended",
-    "rid": "6813b7059403bc4170a5d7b0",
-    "code": "tr-marmara",
-    "name": "Marmara",
-    "cc": "ro",
-    "occ": "tr"
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "went_offline",
-    "rid": "696a81f5882256e1db118226",
-    "code": "ru-outer-manchuria",
-    "name": "Outer Manchuria",
-    "cc": "lt",
-    "occ": "ru",
-    "from": 3
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "came_online",
-    "rid": "6813b70d9403bc4170a5db76",
-    "code": "az-karabax",
-    "name": "Karabakh",
-    "cc": "az",
-    "occ": "az",
-    "to": 1
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "went_offline",
-    "rid": "696a81f5882256e1db11821e",
-    "code": "ru-arctic-ural-northlands",
-    "name": "Arctic Ural Northlands",
-    "cc": "lt",
-    "occ": "ru",
-    "from": 3
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "ownership_changed",
-    "rid": "6813b70b9403bc4170a5da9e",
-    "code": "gy-east",
-    "name": "East Guyana",
-    "cc": "br",
-    "occ": "gy",
-    "from": "gy",
-    "to": "br"
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "battle_ended",
-    "rid": "6813b70b9403bc4170a5da9e",
-    "code": "gy-east",
-    "name": "East Guyana",
-    "cc": "br",
-    "occ": "gy"
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "went_offline",
-    "rid": "6813b70a9403bc4170a5da26",
-    "code": "ru-russian-far-east",
-    "name": "Russian Far East",
-    "cc": "lt",
-    "occ": "ru",
-    "from": 3
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "came_online",
-    "rid": "6873d11494e6b3b7989a4c08",
-    "code": "ne-south-niger",
-    "name": "Zinder and Diffa",
-    "cc": "eg",
-    "occ": "ne",
-    "to": 2
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "battle_started",
-    "rid": "6813b7059403bc4170a5d7a1",
-    "code": "tr-aegan-region",
-    "name": "Aegean Region",
-    "cc": "tr",
-    "occ": "tr"
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "went_offline",
-    "rid": "6813b70a9403bc4170a5da23",
-    "code": "ru-krasnoyarsk-krai",
-    "name": "Krasnoyarsk Krai",
-    "cc": "lt",
-    "occ": "ru",
-    "from": 3
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "went_offline",
-    "rid": "6813b7079403bc4170a5d8c7",
-    "code": "tw-north",
-    "name": "Northern Taiwan",
-    "cc": "ph",
-    "occ": "tw",
-    "from": 1
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "went_offline",
-    "rid": "696a81f5882256e1db118224",
-    "code": "ru-sakha-republic",
-    "name": "Sakha Republic",
-    "cc": "lt",
-    "occ": "ru",
-    "from": 3
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "went_offline",
-    "rid": "696a81f5882256e1db11821a",
-    "code": "ru-tver-and-smolensk",
-    "name": "Tver & Smolensk",
-    "cc": "lt",
-    "occ": "ru",
-    "from": 4
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "came_online",
-    "rid": "6813b70d9403bc4170a5db7f",
-    "code": "az-shirvan",
-    "name": "Shirvan",
-    "cc": "az",
-    "occ": "az",
-    "to": 1
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "went_offline",
-    "rid": "6813b7059403bc4170a5d792",
-    "code": "hr-continental-croatia",
-    "name": "Continental Croatia",
-    "cc": "hr",
-    "occ": "hr",
-    "from": 4
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "battle_started",
-    "rid": "6813b7059403bc4170a5d789",
-    "code": "hr-dalmatia",
-    "name": "Dalmatia",
-    "cc": "hr",
-    "occ": "hr"
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "resistance_full",
-    "rid": "6813b7059403bc4170a5d795",
-    "code": "rs-west",
-    "name": "Western Serbia",
-    "cc": "it",
-    "occ": "rs",
-    "val": 8809,
-    "max": 8802
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "went_offline",
-    "rid": "696a81f5882256e1db118220",
-    "code": "ru-great-vasyugan-mire",
-    "name": "Great Vasyugan Mire",
-    "cc": "lt",
-    "occ": "ru",
-    "from": 3
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "went_offline",
-    "rid": "6813b70a9403bc4170a5da0e",
-    "code": "ru-kaliningrad",
-    "name": "Kaliningrad",
-    "cc": "lt",
-    "occ": "ru",
-    "from": 3
-  },
-  {
-    "at": "2026-06-20T14:31:33.093504+00:00",
-    "type": "battle_ended",
-    "rid": "6813b70d9403bc4170a5dbaf",
-    "code": "qa-qatar",
-    "name": "Qatar",
-    "cc": "iq",
-    "occ": "qa"
-  },
-  {
     "at": "2026-06-20T17:48:38.272497+00:00",
     "type": "battle_started",
     "rid": "683ddd3e36dbc90b780474c4",
@@ -53230,5 +52871,242 @@
     "cc": "cn",
     "occ": "cn",
     "to": 1
+  },
+  {
+    "at": "2026-07-20T14:34:02.715879+00:00",
+    "type": "ownership_changed",
+    "rid": "683ddd3e36dbc90b780474d6",
+    "code": "la-vientiane",
+    "name": "Vientiane",
+    "cc": "la",
+    "occ": "la",
+    "from": "cn",
+    "to": "la"
+  },
+  {
+    "at": "2026-07-20T14:34:02.715879+00:00",
+    "type": "battle_ended",
+    "rid": "683ddd3e36dbc90b780474d6",
+    "code": "la-vientiane",
+    "name": "Vientiane",
+    "cc": "la",
+    "occ": "la"
+  },
+  {
+    "at": "2026-07-20T14:34:02.715879+00:00",
+    "type": "resistance_full",
+    "rid": "6813b7069403bc4170a5d7ec",
+    "code": "us-alaska",
+    "name": "Alaska",
+    "cc": "gt",
+    "occ": "us",
+    "val": 644,
+    "max": 644
+  },
+  {
+    "at": "2026-07-20T14:34:02.715879+00:00",
+    "type": "battle_started",
+    "rid": "6813b70b9403bc4170a5daad",
+    "code": "pr-center",
+    "name": "Puerto Rico",
+    "cc": "es",
+    "occ": "pr"
+  },
+  {
+    "at": "2026-07-20T14:34:02.715879+00:00",
+    "type": "battle_started",
+    "rid": "6813b70b9403bc4170a5da8c",
+    "code": "fj-fiji",
+    "name": "Fiji",
+    "cc": "fj",
+    "occ": "fj"
+  },
+  {
+    "at": "2026-07-20T14:34:02.715879+00:00",
+    "type": "came_online",
+    "rid": "683ddd3f36dbc90b78047586",
+    "code": "vn-dien-bien-phu",
+    "name": "Dien Bien Phu",
+    "cc": "vn",
+    "occ": "vn",
+    "to": 1
+  },
+  {
+    "at": "2026-07-20T14:34:02.715879+00:00",
+    "type": "went_offline",
+    "rid": "6813b70c9403bc4170a5dafe",
+    "code": "tm-da\u015foguz-region",
+    "name": "Da\u015foguz Region",
+    "cc": "tm",
+    "occ": "tm",
+    "from": 1
+  },
+  {
+    "at": "2026-07-20T14:34:02.715879+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b70b9403bc4170a5dabc",
+    "code": "ir-khorasan",
+    "name": "Khorasan",
+    "cc": "ye",
+    "occ": "ir",
+    "from": "ir",
+    "to": "ye"
+  },
+  {
+    "at": "2026-07-20T14:34:02.715879+00:00",
+    "type": "went_offline",
+    "rid": "6813b70b9403bc4170a5dabc",
+    "code": "ir-khorasan",
+    "name": "Khorasan",
+    "cc": "ye",
+    "occ": "ir",
+    "from": 1
+  },
+  {
+    "at": "2026-07-20T14:34:02.715879+00:00",
+    "type": "battle_started",
+    "rid": "683ddd3e36dbc90b780474d9",
+    "code": "la-xekong",
+    "name": "Sekong",
+    "cc": "vn",
+    "occ": "la"
+  },
+  {
+    "at": "2026-07-20T14:34:02.715879+00:00",
+    "type": "level_changed",
+    "rid": "6813b70d9403bc4170a5dba3",
+    "code": "pk-punjab",
+    "name": "Punjab",
+    "cc": "in",
+    "occ": "pk",
+    "from": 4,
+    "to": 3
+  },
+  {
+    "at": "2026-07-20T14:34:02.715879+00:00",
+    "type": "battle_started",
+    "rid": "6813b7079403bc4170a5d8ca",
+    "code": "tw-east",
+    "name": "Eastern Taiwan",
+    "cc": "ph",
+    "occ": "tw"
+  },
+  {
+    "at": "2026-07-20T14:34:02.715879+00:00",
+    "type": "battle_started",
+    "rid": "6813b7059403bc4170a5d7bf",
+    "code": "gr-macedonia",
+    "name": "Macedonia",
+    "cc": "mk",
+    "occ": "gr"
+  },
+  {
+    "at": "2026-07-20T14:34:02.715879+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b70b9403bc4170a5da62",
+    "code": "by-mogilev",
+    "name": "Mogilev",
+    "cc": "lt",
+    "occ": "by",
+    "from": "pl",
+    "to": "lt"
+  },
+  {
+    "at": "2026-07-20T14:34:02.715879+00:00",
+    "type": "went_offline",
+    "rid": "6813b70b9403bc4170a5da62",
+    "code": "by-mogilev",
+    "name": "Mogilev",
+    "cc": "lt",
+    "occ": "by",
+    "from": 2
+  },
+  {
+    "at": "2026-07-20T14:34:02.715879+00:00",
+    "type": "went_offline",
+    "rid": "6813b70b9403bc4170a5dac5",
+    "code": "ir-balochistan",
+    "name": "Iranian Balochistan",
+    "cc": "ir",
+    "occ": "ir",
+    "from": 2
+  },
+  {
+    "at": "2026-07-20T14:34:02.715879+00:00",
+    "type": "came_online",
+    "rid": "683ddd3f36dbc90b78047589",
+    "code": "vn-dong-hoi",
+    "name": "Dong Hoi",
+    "cc": "vn",
+    "occ": "vn",
+    "to": 1
+  },
+  {
+    "at": "2026-07-20T14:34:02.715879+00:00",
+    "type": "ownership_changed",
+    "rid": "6873d11494e6b3b7989a4bfc",
+    "code": "sn-north-senegal",
+    "name": "Northern Senegal",
+    "cc": "gw",
+    "occ": "sn",
+    "from": "mr",
+    "to": "gw"
+  },
+  {
+    "at": "2026-07-20T14:34:02.715879+00:00",
+    "type": "battle_ended",
+    "rid": "6873d11494e6b3b7989a4bfc",
+    "code": "sn-north-senegal",
+    "name": "Northern Senegal",
+    "cc": "gw",
+    "occ": "sn"
+  },
+  {
+    "at": "2026-07-20T14:34:02.715879+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b7089403bc4170a5d8d0",
+    "code": "tw-center",
+    "name": "Central Taiwan",
+    "cc": "tw",
+    "occ": "tw",
+    "from": "cn",
+    "to": "tw"
+  },
+  {
+    "at": "2026-07-20T14:34:02.715879+00:00",
+    "type": "battle_ended",
+    "rid": "6813b7089403bc4170a5d8d0",
+    "code": "tw-center",
+    "name": "Central Taiwan",
+    "cc": "tw",
+    "occ": "tw"
+  },
+  {
+    "at": "2026-07-20T14:34:02.715879+00:00",
+    "type": "came_online",
+    "rid": "6873d11494e6b3b7989a4bed",
+    "code": "mr-south-east-region",
+    "name": "Southeastern Mauritania",
+    "cc": "mr",
+    "occ": "mr",
+    "to": 3
+  },
+  {
+    "at": "2026-07-20T14:34:02.715879+00:00",
+    "type": "battle_started",
+    "rid": "6813b70a9403bc4170a5da1d",
+    "code": "ru-saratov-and-orenburg",
+    "name": "Saratov & Orenburg",
+    "cc": "ir",
+    "occ": "ru"
+  },
+  {
+    "at": "2026-07-20T14:34:02.715879+00:00",
+    "type": "battle_started",
+    "rid": "6813b70d9403bc4170a5db9d",
+    "code": "pk-balochistan",
+    "name": "Pakistani Balochistan",
+    "cc": "in",
+    "occ": "pk"
   }
 ]

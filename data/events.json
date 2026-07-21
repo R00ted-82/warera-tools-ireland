@@ -53159,5 +53159,238 @@
     "cc": "iq",
     "occ": "iq",
     "to": 2
+  },
+  {
+    "at": "2026-07-21T10:34:08.203199+00:00",
+    "type": "battle_started",
+    "rid": "6813b7079403bc4170a5d8b5",
+    "code": "cn-yunnan-guizhou",
+    "name": "Yunnan Guizhou",
+    "cc": "cn",
+    "occ": "cn"
+  },
+  {
+    "at": "2026-07-21T10:34:08.203199+00:00",
+    "type": "ownership_changed",
+    "rid": "683ddd3d36dbc90b7804746d",
+    "code": "bd-dhaka",
+    "name": "Dhaka",
+    "cc": "in",
+    "occ": "bd",
+    "from": "bd",
+    "to": "in"
+  },
+  {
+    "at": "2026-07-21T10:34:08.203199+00:00",
+    "type": "battle_ended",
+    "rid": "683ddd3d36dbc90b7804746d",
+    "code": "bd-dhaka",
+    "name": "Dhaka",
+    "cc": "in",
+    "occ": "bd"
+  },
+  {
+    "at": "2026-07-21T10:34:08.203199+00:00",
+    "type": "came_online",
+    "rid": "683ddd3e36dbc90b78047546",
+    "code": "om-muscat",
+    "name": "Muscat",
+    "cc": "om",
+    "occ": "om",
+    "to": 1
+  },
+  {
+    "at": "2026-07-21T10:34:08.203199+00:00",
+    "type": "battle_ended",
+    "rid": "6813b7059403bc4170a5d7aa",
+    "code": "tr-southeastern-anatolia",
+    "name": "Southeastern Anatolia",
+    "cc": "ua",
+    "occ": "tr"
+  },
+  {
+    "at": "2026-07-21T10:34:08.203199+00:00",
+    "type": "went_offline",
+    "rid": "683ddd3f36dbc90b780475b3",
+    "code": "za-north-cape",
+    "name": "Northern Cape",
+    "cc": "na",
+    "occ": "za",
+    "from": 2
+  },
+  {
+    "at": "2026-07-21T10:34:08.203199+00:00",
+    "type": "battle_started",
+    "rid": "683ddd3d36dbc90b78047497",
+    "code": "il-south",
+    "name": "Southern District",
+    "cc": "eg",
+    "occ": "il"
+  },
+  {
+    "at": "2026-07-21T10:34:08.203199+00:00",
+    "type": "battle_started",
+    "rid": "6813b70a9403bc4170a5da23",
+    "code": "ru-krasnoyarsk-krai",
+    "name": "Krasnoyarsk Krai",
+    "cc": "ru",
+    "occ": "ru"
+  },
+  {
+    "at": "2026-07-21T10:34:08.203199+00:00",
+    "type": "came_online",
+    "rid": "683ddd3f36dbc90b780475a4",
+    "code": "za-south-cape",
+    "name": "Southern Cape",
+    "cc": "na",
+    "occ": "za",
+    "to": 2
+  },
+  {
+    "at": "2026-07-21T10:34:08.203199+00:00",
+    "type": "came_online",
+    "rid": "6873d11694e6b3b7989a4c74",
+    "code": "bw-east",
+    "name": "Eastern Botswana",
+    "cc": "na",
+    "occ": "bw",
+    "to": 3
+  },
+  {
+    "at": "2026-07-21T10:34:08.203199+00:00",
+    "type": "came_online",
+    "rid": "6813b7059403bc4170a5d7b0",
+    "code": "tr-marmara",
+    "name": "Marmara",
+    "cc": "cy",
+    "occ": "tr",
+    "to": 1
+  },
+  {
+    "at": "2026-07-21T10:34:08.203199+00:00",
+    "type": "came_online",
+    "rid": "696a81f5882256e1db11821a",
+    "code": "ru-tver-and-smolensk",
+    "name": "Tver & Smolensk",
+    "cc": "lv",
+    "occ": "ru",
+    "to": 4
+  },
+  {
+    "at": "2026-07-21T10:34:08.203199+00:00",
+    "type": "battle_started",
+    "rid": "6813b7069403bc4170a5d7c8",
+    "code": "dk-jutland",
+    "name": "Jutland",
+    "cc": "dk",
+    "occ": "dk"
+  },
+  {
+    "at": "2026-07-21T10:34:08.203199+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b7059403bc4170a5d7ad",
+    "code": "tr-eastern-anatolia",
+    "name": "Eastern Anatolia",
+    "cc": "tr",
+    "occ": "tr",
+    "from": "ua",
+    "to": "tr"
+  },
+  {
+    "at": "2026-07-21T10:34:08.203199+00:00",
+    "type": "battle_ended",
+    "rid": "6813b7059403bc4170a5d7ad",
+    "code": "tr-eastern-anatolia",
+    "name": "Eastern Anatolia",
+    "cc": "tr",
+    "occ": "tr"
+  },
+  {
+    "at": "2026-07-21T10:34:08.203199+00:00",
+    "type": "battle_ended",
+    "rid": "683ddd3d36dbc90b78047466",
+    "code": "ao-south-west",
+    "name": "Southwestern Angola",
+    "cc": "cd",
+    "occ": "ao"
+  },
+  {
+    "at": "2026-07-21T10:34:08.203199+00:00",
+    "type": "battle_started",
+    "rid": "6873d11594e6b3b7989a4c6e",
+    "code": "bj-north-benin",
+    "name": "Northern Benin",
+    "cc": "bf",
+    "occ": "bj"
+  },
+  {
+    "at": "2026-07-21T10:34:08.203199+00:00",
+    "type": "came_online",
+    "rid": "6813b7069403bc4170a5d801",
+    "code": "us-south-east",
+    "name": "Southeastern USA",
+    "cc": "bs",
+    "occ": "us",
+    "to": 3
+  },
+  {
+    "at": "2026-07-21T10:34:08.203199+00:00",
+    "type": "resistance_full",
+    "rid": "6813b7069403bc4170a5d7f8",
+    "code": "us-pacific-coast",
+    "name": "American Pacific Coast",
+    "cc": "gt",
+    "occ": "us",
+    "val": 643,
+    "max": 643
+  },
+  {
+    "at": "2026-07-21T10:34:08.203199+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b7059403bc4170a5d7b3",
+    "code": "tr-central-anatolia",
+    "name": "Central Anatolia",
+    "cc": "ua",
+    "occ": "tr",
+    "from": "ro",
+    "to": "ua"
+  },
+  {
+    "at": "2026-07-21T10:34:08.203199+00:00",
+    "type": "went_offline",
+    "rid": "6813b7079403bc4170a5d873",
+    "code": "mk-north",
+    "name": "Northern Macedonia",
+    "cc": "mk",
+    "occ": "mk",
+    "from": 4
+  },
+  {
+    "at": "2026-07-21T10:34:08.203199+00:00",
+    "type": "came_online",
+    "rid": "6813b7079403bc4170a5d8b2",
+    "code": "cn-south",
+    "name": "Southern China",
+    "cc": "cn",
+    "occ": "cn",
+    "to": 1
+  },
+  {
+    "at": "2026-07-21T10:34:08.203199+00:00",
+    "type": "battle_ended",
+    "rid": "6813b7059403bc4170a5d7bf",
+    "code": "gr-macedonia",
+    "name": "Macedonia",
+    "cc": "mk",
+    "occ": "gr"
+  },
+  {
+    "at": "2026-07-21T10:34:08.203199+00:00",
+    "type": "battle_started",
+    "rid": "6813b70a9403bc4170a5da17",
+    "code": "ru-moscow",
+    "name": "Moscow",
+    "cc": "gt",
+    "occ": "ru"
   }
 ]

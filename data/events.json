@@ -1,160 +1,5 @@
 [
   {
-    "at": "2026-06-21T14:33:30.125622+00:00",
-    "type": "ownership_changed",
-    "rid": "6813b7089403bc4170a5d933",
-    "code": "cl-santiago",
-    "name": "Santiago",
-    "cc": "ar",
-    "occ": "cl",
-    "from": "cl",
-    "to": "ar"
-  },
-  {
-    "at": "2026-06-21T14:33:30.125622+00:00",
-    "type": "battle_ended",
-    "rid": "6813b7089403bc4170a5d933",
-    "code": "cl-santiago",
-    "name": "Santiago",
-    "cc": "ar",
-    "occ": "cl"
-  },
-  {
-    "at": "2026-06-21T14:33:30.125622+00:00",
-    "type": "came_online",
-    "rid": "6813b7049403bc4170a5d72f",
-    "code": "hu-pest",
-    "name": "Pest",
-    "cc": "ua",
-    "occ": "hu",
-    "to": 1
-  },
-  {
-    "at": "2026-06-21T14:33:30.125622+00:00",
-    "type": "battle_ended",
-    "rid": "6873d11794e6b3b7989a4cd7",
-    "code": "mw-center",
-    "name": "Central Malawi",
-    "cc": "tz",
-    "occ": "mw"
-  },
-  {
-    "at": "2026-06-21T14:33:30.125622+00:00",
-    "type": "battle_started",
-    "rid": "6813b70c9403bc4170a5dae9",
-    "code": "sv-west",
-    "name": "Western El Salvador",
-    "cc": "gt",
-    "occ": "sv"
-  },
-  {
-    "at": "2026-06-21T14:33:30.125622+00:00",
-    "type": "battle_ended",
-    "rid": "6813b70b9403bc4170a5dace",
-    "code": "ir-kurdistan",
-    "name": "Iranian Kurdistan",
-    "cc": "iq",
-    "occ": "ir"
-  },
-  {
-    "at": "2026-06-21T14:33:30.125622+00:00",
-    "type": "battle_started",
-    "rid": "683ddd3e36dbc90b780474d3",
-    "code": "la-luang-namtha",
-    "name": "Luang Namtha",
-    "cc": "ph",
-    "occ": "la"
-  },
-  {
-    "at": "2026-06-21T14:33:30.125622+00:00",
-    "type": "came_online",
-    "rid": "6813b7079403bc4170a5d867",
-    "code": "fi-north",
-    "name": "Northern Finland",
-    "cc": "nl",
-    "occ": "fi",
-    "to": 1
-  },
-  {
-    "at": "2026-06-21T14:33:30.125622+00:00",
-    "type": "battle_started",
-    "rid": "683ddd3f36dbc90b78047589",
-    "code": "vn-dong-hoi",
-    "name": "Dong Hoi",
-    "cc": "vn",
-    "occ": "vn"
-  },
-  {
-    "at": "2026-06-21T14:33:30.125622+00:00",
-    "type": "came_online",
-    "rid": "6813b7069403bc4170a5d7ce",
-    "code": "se-gotland",
-    "name": "Gotland",
-    "cc": "nl",
-    "occ": "se",
-    "to": 1
-  },
-  {
-    "at": "2026-06-21T14:33:30.125622+00:00",
-    "type": "came_online",
-    "rid": "6813b7069403bc4170a5d7da",
-    "code": "se-jamtland",
-    "name": "J\u00e4mtland",
-    "cc": "nl",
-    "occ": "se",
-    "to": 2
-  },
-  {
-    "at": "2026-06-21T14:33:30.125622+00:00",
-    "type": "battle_started",
-    "rid": "6813b7079403bc4170a5d8c7",
-    "code": "tw-north",
-    "name": "Northern Taiwan",
-    "cc": "ph",
-    "occ": "tw"
-  },
-  {
-    "at": "2026-06-21T14:33:30.125622+00:00",
-    "type": "came_online",
-    "rid": "6813b70a9403bc4170a5da1a",
-    "code": "ru-vologda-and-kostroma",
-    "name": "Vologda & Kostroma",
-    "cc": "lv",
-    "occ": "ru",
-    "to": 4
-  },
-  {
-    "at": "2026-06-21T14:33:30.125622+00:00",
-    "type": "resistance_full",
-    "rid": "683ddd3e36dbc90b780474d6",
-    "code": "la-vientiane",
-    "name": "Vientiane",
-    "cc": "vn",
-    "occ": "la",
-    "val": 325,
-    "max": 325
-  },
-  {
-    "at": "2026-06-21T14:33:30.125622+00:00",
-    "type": "bunker_activating",
-    "rid": "6813b7049403bc4170a5d6f6",
-    "code": "es-galicia",
-    "name": "Galicia",
-    "cc": "es",
-    "occ": "es",
-    "active_at": "2026-06-22T02:59:59.999Z",
-    "level": 1
-  },
-  {
-    "at": "2026-06-21T14:33:30.125622+00:00",
-    "type": "battle_ended",
-    "rid": "6813b7059403bc4170a5d78f",
-    "code": "hr-slavonia",
-    "name": "Slavonia",
-    "cc": "hr",
-    "occ": "hr"
-  },
-  {
     "at": "2026-06-21T17:52:41.382589+00:00",
     "type": "ownership_changed",
     "rid": "6813b7059403bc4170a5d756",
@@ -53182,5 +53027,180 @@
     "name": "Romagna & Tuscany",
     "cc": "rs",
     "occ": "it"
+  },
+  {
+    "at": "2026-07-21T17:46:59.976546+00:00",
+    "type": "battle_started",
+    "rid": "6813b70a9403bc4170a5da14",
+    "code": "ru-central-chernozem-region",
+    "name": "Central Chernozem Region",
+    "cc": "ir",
+    "occ": "ru"
+  },
+  {
+    "at": "2026-07-21T17:46:59.976546+00:00",
+    "type": "resistance_full",
+    "rid": "683ddd3e36dbc90b7804753a",
+    "code": "ng-sokoto-and-niger",
+    "name": "Sokoto and Niger",
+    "cc": "bf",
+    "occ": "ng",
+    "val": 763,
+    "max": 763
+  },
+  {
+    "at": "2026-07-21T17:46:59.976546+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b7059403bc4170a5d792",
+    "code": "hr-continental-croatia",
+    "name": "Continental Croatia",
+    "cc": "rs",
+    "occ": "hr",
+    "from": "ba",
+    "to": "rs"
+  },
+  {
+    "at": "2026-07-21T17:46:59.976546+00:00",
+    "type": "went_offline",
+    "rid": "6813b7039403bc4170a5d683",
+    "code": "be-flanders",
+    "name": "Flanders",
+    "cc": "be",
+    "occ": "be",
+    "from": 4
+  },
+  {
+    "at": "2026-07-21T17:46:59.976546+00:00",
+    "type": "went_offline",
+    "rid": "6813b7039403bc4170a5d67f",
+    "code": "be-wallonia",
+    "name": "Wallonia",
+    "cc": "be",
+    "occ": "be",
+    "from": 4
+  },
+  {
+    "at": "2026-07-21T17:46:59.976546+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b7079403bc4170a5d8c7",
+    "code": "tw-north",
+    "name": "Northern Taiwan",
+    "cc": "tw",
+    "occ": "tw",
+    "from": "cn",
+    "to": "tw"
+  },
+  {
+    "at": "2026-07-21T17:46:59.976546+00:00",
+    "type": "battle_ended",
+    "rid": "6813b7079403bc4170a5d8c7",
+    "code": "tw-north",
+    "name": "Northern Taiwan",
+    "cc": "tw",
+    "occ": "tw"
+  },
+  {
+    "at": "2026-07-21T17:46:59.976546+00:00",
+    "type": "battle_started",
+    "rid": "6813b7069403bc4170a5d834",
+    "code": "no-sorlandet",
+    "name": "Sorlandet",
+    "cc": "no",
+    "occ": "no"
+  },
+  {
+    "at": "2026-07-21T17:46:59.976546+00:00",
+    "type": "went_offline",
+    "rid": "6813b7049403bc4170a5d726",
+    "code": "hu-great-plains",
+    "name": "Great Plains",
+    "cc": "rs",
+    "occ": "hu",
+    "from": 4
+  },
+  {
+    "at": "2026-07-21T17:46:59.976546+00:00",
+    "type": "battle_ended",
+    "rid": "6813b7049403bc4170a5d726",
+    "code": "hu-great-plains",
+    "name": "Great Plains",
+    "cc": "rs",
+    "occ": "hu"
+  },
+  {
+    "at": "2026-07-21T17:46:59.976546+00:00",
+    "type": "battle_started",
+    "rid": "6813b7039403bc4170a5d6b1",
+    "code": "uk-london",
+    "name": "Southeastern England",
+    "cc": "uk",
+    "occ": "uk"
+  },
+  {
+    "at": "2026-07-21T17:46:59.976546+00:00",
+    "type": "battle_started",
+    "rid": "6813b7049403bc4170a5d6c0",
+    "code": "fr-north",
+    "name": "Northern France",
+    "cc": "fr",
+    "occ": "fr"
+  },
+  {
+    "at": "2026-07-21T17:46:59.976546+00:00",
+    "type": "came_online",
+    "rid": "69614d2720e5425d54d00c56",
+    "code": "va-vatican",
+    "name": "Vatican City",
+    "cc": "va",
+    "occ": "va",
+    "to": 4
+  },
+  {
+    "at": "2026-07-21T17:46:59.976546+00:00",
+    "type": "battle_started",
+    "rid": "6813b7049403bc4170a5d6db",
+    "code": "de-rhine",
+    "name": "Rhine",
+    "cc": "de",
+    "occ": "de"
+  },
+  {
+    "at": "2026-07-21T17:46:59.976546+00:00",
+    "type": "battle_started",
+    "rid": "6813b7049403bc4170a5d6d8",
+    "code": "de-lower-saxony",
+    "name": "Lower Saxony",
+    "cc": "de",
+    "occ": "de"
+  },
+  {
+    "at": "2026-07-21T17:46:59.976546+00:00",
+    "type": "bunker_activating",
+    "rid": "6813b7049403bc4170a5d714",
+    "code": "pl-silesia",
+    "name": "Silesia",
+    "cc": "pl",
+    "occ": "pl",
+    "active_at": "2026-07-22T05:59:59.999Z",
+    "level": 4
+  },
+  {
+    "at": "2026-07-21T17:46:59.976546+00:00",
+    "type": "battle_started",
+    "rid": "6813b7069403bc4170a5d819",
+    "code": "mx-north-west",
+    "name": "Northwestern Mexico",
+    "cc": "gt",
+    "occ": "mx"
+  },
+  {
+    "at": "2026-07-21T17:46:59.976546+00:00",
+    "type": "went_offline",
+    "rid": "6813b7059403bc4170a5d77d",
+    "code": "bg-sofia-plovdiv",
+    "name": "Sofia & Plovdiv",
+    "cc": "rs",
+    "occ": "bg",
+    "from": 1
   }
 ]

@@ -32,7 +32,7 @@
  * ═══════════════════════════════════════════════════════════════════ */
 (() => {
   const VALID = new Set([
-    'home', 'community', 'gov', 'mu', 'buddy-finder',
+    'home', 'community', 'gov', 'mu', 'buddy-finder', 'donation-draw',
     'advisor', 'clockin', 'profit', 'profit-dev', 'wealth', 'buddy', 'battle-orders',  'beer',
     'dashboard', 'roster', 'tax', 'tax-dev', 'tax-partner', 'factory-tax', 'tax-deals', 'partners', 'partner-guide',
   ]);
@@ -68,6 +68,7 @@
     profit: DailyProfitTool,
     'profit-dev': DailyProfitDevTool,
     wealth: WealthMonitorTool,
+    'donation-draw': IrelandDonationDrawTool,
     buddy: BuddySystemGate,
     'battle-orders': BattleOrdersGate,
     beer: BeerGate,
@@ -107,7 +108,7 @@
     const isLanding = LANDING.has(name);
     $backLink.hidden = isLanding;
     $backLink.setAttribute('href',
-      (name === 'buddy' || name === 'battle-orders') ? '#gov' :
+      (name === 'buddy' || name === 'battle-orders' || name === 'donation-draw') ? '#gov' :
       (name === 'tax-deals' || name === 'partner-guide') ? '#partners' : '#dashboard');
     if ($tabs) {
       $tabs.hidden = !isLanding;

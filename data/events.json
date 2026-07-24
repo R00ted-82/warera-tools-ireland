@@ -54898,5 +54898,434 @@
     "name": "Northern Benin",
     "cc": "bj",
     "occ": "bj"
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "came_online",
+    "rid": "683ddd3e36dbc90b780474cd",
+    "code": "kp-jagang",
+    "name": "Jagang",
+    "cc": "kp",
+    "occ": "kp",
+    "to": 2
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "battle_ended",
+    "rid": "6813b7059403bc4170a5d7a7",
+    "code": "tr-mediterranean-coast",
+    "name": "Turkish Mediterranean Coast",
+    "cc": "ua",
+    "occ": "tr"
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "went_offline",
+    "rid": "6813b7039403bc4170a5d683",
+    "code": "be-flanders",
+    "name": "Flanders",
+    "cc": "be",
+    "occ": "be",
+    "from": 4
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "went_offline",
+    "rid": "6813b7099403bc4170a5d990",
+    "code": "tn-tunis",
+    "name": "Tunis",
+    "cc": "tn",
+    "occ": "tn",
+    "from": 4
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b7089403bc4170a5d8d3",
+    "code": "id-java",
+    "name": "Java",
+    "cc": "id",
+    "occ": "id",
+    "from": "in",
+    "to": "id"
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "battle_ended",
+    "rid": "6813b7089403bc4170a5d8d3",
+    "code": "id-java",
+    "name": "Java",
+    "cc": "id",
+    "occ": "id"
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "battle_started",
+    "rid": "6813b7039403bc4170a5d690",
+    "code": "it-center",
+    "name": "Lazio",
+    "cc": "va",
+    "occ": "it"
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "battle_started",
+    "rid": "6813b7049403bc4170a5d738",
+    "code": "si-styria-carinthia",
+    "name": "Styria Carinthia",
+    "cc": "rs",
+    "occ": "si"
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "battle_started",
+    "rid": "6813b70a9403bc4170a5da0e",
+    "code": "ru-kaliningrad",
+    "name": "Kaliningrad",
+    "cc": "lt",
+    "occ": "ru"
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "level_changed",
+    "rid": "6813b70c9403bc4170a5db16",
+    "code": "uz-west-uzbekistan",
+    "name": "Western Uzbekistan",
+    "cc": "uz",
+    "occ": "uz",
+    "from": 1,
+    "to": 2
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "battle_started",
+    "rid": "683ddd3e36dbc90b78047534",
+    "code": "ng-kogi-and-edo",
+    "name": "Kogi and Edo",
+    "cc": "bf",
+    "occ": "ng"
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "battle_started",
+    "rid": "683ddd3f36dbc90b7804756e",
+    "code": "sy-homs-and-hama",
+    "name": "Homs & Hama",
+    "cc": "sy",
+    "occ": "sy"
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "ownership_changed",
+    "rid": "696a81f5882256e1db118222",
+    "code": "ru-baikal-highlands",
+    "name": "Baikal Highlands",
+    "cc": "mn",
+    "occ": "ru",
+    "from": "gt",
+    "to": "mn"
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "battle_ended",
+    "rid": "696a81f5882256e1db118222",
+    "code": "ru-baikal-highlands",
+    "name": "Baikal Highlands",
+    "cc": "mn",
+    "occ": "ru"
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "resistance_full",
+    "rid": "6813b7049403bc4170a5d729",
+    "code": "hu-transdanubia",
+    "name": "Transdanubia",
+    "cc": "rs",
+    "occ": "hu",
+    "val": 2260,
+    "max": 2260
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "battle_started",
+    "rid": "683ddd3d36dbc90b78047473",
+    "code": "bt-thimphu",
+    "name": "Thimphu",
+    "cc": "in",
+    "occ": "bt"
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "resistance_full",
+    "rid": "6813b7079403bc4170a5d89d",
+    "code": "cn-xinjiang",
+    "name": "Xinjiang",
+    "cc": "in",
+    "occ": "cn",
+    "val": 122,
+    "max": 122
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "battle_ended",
+    "rid": "683ddd3d36dbc90b7804749d",
+    "code": "il-jerusalem",
+    "name": "Jerusalem",
+    "cc": "eg",
+    "occ": "il"
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "went_offline",
+    "rid": "6813b7069403bc4170a5d825",
+    "code": "ie-connacht",
+    "name": "Connacht",
+    "cc": "ie",
+    "occ": "ie",
+    "from": 4
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "bunker_activating",
+    "rid": "6813b7049403bc4170a5d6d2",
+    "code": "de-brandenburg",
+    "name": "Brandenburg",
+    "cc": "de",
+    "occ": "de",
+    "active_at": "2026-07-24T21:59:59.999Z",
+    "level": 4
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "came_online",
+    "rid": "683ddd3e36dbc90b780474d0",
+    "code": "kp-pyongyang",
+    "name": "Pyongyang",
+    "cc": "kp",
+    "occ": "kp",
+    "to": 2
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "battle_started",
+    "rid": "6813b70a9403bc4170a5d9ea",
+    "code": "in-punjab",
+    "name": "Haryana",
+    "cc": "in",
+    "occ": "in"
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "battle_started",
+    "rid": "6813b7099403bc4170a5d9d2",
+    "code": "in-dravida",
+    "name": "Dravida",
+    "cc": "in",
+    "occ": "in"
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "battle_started",
+    "rid": "681a1795a55a0e2b88d5ae39",
+    "code": "it-romagna-lombardy",
+    "name": "Romagna & Tuscany",
+    "cc": "at",
+    "occ": "it"
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "came_online",
+    "rid": "683ddd3e36dbc90b780474c7",
+    "code": "kp-hamgyong",
+    "name": "Hamgyong",
+    "cc": "kp",
+    "occ": "kp",
+    "to": 3
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b70a9403bc4170a5d9d8",
+    "code": "in-north",
+    "name": "Kashmir",
+    "cc": "th",
+    "occ": "in",
+    "from": "np",
+    "to": "th"
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "battle_ended",
+    "rid": "6813b70a9403bc4170a5d9d8",
+    "code": "in-north",
+    "name": "Kashmir",
+    "cc": "th",
+    "occ": "in"
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b70d9403bc4170a5dba9",
+    "code": "pk-kashmir",
+    "name": "Azad Kashmir",
+    "cc": "pk",
+    "occ": "pk",
+    "from": "in",
+    "to": "pk"
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "went_offline",
+    "rid": "6813b70d9403bc4170a5dba9",
+    "code": "pk-kashmir",
+    "name": "Azad Kashmir",
+    "cc": "pk",
+    "occ": "pk",
+    "from": 1
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "battle_ended",
+    "rid": "6813b70d9403bc4170a5dba9",
+    "code": "pk-kashmir",
+    "name": "Azad Kashmir",
+    "cc": "pk",
+    "occ": "pk"
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "ownership_changed",
+    "rid": "683ddd3f36dbc90b78047577",
+    "code": "th-chiang-mai",
+    "name": "Chiang Mai",
+    "cc": "th",
+    "occ": "th",
+    "from": "cn",
+    "to": "th"
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "battle_ended",
+    "rid": "683ddd3f36dbc90b78047577",
+    "code": "th-chiang-mai",
+    "name": "Chiang Mai",
+    "cc": "th",
+    "occ": "th"
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "went_offline",
+    "rid": "6813b70d9403bc4170a5dba0",
+    "code": "pk-sindh",
+    "name": "Sindh",
+    "cc": "ir",
+    "occ": "pk",
+    "from": 1
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "battle_ended",
+    "rid": "696a81f5882256e1db118220",
+    "code": "ru-great-vasyugan-mire",
+    "name": "Great Vasyugan Mire",
+    "cc": "lv",
+    "occ": "ru"
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "went_offline",
+    "rid": "6813b70d9403bc4170a5db9d",
+    "code": "pk-balochistan",
+    "name": "Pakistani Balochistan",
+    "cc": "ir",
+    "occ": "pk",
+    "from": 1
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "ownership_changed",
+    "rid": "683ddd3e36dbc90b78047537",
+    "code": "ng-lagos",
+    "name": "Lagos",
+    "cc": "bj",
+    "occ": "ng",
+    "from": "bf",
+    "to": "bj"
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "battle_ended",
+    "rid": "683ddd3e36dbc90b78047537",
+    "code": "ng-lagos",
+    "name": "Lagos",
+    "cc": "bj",
+    "occ": "ng"
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "battle_started",
+    "rid": "6813b7049403bc4170a5d70e",
+    "code": "at-tyrol-salzburg",
+    "name": "Tyrol & Salzburg",
+    "cc": "at",
+    "occ": "at"
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "battle_ended",
+    "rid": "6813b7079403bc4170a5d8c1",
+    "code": "kr-east",
+    "name": "Eastern South Korea",
+    "cc": "kr",
+    "occ": "kr"
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "came_online",
+    "rid": "6813b70a9403bc4170a5da23",
+    "code": "ru-krasnoyarsk-krai",
+    "name": "Krasnoyarsk Krai",
+    "cc": "fi",
+    "occ": "ru",
+    "to": 2
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "came_online",
+    "rid": "6813b7039403bc4170a5d67f",
+    "code": "be-wallonia",
+    "name": "Wallonia",
+    "cc": "be",
+    "occ": "be",
+    "to": 4
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "battle_started",
+    "rid": "683ddd3d36dbc90b7804746a",
+    "code": "bd-chittagong",
+    "name": "Chittagong",
+    "cc": "cn",
+    "occ": "bd"
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "went_offline",
+    "rid": "6813b70b9403bc4170a5dac5",
+    "code": "ir-balochistan",
+    "name": "Iranian Balochistan",
+    "cc": "ir",
+    "occ": "ir",
+    "from": 3
+  },
+  {
+    "at": "2026-07-24T10:28:35.035750+00:00",
+    "type": "went_offline",
+    "rid": "6873d11594e6b3b7989a4c41",
+    "code": "mt-malta",
+    "name": "Malta",
+    "cc": "mt",
+    "occ": "mt",
+    "from": 5
   }
 ]

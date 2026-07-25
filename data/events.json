@@ -55520,5 +55520,206 @@
     "cc": "lk",
     "occ": "in",
     "from": 1
+  },
+  {
+    "at": "2026-07-25T06:29:48.809916+00:00",
+    "type": "level_changed",
+    "rid": "6813b7099403bc4170a5d960",
+    "code": "eg-sinai",
+    "name": "Sinai",
+    "cc": "eg",
+    "occ": "eg",
+    "from": 5,
+    "to": 4
+  },
+  {
+    "at": "2026-07-25T06:29:48.809916+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b70a9403bc4170a5d9d5",
+    "code": "in-maratha",
+    "name": "Maratha",
+    "cc": "ir",
+    "occ": "in",
+    "from": "in",
+    "to": "ir"
+  },
+  {
+    "at": "2026-07-25T06:29:48.809916+00:00",
+    "type": "battle_ended",
+    "rid": "6813b70a9403bc4170a5d9d5",
+    "code": "in-maratha",
+    "name": "Maratha",
+    "cc": "ir",
+    "occ": "in"
+  },
+  {
+    "at": "2026-07-25T06:29:48.809916+00:00",
+    "type": "battle_started",
+    "rid": "6813b70c9403bc4170a5db16",
+    "code": "uz-west-uzbekistan",
+    "name": "Western Uzbekistan",
+    "cc": "uz",
+    "occ": "uz"
+  },
+  {
+    "at": "2026-07-25T06:29:48.809916+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b70d9403bc4170a5db64",
+    "code": "kz-east-kazakhstan",
+    "name": "East Kazakhstan",
+    "cc": "lv",
+    "occ": "kz",
+    "from": "kz",
+    "to": "lv"
+  },
+  {
+    "at": "2026-07-25T06:29:48.809916+00:00",
+    "type": "battle_ended",
+    "rid": "6813b70d9403bc4170a5db64",
+    "code": "kz-east-kazakhstan",
+    "name": "East Kazakhstan",
+    "cc": "lv",
+    "occ": "kz"
+  },
+  {
+    "at": "2026-07-25T06:29:48.809916+00:00",
+    "type": "level_changed",
+    "rid": "6813b7039403bc4170a5d67f",
+    "code": "be-wallonia",
+    "name": "Wallonia",
+    "cc": "de",
+    "occ": "be",
+    "from": 3,
+    "to": 2
+  },
+  {
+    "at": "2026-07-25T06:29:48.809916+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b70a9403bc4170a5da26",
+    "code": "ru-russian-far-east",
+    "name": "Russian Far East",
+    "cc": "cl",
+    "occ": "ru",
+    "from": "ru",
+    "to": "cl"
+  },
+  {
+    "at": "2026-07-25T06:29:48.809916+00:00",
+    "type": "battle_ended",
+    "rid": "6813b70a9403bc4170a5da26",
+    "code": "ru-russian-far-east",
+    "name": "Russian Far East",
+    "cc": "cl",
+    "occ": "ru"
+  },
+  {
+    "at": "2026-07-25T06:29:48.809916+00:00",
+    "type": "resistance_full",
+    "rid": "6873d11694e6b3b7989a4c92",
+    "code": "cm-north-cameroon",
+    "name": "Northern Cameroon",
+    "cc": "cf",
+    "occ": "cm",
+    "val": 397,
+    "max": 397
+  },
+  {
+    "at": "2026-07-25T06:29:48.809916+00:00",
+    "type": "battle_started",
+    "rid": "6813b7059403bc4170a5d77d",
+    "code": "bg-sofia-plovdiv",
+    "name": "Sofia & Plovdiv",
+    "cc": "bg",
+    "occ": "bg"
+  },
+  {
+    "at": "2026-07-25T06:29:48.809916+00:00",
+    "type": "came_online",
+    "rid": "6813b7049403bc4170a5d714",
+    "code": "pl-silesia",
+    "name": "Silesia",
+    "cc": "de",
+    "occ": "pl",
+    "to": 3
+  },
+  {
+    "at": "2026-07-25T06:29:48.809916+00:00",
+    "type": "came_online",
+    "rid": "6813b70a9403bc4170a5d9e7",
+    "code": "in-east",
+    "name": "Northeastern India",
+    "cc": "ir",
+    "occ": "in",
+    "to": 1
+  },
+  {
+    "at": "2026-07-25T06:29:48.809916+00:00",
+    "type": "resistance_full",
+    "rid": "6813b70d9403bc4170a5db5b",
+    "code": "kz-aktobe",
+    "name": "Aktobe",
+    "cc": "lv",
+    "occ": "kz",
+    "val": 124,
+    "max": 124
+  },
+  {
+    "at": "2026-07-25T06:29:48.809916+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b7079403bc4170a5d8a3",
+    "code": "cn-qinghai",
+    "name": "Qinghai",
+    "cc": "tw",
+    "occ": "cn",
+    "from": "cn",
+    "to": "tw"
+  },
+  {
+    "at": "2026-07-25T06:29:48.809916+00:00",
+    "type": "battle_ended",
+    "rid": "6813b7079403bc4170a5d8a3",
+    "code": "cn-qinghai",
+    "name": "Qinghai",
+    "cc": "tw",
+    "occ": "cn"
+  },
+  {
+    "at": "2026-07-25T06:29:48.809916+00:00",
+    "type": "went_offline",
+    "rid": "6813b7049403bc4170a5d738",
+    "code": "si-styria-carinthia",
+    "name": "Styria Carinthia",
+    "cc": "rs",
+    "occ": "si",
+    "from": 4
+  },
+  {
+    "at": "2026-07-25T06:29:48.809916+00:00",
+    "type": "resistance_full",
+    "rid": "683ddd3d36dbc90b78047473",
+    "code": "bt-thimphu",
+    "name": "Thimphu",
+    "cc": "th",
+    "occ": "bt",
+    "val": 563,
+    "max": 563
+  },
+  {
+    "at": "2026-07-25T06:29:48.809916+00:00",
+    "type": "battle_started",
+    "rid": "683ddd3e36dbc90b780474fb",
+    "code": "mn-south",
+    "name": "Southern Mongolia",
+    "cc": "gt",
+    "occ": "mn"
+  },
+  {
+    "at": "2026-07-25T06:29:48.809916+00:00",
+    "type": "battle_started",
+    "rid": "6813b70d9403bc4170a5db9a",
+    "code": "pk-gilgit-baltistan",
+    "name": "Gilgit-Baltistan",
+    "cc": "in",
+    "occ": "pk"
   }
 ]

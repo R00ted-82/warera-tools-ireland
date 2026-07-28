@@ -31,20 +31,36 @@
           "auto_remit_tax": 34.24,
           "host_retained": 39.95
         }
+      },
+      {
+        "date": "2026-07-28",
+        "row": {
+          "factories": 43,
+          "workers": 51,
+          "home_workers": 5,
+          "partner_workers": 46,
+          "wages": 1512.47,
+          "gross_tax": 151.25,
+          "home_worker_tax": 14.04,
+          "partner_worker_tax": 137.2,
+          "manual_rebate_due": 52.94,
+          "auto_remit_tax": 45.37,
+          "host_retained": 52.94
+        }
       }
     ],
     "totals": {
-      "factories": 44,
-      "workers": 53,
-      "home_workers": 4,
-      "partner_workers": 49,
-      "wages": 1654.25,
-      "gross_tax": 114.14,
-      "home_worker_tax": 10.67,
-      "partner_worker_tax": 103.47,
-      "manual_rebate_due": 39.95,
-      "auto_remit_tax": 34.24,
-      "host_retained": 39.95
+      "factories": 87,
+      "workers": 104,
+      "home_workers": 9,
+      "partner_workers": 95,
+      "wages": 3166.72,
+      "gross_tax": 265.39,
+      "home_worker_tax": 24.71,
+      "partner_worker_tax": 240.67,
+      "manual_rebate_due": 92.89,
+      "auto_remit_tax": 79.61,
+      "host_retained": 92.89
     }
   },
   "previous_week": {
@@ -63,5 +79,5 @@
       "host_retained": 242.26
     }
   },
-  "updated_at": "2026-07-27T20:11:43.124214+00:00"
+  "updated_at": "2026-07-28T20:17:12.086838+00:00"
 }

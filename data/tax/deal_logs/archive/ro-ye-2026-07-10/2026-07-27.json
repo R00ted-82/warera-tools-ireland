@@ -1,0 +1,82 @@
+{
+  "week_start": "2026-07-27",
+  "days": [
+    {
+      "date": "2026-07-27",
+      "row": {
+        "factories": 6,
+        "workers": 6,
+        "home_workers": 2,
+        "partner_workers": 4,
+        "wages": 327.51,
+        "gross_tax": 22.6,
+        "home_worker_tax": 8.23,
+        "partner_worker_tax": 14.37,
+        "manual_rebate_due": 7.91,
+        "auto_remit_tax": 6.78,
+        "host_retained": 7.91
+      }
+    },
+    {
+      "date": "2026-07-28",
+      "row": {
+        "factories": 7,
+        "workers": 8,
+        "home_workers": 2,
+        "partner_workers": 6,
+        "wages": 486.26,
+        "gross_tax": 48.63,
+        "home_worker_tax": 11.62,
+        "partner_worker_tax": 37.01,
+        "manual_rebate_due": 17.02,
+        "auto_remit_tax": 14.59,
+        "host_retained": 17.02
+      }
+    },
+    {
+      "date": "2026-07-29",
+      "row": {
+        "factories": 3,
+        "workers": 4,
+        "home_workers": 1,
+        "partner_workers": 3,
+        "wages": 361.34,
+        "gross_tax": 36.13,
+        "home_worker_tax": 11.48,
+        "partner_worker_tax": 24.65,
+        "manual_rebate_due": 12.65,
+        "auto_remit_tax": 10.84,
+        "host_retained": 12.65
+      }
+    },
+    {
+      "date": "2026-07-30",
+      "row": {
+        "factories": 1,
+        "workers": 1,
+        "home_workers": 1,
+        "partner_workers": 0,
+        "wages": 118.44,
+        "gross_tax": 8.17,
+        "home_worker_tax": 8.17,
+        "partner_worker_tax": 0.0,
+        "manual_rebate_due": 2.86,
+        "auto_remit_tax": 2.45,
+        "host_retained": 2.86
+      }
+    }
+  ],
+  "totals": {
+    "factories": 17,
+    "workers": 19,
+    "home_workers": 6,
+    "partner_workers": 13,
+    "wages": 1293.55,
+    "gross_tax": 115.53,
+    "home_worker_tax": 39.5,
+    "partner_worker_tax": 76.03,
+    "manual_rebate_due": 40.44,
+    "auto_remit_tax": 34.66,
+    "host_retained": 40.44
+  }
+}

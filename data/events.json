@@ -1,232 +1,5 @@
 [
   {
-    "at": "2026-08-03T21:30:56.131115+00:00",
-    "type": "ownership_changed",
-    "rid": "6813b70d9403bc4170a5db85",
-    "code": "af-north-east",
-    "name": "Northeastern Afghanistan",
-    "cc": "pk",
-    "occ": "af",
-    "from": "af",
-    "to": "pk"
-  },
-  {
-    "at": "2026-08-03T21:30:56.131115+00:00",
-    "type": "battle_ended",
-    "rid": "6813b70d9403bc4170a5db85",
-    "code": "af-north-east",
-    "name": "Northeastern Afghanistan",
-    "cc": "pk",
-    "occ": "af"
-  },
-  {
-    "at": "2026-08-03T21:30:56.131115+00:00",
-    "type": "came_online",
-    "rid": "6873d11394e6b3b7989a4bd8",
-    "code": "ml-koulikoro-and-sikasso",
-    "name": "Koulikoro & Sikasso",
-    "cc": "ml",
-    "occ": "ml",
-    "to": 4
-  },
-  {
-    "at": "2026-08-03T21:30:56.131115+00:00",
-    "type": "battle_ended",
-    "rid": "6813b70c9403bc4170a5db3d",
-    "code": "sa-asir",
-    "name": "Asir",
-    "cc": "eg",
-    "occ": "sa"
-  },
-  {
-    "at": "2026-08-03T21:30:56.131115+00:00",
-    "type": "resistance_full",
-    "rid": "6813b7099403bc4170a5d9cf",
-    "code": "in-utkala",
-    "name": "Utkala",
-    "cc": "lk",
-    "occ": "in",
-    "val": 2130,
-    "max": 2130
-  },
-  {
-    "at": "2026-08-03T21:30:56.131115+00:00",
-    "type": "came_online",
-    "rid": "6813b7039403bc4170a5d675",
-    "code": "nl-friesland",
-    "name": "Friesland",
-    "cc": "nl",
-    "occ": "nl",
-    "to": 4
-  },
-  {
-    "at": "2026-08-03T21:30:56.131115+00:00",
-    "type": "battle_started",
-    "rid": "6813b7039403bc4170a5d675",
-    "code": "nl-friesland",
-    "name": "Friesland",
-    "cc": "nl",
-    "occ": "nl"
-  },
-  {
-    "at": "2026-08-03T21:30:56.131115+00:00",
-    "type": "battle_started",
-    "rid": "6813b70a9403bc4170a5da47",
-    "code": "sd-nuba-mountains",
-    "name": "Nuba Mountains",
-    "cc": "ss",
-    "occ": "sd"
-  },
-  {
-    "at": "2026-08-03T21:30:56.131115+00:00",
-    "type": "ownership_changed",
-    "rid": "6813b7069403bc4170a5d7fe",
-    "code": "us-south",
-    "name": "Southern USA",
-    "cc": "us",
-    "occ": "us",
-    "from": "bs",
-    "to": "us"
-  },
-  {
-    "at": "2026-08-03T21:30:56.131115+00:00",
-    "type": "battle_ended",
-    "rid": "6813b7069403bc4170a5d7fe",
-    "code": "us-south",
-    "name": "Southern USA",
-    "cc": "us",
-    "occ": "us"
-  },
-  {
-    "at": "2026-08-03T21:30:56.131115+00:00",
-    "type": "battle_started",
-    "rid": "6813b7069403bc4170a5d7fb",
-    "code": "us-south-west",
-    "name": "Southwestern USA",
-    "cc": "bs",
-    "occ": "us"
-  },
-  {
-    "at": "2026-08-03T21:30:56.131115+00:00",
-    "type": "came_online",
-    "rid": "683ddd3f36dbc90b78047595",
-    "code": "ye-al-hodeidah",
-    "name": "Al Hodeidah",
-    "cc": "ye",
-    "occ": "ye",
-    "to": 3
-  },
-  {
-    "at": "2026-08-03T21:30:56.131115+00:00",
-    "type": "ownership_changed",
-    "rid": "6813b7049403bc4170a5d6cf",
-    "code": "de-mecklenburg-holstein",
-    "name": "Mecklenburg-Holstein",
-    "cc": "dk",
-    "occ": "de",
-    "from": "de",
-    "to": "dk"
-  },
-  {
-    "at": "2026-08-03T21:30:56.131115+00:00",
-    "type": "battle_ended",
-    "rid": "6813b7049403bc4170a5d6cf",
-    "code": "de-mecklenburg-holstein",
-    "name": "Mecklenburg-Holstein",
-    "cc": "dk",
-    "occ": "de"
-  },
-  {
-    "at": "2026-08-03T21:30:56.131115+00:00",
-    "type": "ownership_changed",
-    "rid": "683ddd3e36dbc90b7804751f",
-    "code": "mz-tete",
-    "name": "Tete",
-    "cc": "za",
-    "occ": "mz",
-    "from": "mz",
-    "to": "za"
-  },
-  {
-    "at": "2026-08-03T21:30:56.131115+00:00",
-    "type": "went_offline",
-    "rid": "6813b7069403bc4170a5d825",
-    "code": "ie-connacht",
-    "name": "Connacht",
-    "cc": "ie",
-    "occ": "ie",
-    "from": 3
-  },
-  {
-    "at": "2026-08-03T21:30:56.131115+00:00",
-    "type": "battle_ended",
-    "rid": "6813b7039403bc4170a5d679",
-    "code": "nl-holland",
-    "name": "Holland",
-    "cc": "nl",
-    "occ": "nl"
-  },
-  {
-    "at": "2026-08-03T21:30:56.131115+00:00",
-    "type": "battle_started",
-    "rid": "6873d11494e6b3b7989a4bea",
-    "code": "gh-brong-ahafo",
-    "name": "Brong-Ahafo",
-    "cc": "tg",
-    "occ": "gh"
-  },
-  {
-    "at": "2026-08-03T21:30:56.131115+00:00",
-    "type": "ownership_changed",
-    "rid": "683ddd3f36dbc90b780475a4",
-    "code": "za-south-cape",
-    "name": "Southern Cape",
-    "cc": "za",
-    "occ": "za",
-    "from": "ar",
-    "to": "za"
-  },
-  {
-    "at": "2026-08-03T21:30:56.131115+00:00",
-    "type": "came_online",
-    "rid": "683ddd3f36dbc90b7804759e",
-    "code": "ye-sana-a",
-    "name": "Sana'a",
-    "cc": "ye",
-    "occ": "ye",
-    "to": 5
-  },
-  {
-    "at": "2026-08-03T21:30:56.131115+00:00",
-    "type": "ownership_changed",
-    "rid": "6813b7059403bc4170a5d771",
-    "code": "ee-hiiu-saare",
-    "name": "Hiiu & Saare",
-    "cc": "ee",
-    "occ": "ee",
-    "from": "se",
-    "to": "ee"
-  },
-  {
-    "at": "2026-08-03T21:30:56.131115+00:00",
-    "type": "battle_ended",
-    "rid": "6813b7059403bc4170a5d771",
-    "code": "ee-hiiu-saare",
-    "name": "Hiiu & Saare",
-    "cc": "ee",
-    "occ": "ee"
-  },
-  {
-    "at": "2026-08-03T21:30:56.131115+00:00",
-    "type": "came_online",
-    "rid": "683ddd3f36dbc90b78047574",
-    "code": "th-bangkok",
-    "name": "Bangkok",
-    "cc": "th",
-    "occ": "th",
-    "to": 1
-  },
-  {
     "at": "2026-08-04T03:39:39.376427+00:00",
     "type": "resistance_full",
     "rid": "6873d11494e6b3b7989a4c26",
@@ -63069,5 +62842,404 @@
     "cc": "de",
     "occ": "de",
     "from": 4
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b70c9403bc4170a5db28",
+    "code": "tj-gorno-badakhshan",
+    "name": "Gorno-Badakhshan",
+    "cc": "kg",
+    "occ": "tj",
+    "from": "tj",
+    "to": "kg"
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "battle_ended",
+    "rid": "6813b70c9403bc4170a5db28",
+    "code": "tj-gorno-badakhshan",
+    "name": "Gorno-Badakhshan",
+    "cc": "kg",
+    "occ": "tj"
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "went_offline",
+    "rid": "6813b7099403bc4170a5d98a",
+    "code": "dz-northwestern-algeria",
+    "name": "Northwestern Algeria",
+    "cc": "pt",
+    "occ": "dz",
+    "from": 1
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "level_changed",
+    "rid": "6873d11494e6b3b7989a4c05",
+    "code": "ne-capital-region",
+    "name": "Tillab\u00e9ri and Tahoua",
+    "cc": "pt",
+    "occ": "ne",
+    "from": 1,
+    "to": 2
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "level_changed",
+    "rid": "6873d11594e6b3b7989a4c65",
+    "code": "bf-center",
+    "name": "Central Burkina Faso",
+    "cc": "bf",
+    "occ": "bf",
+    "from": 2,
+    "to": 3
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b7049403bc4170a5d6d8",
+    "code": "de-lower-saxony",
+    "name": "Lower Saxony",
+    "cc": "nl",
+    "occ": "de",
+    "from": "de",
+    "to": "nl"
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "went_offline",
+    "rid": "6813b7049403bc4170a5d6d8",
+    "code": "de-lower-saxony",
+    "name": "Lower Saxony",
+    "cc": "nl",
+    "occ": "de",
+    "from": 2
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "battle_ended",
+    "rid": "6813b7049403bc4170a5d6d8",
+    "code": "de-lower-saxony",
+    "name": "Lower Saxony",
+    "cc": "nl",
+    "occ": "de"
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "went_offline",
+    "rid": "6873d11494e6b3b7989a4c0b",
+    "code": "ne-agadez",
+    "name": "Agadez",
+    "cc": "pt",
+    "occ": "ne",
+    "from": 1
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "came_online",
+    "rid": "6813b70b9403bc4170a5dabf",
+    "code": "ir-persian-gulf",
+    "name": "Persian Gulf Coast",
+    "cc": "iq",
+    "occ": "ir",
+    "to": 1
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "battle_started",
+    "rid": "6813b70d9403bc4170a5db91",
+    "code": "af-east",
+    "name": "Eastern Afghanistan",
+    "cc": "pk",
+    "occ": "af"
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "level_changed",
+    "rid": "6873d11594e6b3b7989a4c6b",
+    "code": "bf-west",
+    "name": "Western Burkina Faso",
+    "cc": "bf",
+    "occ": "bf",
+    "from": 1,
+    "to": 2
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b70b9403bc4170a5da86",
+    "code": "cu-center",
+    "name": "Central Cuba",
+    "cc": "pt",
+    "occ": "cu",
+    "from": "us",
+    "to": "pt"
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "battle_ended",
+    "rid": "6813b70b9403bc4170a5da86",
+    "code": "cu-center",
+    "name": "Central Cuba",
+    "cc": "pt",
+    "occ": "cu"
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "battle_ended",
+    "rid": "6813b7099403bc4170a5d9d2",
+    "code": "in-dravida",
+    "name": "Dravida",
+    "cc": "in",
+    "occ": "in"
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "resistance_full",
+    "rid": "6813b70b9403bc4170a5dacb",
+    "code": "ir-west",
+    "name": "Western Iran",
+    "cc": "iq",
+    "occ": "ir",
+    "val": 1036,
+    "max": 1036
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "went_offline",
+    "rid": "6813b70c9403bc4170a5db07",
+    "code": "tm-balkan-region",
+    "name": "Balkan Region",
+    "cc": "lv",
+    "occ": "tm",
+    "from": 1
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "battle_ended",
+    "rid": "6813b70c9403bc4170a5db07",
+    "code": "tm-balkan-region",
+    "name": "Balkan Region",
+    "cc": "lv",
+    "occ": "tm"
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "came_online",
+    "rid": "6813b7039403bc4170a5d683",
+    "code": "be-flanders",
+    "name": "Flanders",
+    "cc": "be",
+    "occ": "be",
+    "to": 4
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "level_changed",
+    "rid": "683ddd3f36dbc90b780475a4",
+    "code": "za-south-cape",
+    "name": "Southern Cape",
+    "cc": "za",
+    "occ": "za",
+    "from": 3,
+    "to": 4
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b7099403bc4170a5d984",
+    "code": "dz-northeastern-algeria",
+    "name": "Northeastern Algeria",
+    "cc": "pt",
+    "occ": "dz",
+    "from": "tn",
+    "to": "pt"
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "went_offline",
+    "rid": "6813b7099403bc4170a5d984",
+    "code": "dz-northeastern-algeria",
+    "name": "Northeastern Algeria",
+    "cc": "pt",
+    "occ": "dz",
+    "from": 1
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "battle_ended",
+    "rid": "6813b7099403bc4170a5d984",
+    "code": "dz-northeastern-algeria",
+    "name": "Northeastern Algeria",
+    "cc": "pt",
+    "occ": "dz"
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "went_offline",
+    "rid": "6813b7099403bc4170a5d9c6",
+    "code": "ve-center",
+    "name": "Central Venezuela",
+    "cc": "ve",
+    "occ": "ve",
+    "from": 4
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "ownership_changed",
+    "rid": "6873d11694e6b3b7989a4c95",
+    "code": "cm-quest",
+    "name": "Western Cameroon",
+    "cc": "ng",
+    "occ": "cm",
+    "from": "cm",
+    "to": "ng"
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "ownership_changed",
+    "rid": "683ddd3f36dbc90b78047574",
+    "code": "th-bangkok",
+    "name": "Bangkok",
+    "cc": "in",
+    "occ": "th",
+    "from": "th",
+    "to": "in"
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "battle_ended",
+    "rid": "683ddd3f36dbc90b78047574",
+    "code": "th-bangkok",
+    "name": "Bangkok",
+    "cc": "in",
+    "occ": "th"
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "battle_started",
+    "rid": "6873d11794e6b3b7989a4cbf",
+    "code": "gn-nz\u00e9r\u00e9kor\u00e9",
+    "name": "Nz\u00e9r\u00e9kor\u00e9",
+    "cc": "gn",
+    "occ": "gn"
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "came_online",
+    "rid": "6813b7039403bc4170a5d67c",
+    "code": "be-brussels",
+    "name": "Brussels",
+    "cc": "be",
+    "occ": "be",
+    "to": 4
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "went_offline",
+    "rid": "6873d11494e6b3b7989a4c26",
+    "code": "cd-katanga",
+    "name": "Katanga",
+    "cc": "za",
+    "occ": "cd",
+    "from": 3
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "battle_ended",
+    "rid": "6813b70a9403bc4170a5da14",
+    "code": "ru-central-chernozem-region",
+    "name": "Central Chernozem Region",
+    "cc": "lt",
+    "occ": "ru"
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "ownership_changed",
+    "rid": "683ddd3e36dbc90b78047516",
+    "code": "mz-manica",
+    "name": "Manica",
+    "cc": "za",
+    "occ": "mz",
+    "from": "mz",
+    "to": "za"
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "battle_ended",
+    "rid": "683ddd3e36dbc90b78047516",
+    "code": "mz-manica",
+    "name": "Manica",
+    "cc": "za",
+    "occ": "mz"
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "battle_ended",
+    "rid": "6813b7039403bc4170a5d6b1",
+    "code": "uk-london",
+    "name": "Southeastern England",
+    "cc": "uk",
+    "occ": "uk"
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "battle_started",
+    "rid": "6813b70d9403bc4170a5db8b",
+    "code": "af-west",
+    "name": "Western Afghanistan",
+    "cc": "af",
+    "occ": "af"
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b70d9403bc4170a5db85",
+    "code": "af-north-east",
+    "name": "Northeastern Afghanistan",
+    "cc": "kg",
+    "occ": "af",
+    "from": "pk",
+    "to": "kg"
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "battle_ended",
+    "rid": "6813b70d9403bc4170a5db85",
+    "code": "af-north-east",
+    "name": "Northeastern Afghanistan",
+    "cc": "kg",
+    "occ": "af"
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "went_offline",
+    "rid": "6813b70b9403bc4170a5da9b",
+    "code": "gl-northeast",
+    "name": "Northeastern Greenland",
+    "cc": "se",
+    "occ": "gl",
+    "from": 2
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "battle_ended",
+    "rid": "6813b70b9403bc4170a5da9b",
+    "code": "gl-northeast",
+    "name": "Northeastern Greenland",
+    "cc": "se",
+    "occ": "gl"
+  },
+  {
+    "at": "2026-09-02T22:40:17.089190+00:00",
+    "type": "level_changed",
+    "rid": "6813b70c9403bc4170a5db34",
+    "code": "sa-al-hudud-ash-shamaliyah",
+    "name": "Al Hudud ash Shamaliyah",
+    "cc": "eg",
+    "occ": "sa",
+    "from": 2,
+    "to": 3
   }
 ]

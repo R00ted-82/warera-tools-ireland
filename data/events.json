@@ -1,242 +1,5 @@
 [
   {
-    "at": "2026-08-10T21:02:56.837038+00:00",
-    "type": "battle_started",
-    "rid": "6873d11494e6b3b7989a4bf6",
-    "code": "mr-west-region",
-    "name": "Western Mauritania",
-    "cc": "mr",
-    "occ": "mr"
-  },
-  {
-    "at": "2026-08-10T21:02:56.837038+00:00",
-    "type": "ownership_changed",
-    "rid": "6813b70c9403bc4170a5daf8",
-    "code": "bz-south",
-    "name": "Southern Belize",
-    "cc": "bz",
-    "occ": "bz",
-    "from": "mx",
-    "to": "bz"
-  },
-  {
-    "at": "2026-08-10T21:02:56.837038+00:00",
-    "type": "resistance_full",
-    "rid": "6813b70b9403bc4170a5da80",
-    "code": "uk-falkland-islands",
-    "name": "Falkland Islands",
-    "cc": "ar",
-    "occ": "uk",
-    "val": 1587,
-    "max": 1587
-  },
-  {
-    "at": "2026-08-10T21:02:56.837038+00:00",
-    "type": "battle_started",
-    "rid": "6813b7059403bc4170a5d750",
-    "code": "ro-ardeal",
-    "name": "Transylvania",
-    "cc": "tr",
-    "occ": "ro"
-  },
-  {
-    "at": "2026-08-10T21:02:56.837038+00:00",
-    "type": "level_changed",
-    "rid": "6813b7099403bc4170a5d9a5",
-    "code": "co-andes",
-    "name": "Colombian Andes",
-    "cc": "ve",
-    "occ": "co",
-    "from": 3,
-    "to": 4
-  },
-  {
-    "at": "2026-08-10T21:02:56.837038+00:00",
-    "type": "battle_ended",
-    "rid": "683ddd3f36dbc90b780475a1",
-    "code": "ye-socotra",
-    "name": "Socotra",
-    "cc": "eg",
-    "occ": "ye"
-  },
-  {
-    "at": "2026-08-10T21:02:56.837038+00:00",
-    "type": "ownership_changed",
-    "rid": "6873d11494e6b3b7989a4bf0",
-    "code": "mr-adrar",
-    "name": "Adrar",
-    "cc": "ma",
-    "occ": "mr",
-    "from": "mr",
-    "to": "ma"
-  },
-  {
-    "at": "2026-08-10T21:02:56.837038+00:00",
-    "type": "went_offline",
-    "rid": "6813b7059403bc4170a5d79b",
-    "code": "rs-vojvodina",
-    "name": "Vojvodina",
-    "cc": "be",
-    "occ": "rs",
-    "from": 1
-  },
-  {
-    "at": "2026-08-10T21:02:56.837038+00:00",
-    "type": "battle_started",
-    "rid": "6813b7059403bc4170a5d79b",
-    "code": "rs-vojvodina",
-    "name": "Vojvodina",
-    "cc": "be",
-    "occ": "rs"
-  },
-  {
-    "at": "2026-08-10T21:02:56.837038+00:00",
-    "type": "battle_ended",
-    "rid": "6813b7089403bc4170a5d8e8",
-    "code": "ph-north",
-    "name": "Luzon",
-    "cc": "id",
-    "occ": "ph"
-  },
-  {
-    "at": "2026-08-10T21:02:56.837038+00:00",
-    "type": "went_offline",
-    "rid": "6813b7059403bc4170a5d747",
-    "code": "ro-oltenia",
-    "name": "Oltenia",
-    "cc": "ro",
-    "occ": "ro",
-    "from": 2
-  },
-  {
-    "at": "2026-08-10T21:02:56.837038+00:00",
-    "type": "ownership_changed",
-    "rid": "6813b7069403bc4170a5d7c5",
-    "code": "dk-funen",
-    "name": "Funen",
-    "cc": "se",
-    "occ": "dk",
-    "from": "dk",
-    "to": "se"
-  },
-  {
-    "at": "2026-08-10T21:02:56.837038+00:00",
-    "type": "battle_ended",
-    "rid": "6813b7069403bc4170a5d7c5",
-    "code": "dk-funen",
-    "name": "Funen",
-    "cc": "se",
-    "occ": "dk"
-  },
-  {
-    "at": "2026-08-10T21:02:56.837038+00:00",
-    "type": "battle_ended",
-    "rid": "6813b7069403bc4170a5d7e6",
-    "code": "al-north",
-    "name": "Northern Albania",
-    "cc": "it",
-    "occ": "al"
-  },
-  {
-    "at": "2026-08-10T21:02:56.837038+00:00",
-    "type": "battle_started",
-    "rid": "6813b7039403bc4170a5d683",
-    "code": "be-flanders",
-    "name": "Flanders",
-    "cc": "be",
-    "occ": "be"
-  },
-  {
-    "at": "2026-08-10T21:02:56.837038+00:00",
-    "type": "battle_started",
-    "rid": "6873d11594e6b3b7989a4c65",
-    "code": "bf-center",
-    "name": "Central Burkina Faso",
-    "cc": "bf",
-    "occ": "bf"
-  },
-  {
-    "at": "2026-08-10T21:02:56.837038+00:00",
-    "type": "went_offline",
-    "rid": "696a81f5882256e1db118208",
-    "code": "ro-muntenia",
-    "name": "Muntenia",
-    "cc": "ro",
-    "occ": "ro",
-    "from": 3
-  },
-  {
-    "at": "2026-08-10T21:02:56.837038+00:00",
-    "type": "battle_started",
-    "rid": "6873d11494e6b3b7989a4bfc",
-    "code": "sn-north-senegal",
-    "name": "Northern Senegal",
-    "cc": "mr",
-    "occ": "sn"
-  },
-  {
-    "at": "2026-08-10T21:02:56.837038+00:00",
-    "type": "went_offline",
-    "rid": "6873d11594e6b3b7989a4c4a",
-    "code": "cv-center",
-    "name": "Cape Verde",
-    "cc": "ve",
-    "occ": "cv",
-    "from": 3
-  },
-  {
-    "at": "2026-08-10T21:02:56.837038+00:00",
-    "type": "resistance_full",
-    "rid": "696a81f5882256e1db118228",
-    "code": "uk-south-georgia",
-    "name": "South Georgia",
-    "cc": "ar",
-    "occ": "uk",
-    "val": 1587,
-    "max": 1587
-  },
-  {
-    "at": "2026-08-10T21:02:56.837038+00:00",
-    "type": "resistance_full",
-    "rid": "6813b70b9403bc4170a5dabc",
-    "code": "ir-khorasan",
-    "name": "Khorasan",
-    "cc": "tr",
-    "occ": "ir",
-    "val": 893,
-    "max": 893
-  },
-  {
-    "at": "2026-08-10T21:02:56.837038+00:00",
-    "type": "went_offline",
-    "rid": "6813b7059403bc4170a5d753",
-    "code": "ro-banat-crisana",
-    "name": "Banat & Cri\u0219ana",
-    "cc": "ro",
-    "occ": "ro",
-    "from": 1
-  },
-  {
-    "at": "2026-08-10T21:02:56.837038+00:00",
-    "type": "battle_ended",
-    "rid": "6813b7059403bc4170a5d753",
-    "code": "ro-banat-crisana",
-    "name": "Banat & Cri\u0219ana",
-    "cc": "ro",
-    "occ": "ro"
-  },
-  {
-    "at": "2026-08-10T21:02:56.837038+00:00",
-    "type": "resistance_full",
-    "rid": "6813b7069403bc4170a5d7cb",
-    "code": "dk-zealand",
-    "name": "Zealand",
-    "cc": "se",
-    "occ": "dk",
-    "val": 1379,
-    "max": 1379
-  },
-  {
     "at": "2026-08-11T02:28:54.371037+00:00",
     "type": "ownership_changed",
     "rid": "6813b7039403bc4170a5d6a5",
@@ -70063,5 +69826,376 @@
     "cc": "ba",
     "occ": "ba",
     "from": 1
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "came_online",
+    "rid": "696a81f5882256e1db11820c",
+    "code": "dk-faroe-islands",
+    "name": "Faroe Islands",
+    "cc": "se",
+    "occ": "dk",
+    "to": 2
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "resistance_full",
+    "rid": "683ddd3e36dbc90b780474d6",
+    "code": "la-vientiane",
+    "name": "Vientiane",
+    "cc": "in",
+    "occ": "la",
+    "val": 797,
+    "max": 797
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "came_online",
+    "rid": "696a81f5882256e1db118214",
+    "code": "dz-algerian-atlas-mountains",
+    "name": "Algerian Atlas Mountains",
+    "cc": "pt",
+    "occ": "dz",
+    "to": 1
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b70b9403bc4170a5dac2",
+    "code": "ir-caspian-sea",
+    "name": "Caspian Sea Coast",
+    "cc": "tr",
+    "occ": "ir",
+    "from": "ir",
+    "to": "tr"
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "battle_ended",
+    "rid": "6813b70b9403bc4170a5dac2",
+    "code": "ir-caspian-sea",
+    "name": "Caspian Sea Coast",
+    "cc": "tr",
+    "occ": "ir"
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "went_offline",
+    "rid": "6873d11494e6b3b7989a4bf9",
+    "code": "sn-tambacounda",
+    "name": "Tambacounda",
+    "cc": "ve",
+    "occ": "sn",
+    "from": 2
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "battle_ended",
+    "rid": "6813b70c9403bc4170a5db31",
+    "code": "sa-ash-sharqiyah",
+    "name": "Ash Sharqiyah",
+    "cc": "ye",
+    "occ": "sa"
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "ownership_changed",
+    "rid": "683ddd3d36dbc90b7804746a",
+    "code": "bd-chittagong",
+    "name": "Chittagong",
+    "cc": "in",
+    "occ": "bd",
+    "from": "bd",
+    "to": "in"
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "battle_ended",
+    "rid": "683ddd3d36dbc90b7804746a",
+    "code": "bd-chittagong",
+    "name": "Chittagong",
+    "cc": "in",
+    "occ": "bd"
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "ownership_changed",
+    "rid": "683ddd3f36dbc90b78047549",
+    "code": "om-north",
+    "name": "Northern Oman",
+    "cc": "ye",
+    "occ": "om",
+    "from": "om",
+    "to": "ye"
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "battle_ended",
+    "rid": "683ddd3f36dbc90b78047549",
+    "code": "om-north",
+    "name": "Northern Oman",
+    "cc": "ye",
+    "occ": "om"
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "came_online",
+    "rid": "6813b7099403bc4170a5d987",
+    "code": "dz-northern-algeria",
+    "name": "Northern Algeria",
+    "cc": "pt",
+    "occ": "dz",
+    "to": 2
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "battle_ended",
+    "rid": "6813b7039403bc4170a5d6b1",
+    "code": "uk-london",
+    "name": "Southeastern England",
+    "cc": "uk",
+    "occ": "uk"
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "resistance_full",
+    "rid": "683ddd3d36dbc90b7804748e",
+    "code": "ge-imereti",
+    "name": "Imereti",
+    "cc": "tr",
+    "occ": "ge",
+    "val": 260,
+    "max": 260
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b70d9403bc4170a5dba0",
+    "code": "pk-sindh",
+    "name": "Sindh",
+    "cc": "pk",
+    "occ": "pk",
+    "from": "in",
+    "to": "pk"
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "battle_ended",
+    "rid": "6813b70d9403bc4170a5dba0",
+    "code": "pk-sindh",
+    "name": "Sindh",
+    "cc": "pk",
+    "occ": "pk"
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "bunker_activating",
+    "rid": "6813b70c9403bc4170a5db1c",
+    "code": "kg-osh",
+    "name": "Osh",
+    "cc": "kg",
+    "occ": "kg",
+    "active_at": "2026-09-10T07:59:59.999Z",
+    "level": 4
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "ownership_changed",
+    "rid": "6873d11694e6b3b7989a4ca1",
+    "code": "er-capital-region",
+    "name": "Central Eritrea",
+    "cc": "ye",
+    "occ": "er",
+    "from": "et",
+    "to": "ye"
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "battle_ended",
+    "rid": "6873d11694e6b3b7989a4ca1",
+    "code": "er-capital-region",
+    "name": "Central Eritrea",
+    "cc": "ye",
+    "occ": "er"
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "bunker_activating",
+    "rid": "6813b70c9403bc4170a5db1f",
+    "code": "kg-bishkek",
+    "name": "Bishkek",
+    "cc": "kg",
+    "occ": "kg",
+    "active_at": "2026-09-10T07:59:59.999Z",
+    "level": 4
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "came_online",
+    "rid": "6813b7069403bc4170a5d7cb",
+    "code": "dk-zealand",
+    "name": "Zealand",
+    "cc": "se",
+    "occ": "dk",
+    "to": 2
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "battle_started",
+    "rid": "6813b70c9403bc4170a5db0d",
+    "code": "uz-tashkent",
+    "name": "Tashkent",
+    "cc": "lv",
+    "occ": "uz"
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "went_offline",
+    "rid": "6813b70d9403bc4170a5db55",
+    "code": "kz-astana",
+    "name": "Astana",
+    "cc": "lv",
+    "occ": "kz",
+    "from": 1
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "battle_ended",
+    "rid": "6813b70d9403bc4170a5db55",
+    "code": "kz-astana",
+    "name": "Astana",
+    "cc": "lv",
+    "occ": "kz"
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "resistance_full",
+    "rid": "6813b70d9403bc4170a5db67",
+    "code": "kz-west-kazakhstan",
+    "name": "West Kazakhstan",
+    "cc": "lv",
+    "occ": "kz",
+    "val": 196,
+    "max": 196
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "resistance_full",
+    "rid": "6813b7089403bc4170a5d912",
+    "code": "ar-pantagonia",
+    "name": "Patagonia",
+    "cc": "br",
+    "occ": "ar",
+    "val": 1794,
+    "max": 1794
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "resistance_full",
+    "rid": "6813b70d9403bc4170a5db61",
+    "code": "kz-pavlodar",
+    "name": "Pavlodar",
+    "cc": "lv",
+    "occ": "kz",
+    "val": 196,
+    "max": 196
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "came_online",
+    "rid": "696a81f5882256e1db118218",
+    "code": "dz-western-algerian-sahara",
+    "name": "Western Algerian Sahara",
+    "cc": "pt",
+    "occ": "dz",
+    "to": 1
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "battle_ended",
+    "rid": "696a81f5882256e1db118206",
+    "code": "fr-reunion",
+    "name": "R\u00e9union",
+    "cc": "mg",
+    "occ": "fr"
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "battle_started",
+    "rid": "683ddd3e36dbc90b780474a6",
+    "code": "iq-baghdad",
+    "name": "Baghdad",
+    "cc": "iq",
+    "occ": "iq"
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "went_offline",
+    "rid": "6813b7049403bc4170a5d6e1",
+    "code": "de-bavaria",
+    "name": "Bavaria",
+    "cc": "de",
+    "occ": "de",
+    "from": 4
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "resistance_full",
+    "rid": "6813b70a9403bc4170a5da53",
+    "code": "by-minsk",
+    "name": "Minsk",
+    "cc": "lt",
+    "occ": "by",
+    "val": 209,
+    "max": 209
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "battle_started",
+    "rid": "683ddd3f36dbc90b78047592",
+    "code": "ye-aden",
+    "name": "Aden",
+    "cc": "dj",
+    "occ": "ye"
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "battle_ended",
+    "rid": "6813b7069403bc4170a5d7e9",
+    "code": "us-hawaii",
+    "name": "Hawaii",
+    "cc": "cl",
+    "occ": "us"
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "resistance_full",
+    "rid": "6813b70a9403bc4170a5da56",
+    "code": "by-vitebsk",
+    "name": "Vitebsk",
+    "cc": "lt",
+    "occ": "by",
+    "val": 209,
+    "max": 209
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "came_online",
+    "rid": "6813b70b9403bc4170a5da5c",
+    "code": "by-gomel",
+    "name": "Gomel",
+    "cc": "lt",
+    "occ": "by",
+    "to": 4
+  },
+  {
+    "at": "2026-09-09T22:34:21.534765+00:00",
+    "type": "came_online",
+    "rid": "6813b70d9403bc4170a5dbaf",
+    "code": "qa-qatar",
+    "name": "Qatar",
+    "cc": "ye",
+    "occ": "qa",
+    "to": 2
   }
 ]

@@ -2557,3 +2557,148 @@ table.rs-table {
   .spa-toggle-opt { font-size: 12px; padding: 4px 8px; }
   .spa-result-card { padding: 14px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+ *  IRELAND DONATION DRAW
+ *  Public government tool; all classes are scoped with idd-.
+ * ═══════════════════════════════════════════════════════════════════ */
+.idd-period-panel {
+  display: grid;
+  grid-template-columns: minmax(190px, 1fr) minmax(190px, 1fr) minmax(190px, .8fr) auto;
+  gap: 12px;
+  align-items: end;
+  padding: 16px;
+  margin-bottom: 16px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.idd-period-panel label { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.idd-period-panel label > span:first-child,
+.idd-timezone { color: var(--muted); font-size: 11px; }
+.idd-period-panel input {
+  width: 100%; min-width: 0;
+  background: var(--bg); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 8px 10px; font: inherit; font-size: 13px;
+  color-scheme: dark;
+}
+html[data-theme="light"] .idd-period-panel input { color-scheme: light; }
+.idd-period-panel input:focus { outline: none; border-color: var(--muted); }
+.idd-money-input { display: flex; align-items: center; position: relative; }
+.idd-money-input b { position: absolute; left: 10px; color: var(--muted); font-weight: 500; }
+.idd-money-input input { padding-left: 27px; }
+.idd-timezone { grid-column: 1 / -1; }
+.idd-warning {
+  padding: 12px 16px; margin-bottom: 16px;
+  color: var(--warn); background: var(--panel);
+  border: 1px solid var(--warn); border-radius: 8px;
+  font-size: 13px; white-space: pre-line;
+}
+.idd-warning.hidden, .idd-results.hidden, .idd-winner.hidden,
+.idd-history-panel.hidden { display: none; }
+.idd-summary {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px; margin-bottom: 16px;
+}
+.idd-summary-card {
+  padding: 13px 15px; background: var(--panel);
+  border: 1px solid var(--border); border-radius: 8px;
+}
+.idd-summary-card .k {
+  color: var(--muted); font-size: 10px;
+  text-transform: uppercase; letter-spacing: .05em;
+}
+.idd-summary-card .v {
+  margin-top: 3px; color: var(--text); font-size: 19px;
+  font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.idd-draw-panel {
+  display: flex; gap: 20px; align-items: center; justify-content: space-between;
+  padding: 16px 18px; margin-bottom: 14px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+}
+.idd-draw-panel h3, .idd-history-panel h3 { margin: 0; font-size: 15px; }
+.idd-draw-panel p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+.idd-roll { min-width: 120px; }
+.idd-winner {
+  padding: 20px; margin-bottom: 14px; text-align: center;
+  background: var(--panel); border: 2px solid var(--accent); border-radius: 10px;
+}
+.idd-winner .idd-winner-label {
+  color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+}
+.idd-winner .idd-winner-name { margin-top: 5px; font-size: 24px; font-weight: 700; }
+.idd-winner .idd-winner-name a { color: var(--accent); }
+.idd-winner .idd-winner-meta { margin-top: 3px; color: var(--muted); font-size: 12px; }
+.idd-history-panel {
+  padding: 15px 18px; margin-bottom: 16px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+}
+.idd-history-panel ol { margin: 10px 0 0; padding-left: 24px; }
+.idd-history-panel li { padding: 3px 0 3px 5px; color: var(--muted); }
+.idd-history-panel a { color: var(--text); font-weight: 600; }
+.idd-table-toolbar {
+  display: flex; gap: 16px; align-items: center; justify-content: space-between;
+  margin: 18px 0 10px;
+}
+.idd-toggle {
+  display: inline-flex; align-items: center; gap: 7px;
+  color: var(--muted); font-size: 12px; cursor: pointer; user-select: none;
+}
+.idd-toggle input { margin: 0; }
+.idd-table-wrap {
+  overflow-x: auto; background: var(--panel);
+  border: 1px solid var(--border); border-radius: 8px;
+}
+.idd-table { width: 100%; min-width: 850px; border-collapse: collapse; }
+.idd-table th, .idd-table td {
+  padding: 10px 12px; border-bottom: 1px solid var(--border);
+  text-align: left; vertical-align: middle; font-size: 12px;
+}
+.idd-table th { color: var(--muted); font-weight: 600; white-space: nowrap; }
+.idd-table th button {
+  display: inline-flex; gap: 5px; align-items: center;
+  padding: 0; border: 0; background: transparent; color: inherit;
+  font: inherit; font-weight: inherit;
+}
+.idd-table th button:hover:not(:disabled) { background: transparent; border-color: transparent; color: var(--text); }
+.idd-table th button span { color: var(--accent); }
+.idd-table tbody tr:last-child td { border-bottom: 0; }
+.idd-donor-row { cursor: pointer; }
+.idd-donor-row:hover td { background: var(--panel-2); }
+.idd-donor-row.idd-unresolved td:first-child { border-left: 3px solid var(--danger); }
+.idd-user { display: flex; align-items: center; gap: 7px; font-weight: 600; }
+.idd-expand { color: var(--muted); width: 12px; text-align: center; }
+.idd-amount, .idd-date { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.idd-amount { font-weight: 600; }
+.idd-status-pill {
+  display: inline-block; padding: 2px 8px; border-radius: 999px;
+  color: var(--muted); background: var(--panel-2); font-size: 10px; font-weight: 600;
+}
+.idd-status-pill.eligible { color: var(--accent); }
+.idd-status-pill.unresolved { color: var(--danger); }
+.idd-transactions-row td { padding: 0; background: var(--bg); }
+.idd-transactions-row.hidden { display: none; }
+.idd-transactions {
+  list-style: none; margin: 0; padding: 9px 14px 9px 38px;
+  color: var(--muted); font-size: 11px;
+}
+.idd-transactions li { display: flex; gap: 14px; padding: 3px 0; }
+.idd-transactions strong { color: var(--text); min-width: 75px; }
+.idd-empty-row td { padding: 28px 16px; color: var(--muted); text-align: center; }
+
+@media (max-width: 720px) {
+  .idd-period-panel { grid-template-columns: 1fr 1fr; }
+  .idd-period-panel button { width: 100%; }
+  .idd-summary { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+  .idd-period-panel { grid-template-columns: 1fr; }
+  .idd-draw-panel, .idd-table-toolbar { align-items: stretch; flex-direction: column; }
+  .idd-roll, .idd-table-toolbar input[type="text"] { width: 100%; }
+  .idd-summary-card .v { font-size: 17px; }
+}
+@media (max-width: 380px) {
+  .idd-summary { grid-template-columns: 1fr; }
+}

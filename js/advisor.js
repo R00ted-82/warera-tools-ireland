@@ -1,21 +1,15 @@
 /* ═══════════════════════════════════════════════════════════════════
  *  COMPANY MIGRATION ADVISOR
  *
- *  Computes production bonuses locally from country + region data fetched
- *  through the warerastats gateway. The bonus model has four components:
+ *  Computes production bonuses locally from country + region data. The
+ *  model mirrors the current game API's four-component breakdown:
  *
  *    strategic       — country.strategicResources.bonuses.productionPercent
  *                      (fires when item matches country.specializedItem)
- *    specialisation  — flat +30% "Industrialism", fires when the country is
- *                      INDUSTRIALIST-leaning (industrialism > 0), the item
- *                      matches its specialisedItem, AND the item is covered
- *                      by the Fanatic Industrialist trait (which says "ammo
- *                      or construction specialization good"). The
- *                      AGRARIAN_ITEMS set lists items NOT covered — food,
- *                      plants, pills. Verified: Bulgaria/steak (ind=+2)
- *                      no +30, Morocco/cocain (Fanatic Industrialist) no
- *                      +30, but South Africa/steel and Guinea-Bissau/lead
- *                      and Egypt/iron all do get +30.
+ *    specialisation  — the ruling party's positive Industrialism modifier:
+ *                      +10% at +1 or +30% at +2, on the specialised item
+ *                      when it is one of the game's 12 eligible industrial
+ *                      goods
  *    deposit         — region.deposit.bonusPercent, fires when the region
  *                      has an active matching deposit, EXCEPT when the
  *                      country specialises in the item AND is industrialist
@@ -28,36 +22,26 @@
  *                      when the country IS industrialist — verified
  *                      Egypt/iron/Ouham: +32 strategic + +30 specialisation
  *                      = +62, deposit suppressed despite being active.
- *    depositCountry  — flat country-level deposit bonus (read from
- *                      gameConfig.company.depositResourceBonus, defaults
- *                      to 30), fires when there's a matching active deposit
- *                      AND the country is AGRARIAN-leaning (industrialism < 0)
+ *    depositCountry  — the ruling party's negative Industrialism modifier:
+ *                      +10% at -1 or +30% at -2, on matching active deposits
+ *                      of coca, grain, livestock, or fish only
  *
- *  Industrialism is a signed integer from the warerastats companion endpoint
- *  (range −2…+2; only sign matters for bonus gating). Each lean grants
- *  exactly one type of +30%, never both. Neutral (industrialism = 0)
- *  countries grant neither. If the companion endpoint is unreachable,
- *  industrialism defaults to 0 — the +30% bonuses just don't fire, which
- *  under-counts rather than wrong-counts.
+ *  Industrialism is a signed tier from the warerastats companion endpoint.
+ *  Both sign and magnitude matter. Neutral, missing, or unknown tiers grant
+ *  neither modifier, preserving the tool's conservative fallback.
  *
- *  This model was verified against in-game tooltips for Guinea-Bissau/lead
- *  (+56), Jordan/concrete (no +30), India/cookedFish (+20.5), Serbia/steak
- *  (+20), South Africa/steel (+34.25), Ireland/grain deposit (+60),
- *  Bulgaria/steak (+10 not +40 — pills/food not covered by trait),
- *  Morocco/cocain (+15.5 not +45.5 — Fanatic Industrialist trait does
- *  NOT cover pills), Egypt/iron/Ouham (+62 = +32 strategic + +30
- *  specialisation, deposit suppressed when country is industrialist),
- *  Brazil/coca/Recife (+45 = +15 strategic + +30 deposit — deposit stacks
- *  with non-industrialist specialisation), and others.
+ *  Re-verified July 2026 against api2.warera.io's game-owned calculations:
+ *  Namibia/lead/Ghanzi = +50 (+20 strategic, +30 Fanatic Industrialist);
+ *  Egypt/iron/Red Sea Coast = +45.5 (+15.5 strategic, +30 deposit);
+ *  Switzerland/grain/Zurich = +60 (+30 deposit, +30 Fanatic Agrarian).
+ *  Sudan (-1)/lead/Tigray gets only the +30 deposit: lead is not eligible
+ *  for the Agrarian deposit modifier.
  *
  *  Bugs to NOT repeat:
- *  - DO put food/agrarian items in AGRARIAN_ITEMS — the +30 doesn't fire
- *    on them. Bulgaria/steak proves it.
- *  - DO put coca and cocain in AGRARIAN_ITEMS — the Fanatic Industrialist
- *    trait literally says "ammo or construction specialization good";
- *    plants and pills aren't covered. Morocco/cocain proves it for pills.
- *    Earlier we removed them based on misreading Brazil/coca, where the
- *    +30% turned out to come from a regional deposit, not from Industrialism.
+ *  - DO use the exact tier. Treating only the sign as meaningful turns +1
+ *    and -1 into +30% and caused the false Tigray recommendation.
+ *  - DO keep separate allowlists. Industrial specialisation covers 12 goods;
+ *    Agrarian deposit modifiers cover only coca/grain/livestock/fish.
  *  - DO keep the !(isSpecialised && industrialist) gate on hasMatchingDeposit;
  *    Egypt/iron proves deposits don't stack with industrialist specialisation.
  *  - Open question: the mirror case for agrarian-leaning countries (does
@@ -97,43 +81,21 @@ const AdvisorTool = (() => {
   const OPTIMAL_THRESHOLD = 2;
   const HUGE_THRESHOLD    = 20;
 
-  // The +30% "Industrialism" bonus comes from the Fanatic Industrialist
-  // ruling-party trait, which reads in-game: "All companies in your
-  // borders get +30% bonus towards ammo or construction specialization
-  // good. Deposits cannot spawn within your borders."
-  //
-  // The trait is gated by item category — it only fires on "ammo or
-  // construction" items. This set lists items that DON'T qualify (i.e.
-  // items where the +30% does NOT fire even when the country is Fanatic
-  // Industrialist and specialises in the item).
-  //
-  // Verified non-eligible:
-  //   - steak/bread/fish/cookedFish/livestock/grain (food/agrarian):
-  //     Bulgaria/steak doesn't get +30 despite ind=+2.
-  //   - cocain (pills): Morocco specialises in cocain, is Fanatic
-  //     Industrialist, in-game shows +15.5% (strategic only, no +30).
-  //   - coca (plants): no verified case of a Fanatic Industrialist
-  //     country specialising in coca AND getting +30. Added by symmetry
-  //     with pills — plants and pills aren't "ammo or construction"
-  //     either. If a counter-example shows up, drop coca from this set.
-  //
-  // Verified eligible (where +30 does fire):
-  //   - lead (ammo precursor): Guinea-Bissau/lead → +56 (=+26 strategic
-  //     + +30 Industrialism).
-  //   - steel: South Africa/steel → +34.25.
-  //   - iron: Egypt/iron → +62 (=+32 strategic + +30 Industrialism).
-  //   - heavyAmmo, ammo, lightAmmo, concrete: assumed eligible by the
-  //     trait text ("ammo or construction"); not all directly verified
-  //     but consistent with the rule.
-  //
-  // Misnamed — these aren't agrarian, they're "items the Fanatic
-  // Industrialist trait doesn't cover". Kept as AGRARIAN_ITEMS for
-  // backwards-compatibility with the rest of the file; rename if you
-  // refactor to an inclusion list of ammo/construction items.
-  const AGRARIAN_ITEMS = new Set([
-    'steak', 'bread', 'fish', 'cookedFish', 'livestock', 'grain',
-    'coca', 'cocain',
+  // Current Party Ethics production rules, mirrored from the live game's
+  // Industrialism config and checked against its production-bonus API.
+  const INDUSTRIALISM_SPECIALISATION_ITEMS = new Set([
+    'lightAmmo', 'ammo', 'heavyAmmo', 'concrete', 'steel', 'iron',
+    'limestone', 'petroleum', 'oil', 'lead', 'wood', 'paper',
   ]);
+  const AGRARIAN_DEPOSIT_ITEMS = new Set(['coca', 'grain', 'livestock', 'fish']);
+  const SPECIALISATION_MODIFIER_BY_TIER = { 1: 10, 2: 30 };
+  const DEPOSIT_MODIFIER_BY_TIER = { '-1': 10, '-2': 30 };
+  const INDUSTRIALISM_LABEL_BY_TIER = {
+    1: 'Industrialist',
+    2: 'Fanatic Industrialist',
+    '-1': 'Agrarian',
+    '-2': 'Fanatic Agrarian',
+  };
 
   // Companion endpoint for industrialism. Lives on Hattorius's
   // warerastats.io, proxied through the same worker that fronts the
@@ -142,12 +104,6 @@ const AdvisorTool = (() => {
   const WARERASTATS_BASE = (typeof CFG !== 'undefined' && CFG.API_BASE)
     ? CFG.API_BASE.replace(/\/trpc\/?$/, '') + '/warerastats'
     : 'https://warera-proxy.r00ted82.workers.dev/warerastats';
-
-  // Flat country-level deposit bonus, used when an active matching deposit
-  // exists AND the country is agrarian-leaning. Defaults to 30 (observed
-  // in gameConfig); overwritten at runtime if game config exposes a
-  // different number.
-  let GAME_DEPOSIT_BONUS = 30;
 
   const $grid     = document.getElementById('adv-grid');
   const $hint     = document.getElementById('adv-hint');
@@ -236,10 +192,9 @@ const AdvisorTool = (() => {
     return now >= starts && now <= ends;
   }
 
-  function ethicsLean(country) {
-    const ind = country?.industrialism;
-    if (typeof ind !== 'number' || ind === 0) return 'neutral';
-    return ind > 0 ? 'industrialist' : 'agrarian';
+  function industrialismTier(country) {
+    const tier = country?.industrialism;
+    return [-2, -1, 0, 1, 2].includes(tier) ? tier : 0;
   }
 
   /**
@@ -249,45 +204,43 @@ const AdvisorTool = (() => {
    * The asymmetric gating below is the heart of the model and was verified
    * against many in-game tooltips. Do not change without re-verifying:
    *
-   *   • Strategic + Specialisation (+30) fire on the country's SPEC item
-   *     when it's industrialist-leaning.
+   *   • Strategic + Specialisation fire on an eligible specialised item;
+   *     the modifier is +10 at Industrialism +1 or +30 at +2.
    *   • Deposit fires whenever there's an active matching deposit, EXCEPT
    *     when the country specialises in the item AND is industrialist
    *     (deposit suppressed — see header comment for verification).
-   *   • DepositCountry (+30) additionally fires when the country is
-   *     agrarian-leaning.
+   *   • DepositCountry fires only for the four eligible deposit resources;
+   *     the modifier is +10 at Industrialism -1 or +30 at -2.
    */
   function computeBonus(country, region, itemCode) {
     if (!country) return null;
 
     const isSpecialised = country.specializedItem === itemCode;
-    const lean          = ethicsLean(country);
+    const tier          = industrialismTier(country);
 
-    const strategic = isSpecialised
+    // Fanatic Agrarian disables specialization benefits. Such countries
+    // cannot normally retain a specialization, but guard stale API data too.
+    const strategic = isSpecialised && tier !== -2
       ? (country.strategicResources?.bonuses?.productionPercent || 0)
       : 0;
-    // Industrialism (spec) +30 fires only on items covered by the Fanatic
-    // Industrialist trait ("ammo or construction"). Food, plants, and pills
-    // (in AGRARIAN_ITEMS) don't qualify even when the country specialises
-    // and is industrialist-leaning. The set name is historical — it
-    // includes more than just food now. See AGRARIAN_ITEMS comment.
     const specialisation = isSpecialised
-      && lean === 'industrialist'
-      && !AGRARIAN_ITEMS.has(itemCode)
-      ? 30 : 0;
+      && INDUSTRIALISM_SPECIALISATION_ITEMS.has(itemCode)
+      ? (SPECIALISATION_MODIFIER_BY_TIER[tier] || 0) : 0;
 
     const hasMatchingDeposit = !!region?.deposit
       && region.deposit.type === itemCode
       && isDepositActive(region.deposit)
-      && !(isSpecialised && lean === 'industrialist');
+      && !(isSpecialised && tier > 0);
     const deposit        = hasMatchingDeposit ? (region.deposit.bonusPercent || 0) : 0;
-    const depositCountry = hasMatchingDeposit && lean === 'agrarian' ? GAME_DEPOSIT_BONUS : 0;
+    const depositCountry = hasMatchingDeposit && AGRARIAN_DEPOSIT_ITEMS.has(itemCode)
+      ? (DEPOSIT_MODIFIER_BY_TIER[tier] || 0) : 0;
 
     const total   = strategic + specialisation + deposit + depositCountry;
     const tax     = country.taxes?.income ?? 0;
     const netMult = (1 + total / 100) * (1 - tax / 100);
     const depositEndsAt = hasMatchingDeposit ? region.deposit.endsAt : null;
-    return { strategic, specialisation, deposit, depositCountry, depositEndsAt, lean, total, tax, netMult };
+    const industrialismLabel = INDUSTRIALISM_LABEL_BY_TIER[tier] || 'Industrialism';
+    return { strategic, specialisation, deposit, depositCountry, depositEndsAt, tier, industrialismLabel, total, tax, netMult };
   }
 
   async function loadCountriesParallel(countries) {
@@ -350,19 +303,16 @@ const AdvisorTool = (() => {
     }));
     steps.setStep(2, 'done', { count: `${companies.filter(Boolean).length} loaded` });
 
-    // Regions + country list + gameConfig + warerastats companion endpoint
+    // Regions + country list + warerastats companion endpoint
     // (for industrialism) all in parallel. Companion endpoint fails open:
-    // empty array → industrialism defaults to 0 → no +30% bonuses fire,
-    // but everything else still works.
-    steps.setStep(3, 'active', { sub: 'Loading regions, countries, and game config' });
-    const [regionsObj, allCountriesRaw, gameConfig, warerastatsCountries] = await Promise.all([
+    // empty array → industrialism defaults to 0 → no Party Ethics
+    // modifiers fire, but everything else still works.
+    steps.setStep(3, 'active', { sub: 'Loading regions, countries, and party ethics' });
+    const [regionsObj, allCountriesRaw, warerastatsCountries] = await Promise.all([
       adv_trpc('region.getRegionsObject', {}),
       adv_trpc('country.getAllCountries', {}),
-      adv_trpc('gameConfig.getGameConfig', {}).catch(() => null),
       fetch(`${WARERASTATS_BASE}/countries`).then(r => r.json()).catch(() => []),
     ]);
-    const cfgDepBonus = gameConfig?.company?.depositResourceBonus;
-    if (typeof cfgDepBonus === 'number') GAME_DEPOSIT_BONUS = cfgDepBonus;
     const allCountries = Array.isArray(allCountriesRaw)
       ? allCountriesRaw
       : (allCountriesRaw?.items || []);
@@ -479,13 +429,13 @@ const AdvisorTool = (() => {
     if (!side || !side.country) return `<div class="side"><div style="color:var(--muted)">Unknown location</div></div>`;
     const breakdown = [];
     if (side.strategic)       breakdown.push(`Strategic resources: +${fmt(side.strategic)}%`);
-    if (side.specialisation)  breakdown.push(`Industrialism: +${side.specialisation}%`);
+    if (side.specialisation)  breakdown.push(`${side.industrialismLabel} specialization: +${fmt(side.specialisation)}%`);
     if (side.deposit) {
       const ttl = side.depositEndsAt ? new Date(side.depositEndsAt).getTime() - Date.now() : null;
       const left = (ttl !== null && ttl > 0) ? ` (${formatDuration(ttl)} left)` : '';
       breakdown.push(`Regional deposit: +${fmt(side.deposit)}%${left}`);
     }
-    if (side.depositCountry)  breakdown.push(`Industrialism: +${fmt(side.depositCountry)}%`);
+    if (side.depositCountry)  breakdown.push(`${side.industrialismLabel} deposit: +${fmt(side.depositCountry)}%`);
     const taxClass = side.tax >= 12 ? 'tax-high' : side.tax >= 8 ? 'tax-mid' : 'tax-low';
 
     const inlineDelta = (delta, higherIsBetter, threshold = 0.05) => {

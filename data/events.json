@@ -68607,5 +68607,252 @@
     "name": "Canadian Plains",
     "cc": "ca",
     "occ": "ca"
+  },
+  {
+    "at": "2026-09-25T23:19:00.403707+00:00",
+    "type": "battle_started",
+    "rid": "6813b7049403bc4170a5d71a",
+    "code": "pl-lesser-poland",
+    "name": "Lesser Poland",
+    "cc": "pl",
+    "occ": "pl"
+  },
+  {
+    "at": "2026-09-25T23:19:00.403707+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b7059403bc4170a5d798",
+    "code": "rs-east",
+    "name": "Eastern Serbia",
+    "cc": "rs",
+    "occ": "rs",
+    "from": "ir",
+    "to": "rs"
+  },
+  {
+    "at": "2026-09-25T23:19:00.403707+00:00",
+    "type": "battle_ended",
+    "rid": "6813b7059403bc4170a5d798",
+    "code": "rs-east",
+    "name": "Eastern Serbia",
+    "cc": "rs",
+    "occ": "rs"
+  },
+  {
+    "at": "2026-09-25T23:19:00.403707+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b70c9403bc4170a5db10",
+    "code": "uz-navoi",
+    "name": "Navoi",
+    "cc": "lv",
+    "occ": "uz",
+    "from": "kg",
+    "to": "lv"
+  },
+  {
+    "at": "2026-09-25T23:19:00.403707+00:00",
+    "type": "battle_ended",
+    "rid": "6813b70c9403bc4170a5db10",
+    "code": "uz-navoi",
+    "name": "Navoi",
+    "cc": "lv",
+    "occ": "uz"
+  },
+  {
+    "at": "2026-09-25T23:19:00.403707+00:00",
+    "type": "went_offline",
+    "rid": "6813b7099403bc4170a5d9ab",
+    "code": "co-amazon",
+    "name": "Colombian Amazon",
+    "cc": "ec",
+    "occ": "co",
+    "from": 1
+  },
+  {
+    "at": "2026-09-25T23:19:00.403707+00:00",
+    "type": "came_online",
+    "rid": "683ddd3d36dbc90b7804749a",
+    "code": "il-north",
+    "name": "Northern District",
+    "cc": "il",
+    "occ": "il",
+    "to": 2
+  },
+  {
+    "at": "2026-09-25T23:19:00.403707+00:00",
+    "type": "went_offline",
+    "rid": "6813b7069403bc4170a5d822",
+    "code": "lu-luxembourg",
+    "name": "Luxembourg",
+    "cc": "de",
+    "occ": "lu",
+    "from": 1
+  },
+  {
+    "at": "2026-09-25T23:19:00.403707+00:00",
+    "type": "battle_ended",
+    "rid": "6813b70a9403bc4170a5da2f",
+    "code": "ke-center",
+    "name": "Central Kenya",
+    "cc": "ye",
+    "occ": "ke"
+  },
+  {
+    "at": "2026-09-25T23:19:00.403707+00:00",
+    "type": "came_online",
+    "rid": "6813b7039403bc4170a5d67c",
+    "code": "be-brussels",
+    "name": "Brussels",
+    "cc": "be",
+    "occ": "be",
+    "to": 5
+  },
+  {
+    "at": "2026-09-25T23:19:00.403707+00:00",
+    "type": "ownership_changed",
+    "rid": "683ddd3d36dbc90b78047482",
+    "code": "et-somali",
+    "name": "Somali Region",
+    "cc": "ye",
+    "occ": "et",
+    "from": "et",
+    "to": "ye"
+  },
+  {
+    "at": "2026-09-25T23:19:00.403707+00:00",
+    "type": "battle_ended",
+    "rid": "683ddd3d36dbc90b78047482",
+    "code": "et-somali",
+    "name": "Somali Region",
+    "cc": "ye",
+    "occ": "et"
+  },
+  {
+    "at": "2026-09-25T23:19:00.403707+00:00",
+    "type": "came_online",
+    "rid": "683ddd3e36dbc90b780474a3",
+    "code": "iq-al-janubiya",
+    "name": "Southern Iraq",
+    "cc": "iq",
+    "occ": "iq",
+    "to": 1
+  },
+  {
+    "at": "2026-09-25T23:19:00.403707+00:00",
+    "type": "level_changed",
+    "rid": "6813b7039403bc4170a5d6b1",
+    "code": "uk-london",
+    "name": "Southeastern England",
+    "cc": "uk",
+    "occ": "uk",
+    "from": 4,
+    "to": 5
+  },
+  {
+    "at": "2026-09-25T23:19:00.403707+00:00",
+    "type": "came_online",
+    "rid": "687eab418fc7f0dfa1d2b98e",
+    "code": "pt-azores",
+    "name": "Azores",
+    "cc": "pt",
+    "occ": "pt",
+    "to": 3
+  },
+  {
+    "at": "2026-09-25T23:19:00.403707+00:00",
+    "type": "battle_started",
+    "rid": "6813b7089403bc4170a5d94e",
+    "code": "cy-cyprus",
+    "name": "Cyprus",
+    "cc": "ir",
+    "occ": "cy"
+  },
+  {
+    "at": "2026-09-25T23:19:00.403707+00:00",
+    "type": "ownership_changed",
+    "rid": "6813b7039403bc4170a5d6b4",
+    "code": "fr-aquitaine",
+    "name": "Aquitaine",
+    "cc": "es",
+    "occ": "fr",
+    "from": "fr",
+    "to": "es"
+  },
+  {
+    "at": "2026-09-25T23:19:00.403707+00:00",
+    "type": "went_offline",
+    "rid": "6813b7039403bc4170a5d6b4",
+    "code": "fr-aquitaine",
+    "name": "Aquitaine",
+    "cc": "es",
+    "occ": "fr",
+    "from": 1
+  },
+  {
+    "at": "2026-09-25T23:19:00.403707+00:00",
+    "type": "battle_ended",
+    "rid": "6813b7039403bc4170a5d6b4",
+    "code": "fr-aquitaine",
+    "name": "Aquitaine",
+    "cc": "es",
+    "occ": "fr"
+  },
+  {
+    "at": "2026-09-25T23:19:00.403707+00:00",
+    "type": "battle_started",
+    "rid": "6813b7049403bc4170a5d6c6",
+    "code": "fr-south-east",
+    "name": "Southeastern France",
+    "cc": "fr",
+    "occ": "fr"
+  },
+  {
+    "at": "2026-09-25T23:19:00.403707+00:00",
+    "type": "came_online",
+    "rid": "6813b7099403bc4170a5d957",
+    "code": "ma-central-atlantic-region",
+    "name": "Central Atlantic Region",
+    "cc": "pt",
+    "occ": "ma",
+    "to": 3
+  },
+  {
+    "at": "2026-09-25T23:19:00.403707+00:00",
+    "type": "battle_started",
+    "rid": "6813b70a9403bc4170a5d9d5",
+    "code": "in-maratha",
+    "name": "Maratha",
+    "cc": "in",
+    "occ": "in"
+  },
+  {
+    "at": "2026-09-25T23:19:00.403707+00:00",
+    "type": "resistance_full",
+    "rid": "6813b7049403bc4170a5d6bd",
+    "code": "fr-ile-de-france",
+    "name": "Ile-de-France",
+    "cc": "be",
+    "occ": "fr",
+    "val": 2970,
+    "max": 2970
+  },
+  {
+    "at": "2026-09-25T23:19:00.403707+00:00",
+    "type": "resistance_full",
+    "rid": "6813b7059403bc4170a5d792",
+    "code": "hr-continental-croatia",
+    "name": "Continental Croatia",
+    "cc": "ba",
+    "occ": "hr",
+    "val": 7676,
+    "max": 7676
+  },
+  {
+    "at": "2026-09-25T23:19:00.403707+00:00",
+    "type": "battle_started",
+    "rid": "696a81f5882256e1db118228",
+    "code": "uk-south-georgia",
+    "name": "South Georgia",
+    "cc": "ar",
+    "occ": "uk"
   }
 ]

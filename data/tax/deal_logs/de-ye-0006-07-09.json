@@ -14,105 +14,41 @@
   "home_citizen_rebate": 0.35,
   "non_home_citizen_rebate": 0.35,
   "current_week": {
-    "week_start": "2026-09-21",
+    "week_start": "2026-09-28",
     "days": [
       {
-        "date": "2026-09-21",
-        "row": {
-          "factories": 52,
-          "workers": 63,
-          "home_workers": 25,
-          "partner_workers": 38,
-          "wages": 319.46,
-          "gross_tax": 31.95,
-          "home_worker_tax": 22.78,
-          "partner_worker_tax": 9.16,
-          "manual_rebate_due": 11.18,
-          "auto_remit_tax": 9.58,
-          "host_retained": 11.18
-        }
-      },
-      {
-        "date": "2026-09-22",
-        "row": {
-          "factories": 50,
-          "workers": 62,
-          "home_workers": 25,
-          "partner_workers": 37,
-          "wages": 500.01,
-          "gross_tax": 50.0,
-          "home_worker_tax": 22.88,
-          "partner_worker_tax": 27.12,
-          "manual_rebate_due": 17.5,
-          "auto_remit_tax": 15.0,
-          "host_retained": 17.5
-        }
-      },
-      {
-        "date": "2026-09-24",
-        "row": {
-          "factories": 48,
-          "workers": 57,
-          "home_workers": 20,
-          "partner_workers": 37,
-          "wages": 676.25,
-          "gross_tax": 67.62,
-          "home_worker_tax": 46.43,
-          "partner_worker_tax": 21.19,
-          "manual_rebate_due": 23.67,
-          "auto_remit_tax": 20.29,
-          "host_retained": 23.67
-        }
-      },
-      {
-        "date": "2026-09-25",
-        "row": {
-          "factories": 42,
-          "workers": 47,
-          "home_workers": 20,
-          "partner_workers": 27,
-          "wages": 26.25,
-          "gross_tax": 2.62,
-          "home_worker_tax": 0.69,
-          "partner_worker_tax": 1.94,
-          "manual_rebate_due": 0.92,
-          "auto_remit_tax": 0.79,
-          "host_retained": 0.92
-        }
-      },
-      {
-        "date": "2026-09-26",
-        "row": {
-          "factories": 41,
-          "workers": 49,
-          "home_workers": 17,
-          "partner_workers": 32,
-          "wages": 535.89,
-          "gross_tax": 53.59,
-          "home_worker_tax": 42.84,
-          "partner_worker_tax": 10.75,
-          "manual_rebate_due": 18.76,
-          "auto_remit_tax": 16.08,
-          "host_retained": 18.76
-        }
-      },
-      {
-        "date": "2026-09-27",
+        "date": "2026-09-28",
         "row": {
           "factories": 41,
           "workers": 47,
           "home_workers": 15,
           "partner_workers": 32,
-          "wages": 394.68,
-          "gross_tax": 39.47,
-          "home_worker_tax": 27.38,
-          "partner_worker_tax": 12.09,
-          "manual_rebate_due": 13.81,
-          "auto_remit_tax": 11.84,
-          "host_retained": 13.81
+          "wages": 350.96,
+          "gross_tax": 35.1,
+          "home_worker_tax": 21.27,
+          "partner_worker_tax": 13.82,
+          "manual_rebate_due": 12.28,
+          "auto_remit_tax": 10.53,
+          "host_retained": 12.28
         }
       }
     ],
+    "totals": {
+      "factories": 41,
+      "workers": 47,
+      "home_workers": 15,
+      "partner_workers": 32,
+      "wages": 350.96,
+      "gross_tax": 35.1,
+      "home_worker_tax": 21.27,
+      "partner_worker_tax": 13.82,
+      "manual_rebate_due": 12.28,
+      "auto_remit_tax": 10.53,
+      "host_retained": 12.28
+    }
+  },
+  "previous_week": {
+    "week_start": "2026-09-21",
     "totals": {
       "factories": 274,
       "workers": 325,
@@ -127,21 +63,5 @@
       "host_retained": 85.84
     }
   },
-  "previous_week": {
-    "week_start": "2026-09-14",
-    "totals": {
-      "factories": 302,
-      "workers": 385,
-      "home_workers": 150,
-      "partner_workers": 235,
-      "wages": 6693.58,
-      "gross_tax": 669.35,
-      "home_worker_tax": 384.25,
-      "partner_worker_tax": 285.11,
-      "manual_rebate_due": 234.27,
-      "auto_remit_tax": 200.8,
-      "host_retained": 234.27
-    }
-  },
-  "updated_at": "2026-09-27T21:24:58.161000+00:00"
+  "updated_at": "2026-09-28T00:54:08.132983+00:00"
 }

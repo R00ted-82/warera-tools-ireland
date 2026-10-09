@@ -142,11 +142,11 @@ Capacity is `dormitories * 5`. MUs with no dormitory data have unknown capacity 
 
 For each of a user's companies, works out whether a different country or region would produce more, and by how much.
 
-This is the most intricate tool in the project. The production bonus is computed locally from four components: strategic resources, a +30% industrialism bonus on the specialised item, a regional deposit bonus, and a +30% industrialism bonus on deposits. Which ones fire depends on the country's industrialism lean (a signed integer from warerastats, where only the sign matters) and on the item category. The gating is asymmetric and stacks in some combinations but not others.
+This is the most intricate tool in the project. The production bonus is computed locally from four components: the Strategic Resource Bonus, an Industrialist specialisation modifier, the active region's Deposit Bonus, and an Agrarian deposit modifier. Industrialism is an exact tier from warerastats: +1/+2 grant +10%/+30% on one of 12 eligible specialised industrial goods, while −1/−2 grant +10%/+30% on matching deposits of coca, grain, livestock, or fish. Neutral, missing, and unknown tiers contribute no Party Ethics modifier.
 
-The whole model was reverse-engineered and verified against in-game tooltips. The file header lists the verified cases and an explicit "bugs to NOT repeat" list. Do not change the bonus logic without re-verifying against live tooltips. In particular, `AGRARIAN_ITEMS` is misnamed: it's the set of items the industrialism bonus does NOT cover (food, plants, pills), not just agrarian goods.
+The whole model was reverse-engineered and verified against game-owned calculations. The file header lists verified cases and an explicit "bugs to NOT repeat" list. Do not change the bonus logic without re-verifying live. Keep the two explicit item allowlists separate, and do not reuse `gameConfig.company.depositResourceBonus` as a Party Ethics modifier.
 
-Income tax only affects the ranking on companies the user actually works in. If they just own it, raw output is ranked instead. If warerastats is unreachable, industrialism defaults to 0 and the +30% bonuses simply don't fire, which under-counts rather than mis-counts.
+Income tax only affects the ranking on companies the user actually works in. If they just own it, raw output is ranked instead. If warerastats is unreachable, Industrialism defaults to 0 and the tier-specific modifiers simply do not fire, which under-counts rather than mis-counts.
 
 ### Employee Clock-In Monitor (`clockin.js`)
 

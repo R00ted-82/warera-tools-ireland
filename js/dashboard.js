@@ -59,8 +59,13 @@ const DashboardTool = (() => {
   }
 
   /* ── Production-bonus model (ported from daily-profit.js / advisor) ── */
-  const AGRARIAN_ITEMS = new Set(['steak','bread','fish','cookedFish','livestock','grain','coca','cocain']);
-  let GAME_DEPOSIT_BONUS = 30;
+  const INDUSTRIALISM_SPECIALISATION_ITEMS = new Set([
+    'lightAmmo', 'ammo', 'heavyAmmo', 'concrete', 'steel', 'iron',
+    'limestone', 'petroleum', 'oil', 'lead', 'wood', 'paper',
+  ]);
+  const AGRARIAN_DEPOSIT_ITEMS = new Set(['coca', 'grain', 'livestock', 'fish']);
+  const SPECIALISATION_MODIFIER_BY_TIER = { 1: 10, 2: 30 };
+  const DEPOSIT_MODIFIER_BY_TIER = { '-1': 10, '-2': 30 };
   const isDepositActive = (d) => {
     if (!d) return false;
     const now = Date.now();
@@ -68,21 +73,26 @@ const DashboardTool = (() => {
     const e = d.endsAt   ? new Date(d.endsAt).getTime()   : 0;
     return now >= s && now <= e;
   };
-  const ethicsLean = (c) => {
-    const ind = c?.industrialism;
-    if (typeof ind !== 'number' || ind === 0) return 'neutral';
-    return ind > 0 ? 'industrialist' : 'agrarian';
+  const industrialismTier = (country) => {
+    const tier = country?.industrialism;
+    return [-2, -1, 0, 1, 2].includes(tier) ? tier : 0;
   };
   function computeBonus(country, region, itemCode) {
     if (!country) return null;
-    const isSpec = country.specializedItem === itemCode;
-    const lean = ethicsLean(country);
-    const strategic = isSpec ? (country.strategicResources?.bonuses?.productionPercent || 0) : 0;
-    const specialisation = isSpec && lean === 'industrialist' && !AGRARIAN_ITEMS.has(itemCode) ? 30 : 0;
+    const isSpecialised = country.specializedItem === itemCode;
+    const tier = industrialismTier(country);
+    const strategic = isSpecialised && tier !== -2
+      ? (country.strategicResources?.bonuses?.productionPercent || 0)
+      : 0;
+    const specialisation = isSpecialised && INDUSTRIALISM_SPECIALISATION_ITEMS.has(itemCode)
+      ? (SPECIALISATION_MODIFIER_BY_TIER[tier] || 0)
+      : 0;
     const hasDep = !!region?.deposit && region.deposit.type === itemCode && isDepositActive(region.deposit)
-      && !(isSpec && lean === 'industrialist');
+      && !(isSpecialised && tier > 0);
     const deposit = hasDep ? (region.deposit.bonusPercent || 0) : 0;
-    const depositCountry = hasDep && lean === 'agrarian' ? GAME_DEPOSIT_BONUS : 0;
+    const depositCountry = hasDep && AGRARIAN_DEPOSIT_ITEMS.has(itemCode)
+      ? (DEPOSIT_MODIFIER_BY_TIER[tier] || 0)
+      : 0;
     const total = strategic + specialisation + deposit + depositCountry;
     const tax = country.taxes?.income ?? 0;
     return { total, tax, region, country };
@@ -613,9 +623,6 @@ const DashboardTool = (() => {
       const gameItems = gameConfig?.items || {};
       const aeLevels  = gameConfig?.upgradesConfig?.automatedEngine?.levels || {};
       const aeDailyProd = (lvl) => aeLevels[lvl]?.stats?.dailyProd || 0;
-      const cfgDep = gameConfig?.company?.depositResourceBonus;
-      if (typeof cfgDep === 'number') GAME_DEPOSIT_BONUS = cfgDep;
-
       const ownedItems = new Set(companies.map(c => c.itemCode).filter(Boolean));
       const needed = new Set(ownedItems);
       for (const code of ownedItems) {

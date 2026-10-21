@@ -111,6 +111,14 @@
         The 🔒 tools are encrypted and require a minister password to open — if you're not a current minister, you won't be able to load them. Others are open to everyone.
       </div>
       <div class="tool-cards">
+        <a class="tool-card" href="#donation-draw">
+          <div class="tool-card-icon">🎟️</div>
+          <div class="tool-card-body">
+            <h3>Ireland Donation Draw</h3>
+            <p>Review donations to Ireland over an exact period, apply a minimum total, and draw fairly from current Irish citizens without repeat winners.</p>
+            <span class="tool-link">Open Ireland Donation Draw →</span>
+          </div>
+        </a>
         <a class="tool-card" href="#tax">
           <div class="tool-card-icon">🧾</div>
           <div class="tool-card-body">
@@ -137,6 +145,109 @@
         </a>
       </div>
     </div>
+  </section>
+
+  <!-- ─── Ireland Donation Draw (public government tool) ───────── -->
+  <section class="view" data-view="donation-draw">
+    <div class="tool-header">
+      <div class="title-block">
+        <h2><span>🎟️</span> Ireland Donation Draw</h2>
+        <p>Aggregate money donated to Ireland, verify current Irish citizenship, and select unique donors with equal odds.</p>
+      </div>
+      <div class="controls">
+        <button id="idd-refresh" type="button">Refresh</button>
+        <button id="idd-copy" type="button">Copy draw summary</button>
+        <button id="idd-reset" type="button">Reset draw</button>
+      </div>
+    </div>
+
+    <form id="idd-period-form" class="idd-period-panel">
+      <label>
+        <span>Start</span>
+        <input id="idd-start" type="datetime-local" step="1" required />
+      </label>
+      <label>
+        <span>End</span>
+        <input id="idd-end" type="datetime-local" step="1" required />
+      </label>
+      <label class="idd-minimum-field">
+        <span>Minimum aggregate donation</span>
+        <span class="idd-money-input"><b>₿</b><input id="idd-minimum" type="number" min="1" step="0.01" value="1" required /></span>
+      </label>
+      <button class="btn-primary" type="submit">Apply period</button>
+      <div id="idd-timezone" class="idd-timezone"></div>
+    </form>
+
+    <div id="idd-steps" class="steps hidden">
+      <div class="step" data-state="pending" data-step="1">
+        <div class="step-icon"></div><div class="step-body"><div class="step-title">Reading cached donations</div><div class="step-sub"></div></div><div class="step-count"></div>
+      </div>
+      <div class="step" data-state="pending" data-step="2">
+        <div class="step-icon"></div><div class="step-body"><div class="step-title">Fetching latest donation pages</div><div class="step-sub"></div></div><div class="step-count"></div>
+      </div>
+      <div class="step" data-state="pending" data-step="3">
+        <div class="step-icon"></div><div class="step-body"><div class="step-title">Resolving donor profiles and citizenship</div><div class="step-sub"></div></div><div class="step-count"></div>
+      </div>
+      <div class="step" data-state="pending" data-step="4">
+        <div class="step-icon"></div><div class="step-body"><div class="step-title">Aggregating donations and applying eligibility</div><div class="step-sub"></div></div><div class="step-count"></div>
+      </div>
+      <div class="step" data-state="pending" data-step="5">
+        <div class="step-icon"></div><div class="step-body"><div class="step-title">Rendering the draw pool</div><div class="step-sub"></div></div><div class="step-count"></div>
+      </div>
+    </div>
+
+    <div id="idd-status" class="status hidden" role="status"></div>
+    <div id="idd-warning" class="idd-warning hidden" role="alert"></div>
+
+    <div id="idd-results" class="idd-results hidden">
+      <div id="idd-summary" class="idd-summary"></div>
+
+      <section class="idd-draw-panel" aria-labelledby="idd-draw-heading">
+        <div>
+          <h3 id="idd-draw-heading">Random draw</h3>
+          <p>Every eligible donor has one entry, regardless of amount or donation count.</p>
+        </div>
+        <button id="idd-roll" class="btn-primary idd-roll" type="button">Roll winner</button>
+      </section>
+
+      <div id="idd-winner" class="idd-winner hidden" aria-live="polite"></div>
+      <section id="idd-history-panel" class="idd-history-panel hidden">
+        <h3>Winner history</h3>
+        <ol id="idd-history"></ol>
+      </section>
+
+      <div class="idd-table-toolbar">
+        <input id="idd-search" type="text" placeholder="Search username…" autocomplete="off" spellcheck="false" />
+        <label class="idd-toggle"><input id="idd-show-ineligible" type="checkbox" /> Show ineligible donors</label>
+      </div>
+
+      <div class="idd-table-wrap">
+        <table class="idd-table">
+          <thead><tr>
+            <th><button type="button" data-idd-sort="username">User <span></span></button></th>
+            <th><button type="button" data-idd-sort="total">Total donated <span></span></button></th>
+            <th><button type="button" data-idd-sort="count">Donation count <span></span></button></th>
+            <th><button type="button" data-idd-sort="firstAt">First donation <span></span></button></th>
+            <th><button type="button" data-idd-sort="latestAt">Latest donation <span></span></button></th>
+            <th>Eligibility / status</th>
+          </tr></thead>
+          <tbody id="idd-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <details class="howto">
+      <summary>How eligibility and selection work</summary>
+      <div class="howto-body">
+        <ul>
+          <li>The selected period includes its start and excludes its end. The maximum lookback is 31 days.</li>
+          <li>Multiple donations from the same user are added together before the minimum is applied.</li>
+          <li>Only currently Irish citizens with resolved profiles can enter. Every eligible user has exactly one entry.</li>
+          <li>Selection uses the browser's cryptographically secure random generator. Winners cannot win again until this draw is reset.</li>
+          <li>Transaction and winner history are stored locally in this browser. The draw summary is an audit aid, not cryptographic proof that no off-screen reset occurred.</li>
+        </ul>
+      </div>
+    </details>
   </section>
 
   <!-- ─── Community tools view (external, third-party) ──────────── -->
@@ -1425,7 +1536,7 @@ Please transfer: ₿X</pre>
 </footer>
 
 <!-- Load order matters: shared first, tools next, router last. -->
-<script src="js/shared.js?v=20260617h"></script>
+<script src="js/shared.js?v=20260722a"></script>
 <script src="js/mu.js?v=20260617h"></script>
 <script src="js/buddy-finder.js?v=20260617h"></script>
 <script src="js/advisor.js?v=20260617h"></script>
@@ -1434,6 +1545,7 @@ Please transfer: ₿X</pre>
 <script src="js/daily-profit.js?v=20260617h"></script>
 <script src="js/daily-profit-dev.js?v=20260704a"></script>
 <script src="js/dashboard.js?v=20260623a"></script>
+<script src="js/donation-draw.js?v=20260722a"></script>
 <script src="js/irish-tax.js?v=20260703a"></script>
 <script src="js/irish-tax-dev.js?v=20260702a"></script>
 <script src="js/irish-tax-partner.js?v=20260703a"></script>

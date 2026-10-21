@@ -35,6 +35,7 @@ js/
   buddy-finder.js Buddy Finder (public)
   daily-profit.js Daily Profit calculator
   wealth.js       Wealth tracker
+  donation-draw.js Ireland Donation Draw
   mu.js           Irish Military Units
   buddy.js        Buddy System Monitor (encrypted, MoE password)
   battle-orders.js Battle Orders (encrypted, MoD password)
@@ -101,7 +102,7 @@ GAME_BASE        = 'https://app.warera.io'
 IRELAND_COUNTRY_ID = '6813b6d446e731854c7ac7fe'
 ```
 
-**`trpc(endpoint, input, { retry, timeoutMs })`** is the only way to call the game API. It builds the proxied URL, unwraps the tRPC response shape, and optionally retries transient 5xx errors. Always use it rather than calling `fetch` against the gateway directly.
+**`trpc(endpoint, inputOrInputs, { batch, retry, timeoutMs, fresh })`** is the only way to call the game API. It builds the proxied URL, unwraps the tRPC response shape, and optionally retries transient errors. With `batch: true`, pass an array of inputs for the same endpoint; the result uses `Promise.allSettled`'s shape. `fresh: true` bypasses the resolved-value cache. Always use `trpc` rather than calling `fetch` against the gateway directly.
 
 **`enforceIrishOnly(country, username)`** throws unless the user is an Irish citizen or the `bypass=1` URL flag is set. Personal tools call this right after resolving a username, before any expensive loading. A `null` country passes through (the resolution path reports its own error).
 
@@ -173,6 +174,16 @@ The waiting list is backed by a `waitlist.json` file in the [`R00ted-82/warera-t
 Reads hit the GitHub contents API with a cache-buster. This endpoint refreshes within seconds of a commit, unlike the raw or jsDelivr endpoints which cache for hours. Writes POST to the Worker's `/waitlist-update` route, which fires a `repository_dispatch` with the PAT attached server-side, and a GitHub Action then edits the file.
 
 That Action introduces roughly a one-minute lag between a submit and the name appearing. This is intentional and free; the UI warns users about it. Don't write to GitHub directly from the client; that would leak the token.
+
+### Ireland Donation Draw (`donation-draw.js`)
+
+Aggregates money donated to Ireland over an exact, shareable date-time period and selects uniformly from unique donors who are current Irish citizens and meet the operator's aggregate minimum. Periods are half-open (`start <= createdAt < end`), limited to a 31-day lookback, and default to the previous seven days with a ₿1 minimum. Donation totals and counts never weight the draw: each eligible user has one entry.
+
+Donation transaction field names are counterintuitive and were verified against the game UI. For `transactionType: 'donation'`, `buyerId` is the user who donated and `sellerCountryId === IRELAND_COUNTRY_ID` means Ireland received it. Do not reverse this mapping based on the trade-oriented buyer/seller names. Non-money, non-positive, item-only, userless, other-country, and other transaction records are excluded; unexpected donation-shaped records are surfaced as warnings.
+
+The tool incrementally caches only the required public transaction fields in versioned `localStorage`, deduplicated by transaction ID and evicted after 31 days. It still fetches the newest API page every time it opens or refreshes. Current citizenship is reloaded separately and revalidated before the first roll or after it becomes stale; unresolved profiles and incomplete pagination disable selection rather than silently shrinking the pool.
+
+Winner history is also versioned in `localStorage` and keyed by the exact normalized start, end, and minimum. Winners cannot repeat for that filter set until the operator explicitly resets the draw. Search, sorting, row expansion, and the ineligible-donor toggle affect only the audit table, never the random pool. Selection uses `crypto.getRandomValues()` with rejection sampling rather than `Math.random()`.
 
 ### Buddy System Monitor (`buddy.js`) and Battle Orders (`battle-orders.js`)
 
